@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 94 89">
+  <defs>
+    <style>
+      .cls-1, .cls-2, .cls-3 {
+        fill: none;
+      }
+
+      .cls-4 {
+        clip-path: url(#clippath-1);
+      }
+
+      .cls-2 {
+        stroke-width: 2.47px;
+      }
+
+      .cls-2, .cls-3 {
+        stroke: #000;
+        stroke-miterlimit: 10;
+      }
+
+      .cls-3 {
+        stroke-width: 1.5px;
+      }
+
+      .cls-5 {
+        clip-path: url(#clippath);
+      }
+    </style>
+    <clipPath id="clippath">
+      <rect class="cls-1" x="2.55" y="4.47" width="44.45" height="80.07"/>
+    </clipPath>
+    <clipPath id="clippath-1">
+      <rect class="cls-1" x="47" y="4.47" width="44.45" height="80.07"/>
+    </clipPath>
+  </defs>
+  <g id="Camada_1" data-name="Camada 1" focusable="false">
+    <g>
+      <g id="_Repetição_do_espelho_" data-name="&amp;lt;Repetição do espelho&amp;gt;">
+        <g class="cls-5">
+          <path class="cls-2" d="M47.89,5.7h-30.47c-2.93,4.91-8.08,8.64-13.63,10.05v58.47c2.89,0,5.38.98,7.7,2.7s4.16,4.02,5.83,6.38h43.89"/>
+          <path class="cls-3" d="M48.44,9.59H7.31c1.54,1.22,2.81,3.23,3.14,5.16s-.57,4.15-2.39,4.88v49.42c.11,2.88-1.1,5.44-3.16,7.46-.55.54-1.2,1.08-1.34,1.85-.13.74.3,1.5.93,1.92s1.4.54,2.16.53c2.14-.04,4.11-1.08,6.2-1.55,1.81-.41,3.71-.39,5.51.06l31.99.06"/>
+        </g>
+      </g>
+      <g id="_Repetição_do_espelho_-2" data-name="&amp;lt;Repetição do espelho&amp;gt;">
+        <g class="cls-4">
+          <path class="cls-2" d="M46.11,5.7h30.47c2.93,4.91,8.08,8.64,13.63,10.05v58.47c-2.89,0-5.38.98-7.7,2.7s-4.16,4.02-5.83,6.38h-43.89"/>
+          <path class="cls-3" d="M45.56,9.59h41.13c-1.54,1.22-2.81,3.23-3.14,5.16s.57,4.15,2.39,4.88v49.42c-.11,2.88,1.1,5.44,3.16,7.46.55.54,1.2,1.08,1.34,1.85.13.74-.3,1.5-.93,1.92s-1.4.54-2.16.53c-2.14-.04-4.11-1.08-6.2-1.55-1.81-.41-3.71-.39-5.51.06l-31.99.06"/>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="Camada_2" data-name="Camada 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 72.32 72.58">
+  <defs>
+    <style>
+      .cls-1, .cls-2, .cls-3 {
+        fill: none;
+      }
+
+      .cls-4 {
+        clip-path: url(#clippath-1);
+      }
+
+      .cls-2 {
+        stroke-width: 2px;
+      }
+
+      .cls-2, .cls-3 {
+        stroke: #000;
+        stroke-miterlimit: 10;
+      }
+
+      .cls-3 {
+        stroke-width: 4px;
+      }
+
+      .cls-5 {
+        clip-path: url(#clippath);
+      }
+    </style>
+    <clipPath id="clippath">
+      <rect class="cls-1" x="6.27" y=".86" width="59.72" height="35.86"/>
+    </clipPath>
+    <clipPath id="clippath-1">
+      <rect class="cls-1" x="6.27" y="36.72" width="59.72" height="35.86"/>
+    </clipPath>
+  </defs>
+  <g id="Camada_1-2" data-name="Camada 1">
+    <g>
+      <circle class="cls-3" cx="36.16" cy="36.16" r="34.16"/>
+      <g>
+        <g id="_Repetição_do_espelho_" data-name="&amp;lt;Repetição do espelho&amp;gt;">
+          <g class="cls-5">
+            <path class="cls-2" d="M64.99,40.52V7.14c-3.6-.56-7.46-2.23-10.28-4.55-.79,2.68-3.2,4.31-5.86,5.14s-5.52.77-8.31.7h-5.77"/>
+            <path class="cls-2" d="M7.27,40.52V7.14c3.6-.56,7.46-2.23,10.28-4.55.79,2.68,3.2,4.31,5.86,5.14s5.52.77,8.31.7h5.77"/>
+          </g>
+        </g>
+        <g id="_Repetição_do_espelho_-2" data-name="&amp;lt;Repetição do espelho&amp;gt;">
+          <g class="cls-4">
+            <path class="cls-2" d="M64.99,32.92v33.38c-3.6.56-7.46,2.23-10.28,4.55-.79-2.68-3.2-4.31-5.86-5.14s-5.52-.77-8.31-.7h-5.77"/>
+            <path class="cls-2" d="M7.27,32.92v33.38c3.6.56,7.46,2.23,10.28,4.55.79-2.68,3.2-4.31,5.86-5.14s5.52-.77,8.31-.7h5.77"/>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

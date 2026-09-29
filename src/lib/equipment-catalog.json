@@ -1,0 +1,3742 @@
+{
+  "items": [
+    {
+      "id": "acolchoada",
+      "name": "Acolchoada",
+      "category": "armor",
+      "subcategory": "Armadura leve",
+      "priceCp": 500,
+      "weightKg": 4,
+      "unit": "unidade",
+      "description": "Armaduras pesadas reduzem o deslocamento em 3 metros se a Força for inferior ao requisito.",
+      "properties": [
+        "Desvantagem em Furtividade"
+      ],
+      "sourcePage": 145,
+      "aliases": [],
+      "armor": {
+        "ac": 11,
+        "dexterity": "full",
+        "strength": null,
+        "stealthDisadvantage": true,
+        "shield": false
+      }
+    },
+    {
+      "id": "couro",
+      "name": "Couro",
+      "category": "armor",
+      "subcategory": "Armadura leve",
+      "priceCp": 1000,
+      "weightKg": 5,
+      "unit": "unidade",
+      "description": "Armaduras pesadas reduzem o deslocamento em 3 metros se a Força for inferior ao requisito.",
+      "properties": [],
+      "sourcePage": 145,
+      "aliases": [],
+      "armor": {
+        "ac": 11,
+        "dexterity": "full",
+        "strength": null,
+        "stealthDisadvantage": false,
+        "shield": false
+      }
+    },
+    {
+      "id": "couro-batido",
+      "name": "Couro Batido",
+      "category": "armor",
+      "subcategory": "Armadura leve",
+      "priceCp": 4500,
+      "weightKg": 6,
+      "unit": "unidade",
+      "description": "Armaduras pesadas reduzem o deslocamento em 3 metros se a Força for inferior ao requisito.",
+      "properties": [],
+      "sourcePage": 145,
+      "aliases": [],
+      "armor": {
+        "ac": 12,
+        "dexterity": "full",
+        "strength": null,
+        "stealthDisadvantage": false,
+        "shield": false
+      }
+    },
+    {
+      "id": "gibao-de-peles",
+      "name": "Gibão de Peles",
+      "category": "armor",
+      "subcategory": "Armadura média",
+      "priceCp": 1500,
+      "weightKg": 7.5,
+      "unit": "unidade",
+      "description": "Armaduras pesadas reduzem o deslocamento em 3 metros se a Força for inferior ao requisito.",
+      "properties": [],
+      "sourcePage": 145,
+      "aliases": [],
+      "armor": {
+        "ac": 12,
+        "dexterity": "max2",
+        "strength": null,
+        "stealthDisadvantage": false,
+        "shield": false
+      }
+    },
+    {
+      "id": "camisao-de-malha",
+      "name": "Camisão de Malha",
+      "category": "armor",
+      "subcategory": "Armadura média",
+      "priceCp": 5000,
+      "weightKg": 8,
+      "unit": "unidade",
+      "description": "Armaduras pesadas reduzem o deslocamento em 3 metros se a Força for inferior ao requisito.",
+      "properties": [],
+      "sourcePage": 145,
+      "aliases": [],
+      "armor": {
+        "ac": 13,
+        "dexterity": "max2",
+        "strength": null,
+        "stealthDisadvantage": false,
+        "shield": false
+      }
+    },
+    {
+      "id": "brunea",
+      "name": "Brunea",
+      "category": "armor",
+      "subcategory": "Armadura média",
+      "priceCp": 7500,
+      "weightKg": 12.5,
+      "unit": "unidade",
+      "description": "Armaduras pesadas reduzem o deslocamento em 3 metros se a Força for inferior ao requisito.",
+      "properties": [
+        "Desvantagem em Furtividade"
+      ],
+      "sourcePage": 145,
+      "aliases": [],
+      "armor": {
+        "ac": 14,
+        "dexterity": "max2",
+        "strength": null,
+        "stealthDisadvantage": true,
+        "shield": false
+      }
+    },
+    {
+      "id": "peitoral",
+      "name": "Peitoral",
+      "category": "armor",
+      "subcategory": "Armadura média",
+      "priceCp": 15000,
+      "weightKg": 10,
+      "unit": "unidade",
+      "description": "Armaduras pesadas reduzem o deslocamento em 3 metros se a Força for inferior ao requisito.",
+      "properties": [],
+      "sourcePage": 145,
+      "aliases": [],
+      "armor": {
+        "ac": 14,
+        "dexterity": "max2",
+        "strength": null,
+        "stealthDisadvantage": false,
+        "shield": false
+      }
+    },
+    {
+      "id": "meia-armadura",
+      "name": "Meia-Armadura",
+      "category": "armor",
+      "subcategory": "Armadura média",
+      "priceCp": 50000,
+      "weightKg": 15,
+      "unit": "unidade",
+      "description": "Armaduras pesadas reduzem o deslocamento em 3 metros se a Força for inferior ao requisito.",
+      "properties": [
+        "Desvantagem em Furtividade"
+      ],
+      "sourcePage": 145,
+      "aliases": [],
+      "armor": {
+        "ac": 15,
+        "dexterity": "max2",
+        "strength": null,
+        "stealthDisadvantage": true,
+        "shield": false
+      }
+    },
+    {
+      "id": "cota-de-malha",
+      "name": "Cota de Malha",
+      "category": "armor",
+      "subcategory": "Armadura pesada",
+      "priceCp": 7500,
+      "weightKg": 17.5,
+      "unit": "unidade",
+      "description": "Armaduras pesadas reduzem o deslocamento em 3 metros se a Força for inferior ao requisito.",
+      "properties": [
+        "Desvantagem em Furtividade"
+      ],
+      "sourcePage": 145,
+      "aliases": [],
+      "armor": {
+        "ac": 15,
+        "dexterity": "full",
+        "strength": 13,
+        "stealthDisadvantage": true,
+        "shield": false
+      }
+    },
+    {
+      "id": "loriga",
+      "name": "Loriga",
+      "category": "armor",
+      "subcategory": "Armadura pesada",
+      "priceCp": 20000,
+      "weightKg": 20,
+      "unit": "unidade",
+      "description": "Armaduras pesadas reduzem o deslocamento em 3 metros se a Força for inferior ao requisito.",
+      "properties": [
+        "Desvantagem em Furtividade"
+      ],
+      "sourcePage": 145,
+      "aliases": [],
+      "armor": {
+        "ac": 16,
+        "dexterity": "none",
+        "strength": 13,
+        "stealthDisadvantage": true,
+        "shield": false
+      }
+    },
+    {
+      "id": "cota-de-talas",
+      "name": "Cota de Talas",
+      "category": "armor",
+      "subcategory": "Armadura pesada",
+      "priceCp": 75000,
+      "weightKg": 22.5,
+      "unit": "unidade",
+      "description": "Armaduras pesadas reduzem o deslocamento em 3 metros se a Força for inferior ao requisito.",
+      "properties": [
+        "Desvantagem em Furtividade"
+      ],
+      "sourcePage": 145,
+      "aliases": [],
+      "armor": {
+        "ac": 17,
+        "dexterity": "none",
+        "strength": 15,
+        "stealthDisadvantage": true,
+        "shield": false
+      }
+    },
+    {
+      "id": "placas",
+      "name": "Placas",
+      "category": "armor",
+      "subcategory": "Armadura pesada",
+      "priceCp": 150000,
+      "weightKg": 25,
+      "unit": "unidade",
+      "description": "Armaduras pesadas reduzem o deslocamento em 3 metros se a Força for inferior ao requisito.",
+      "properties": [
+        "Desvantagem em Furtividade"
+      ],
+      "sourcePage": 145,
+      "aliases": [],
+      "armor": {
+        "ac": 18,
+        "dexterity": "none",
+        "strength": 15,
+        "stealthDisadvantage": true,
+        "shield": false
+      }
+    },
+    {
+      "id": "escudo",
+      "name": "Escudo",
+      "category": "armor",
+      "subcategory": "Escudo",
+      "priceCp": 1000,
+      "weightKg": 3,
+      "unit": "unidade",
+      "description": "Empunhar aumenta a CA em 2; apenas um escudo concede benefício por vez.",
+      "properties": [],
+      "sourcePage": 145,
+      "aliases": [],
+      "armor": {
+        "ac": 2,
+        "dexterity": "none",
+        "strength": null,
+        "stealthDisadvantage": false,
+        "shield": true
+      }
+    },
+    {
+      "id": "adaga",
+      "name": "Adaga",
+      "category": "weapons",
+      "subcategory": "Arma simples corpo a corpo",
+      "priceCp": 200,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Acuidade",
+        "Leve",
+        "Arremesso"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d4",
+        "damageType": "perfurante",
+        "range": "6/18 m"
+      }
+    },
+    {
+      "id": "azagaia",
+      "name": "Azagaia",
+      "category": "weapons",
+      "subcategory": "Arma simples corpo a corpo",
+      "priceCp": 50,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Arremesso"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d6",
+        "damageType": "perfurante",
+        "range": "9/36 m"
+      }
+    },
+    {
+      "id": "bordao",
+      "name": "Bordão",
+      "category": "weapons",
+      "subcategory": "Arma simples corpo a corpo",
+      "priceCp": 20,
+      "weightKg": 2,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Versátil (1d8)"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d6",
+        "damageType": "concussão",
+        "range": null
+      }
+    },
+    {
+      "id": "clava-grande",
+      "name": "Clava Grande",
+      "category": "weapons",
+      "subcategory": "Arma simples corpo a corpo",
+      "priceCp": 20,
+      "weightKg": 5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Pesada",
+        "Duas mãos"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d8",
+        "damageType": "concussão",
+        "range": null
+      }
+    },
+    {
+      "id": "foice-curta",
+      "name": "Foice Curta",
+      "category": "weapons",
+      "subcategory": "Arma simples corpo a corpo",
+      "priceCp": 100,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Leve"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d4",
+        "damageType": "cortante",
+        "range": null
+      }
+    },
+    {
+      "id": "lanca",
+      "name": "Lança",
+      "category": "weapons",
+      "subcategory": "Arma simples corpo a corpo",
+      "priceCp": 100,
+      "weightKg": 1.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Arremesso",
+        "Versátil (1d8)"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d6",
+        "damageType": "perfurante",
+        "range": "6/18 m"
+      }
+    },
+    {
+      "id": "maca",
+      "name": "Maça",
+      "category": "weapons",
+      "subcategory": "Arma simples corpo a corpo",
+      "priceCp": 500,
+      "weightKg": 2,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d6",
+        "damageType": "concussão",
+        "range": null
+      }
+    },
+    {
+      "id": "machadinha",
+      "name": "Machadinha",
+      "category": "weapons",
+      "subcategory": "Arma simples corpo a corpo",
+      "priceCp": 500,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Leve",
+        "Arremesso"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d6",
+        "damageType": "cortante",
+        "range": "6/18 m"
+      }
+    },
+    {
+      "id": "martelo-leve",
+      "name": "Martelo Leve",
+      "category": "weapons",
+      "subcategory": "Arma simples corpo a corpo",
+      "priceCp": 200,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Leve",
+        "Arremesso"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d4",
+        "damageType": "concussão",
+        "range": "6/18 m"
+      }
+    },
+    {
+      "id": "porrete",
+      "name": "Porrete",
+      "category": "weapons",
+      "subcategory": "Arma simples corpo a corpo",
+      "priceCp": 10,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Leve"
+      ],
+      "sourcePage": 149,
+      "aliases": [
+        "Malagueta (clava)",
+        "Clava"
+      ],
+      "weapon": {
+        "damage": "1d4",
+        "damageType": "concussão",
+        "range": null
+      }
+    },
+    {
+      "id": "arco-curto",
+      "name": "Arco Curto",
+      "category": "weapons",
+      "subcategory": "Arma simples à distância",
+      "priceCp": 2500,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Munição",
+        "Duas mãos"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d6",
+        "damageType": "perfurante",
+        "range": "24/96 m"
+      }
+    },
+    {
+      "id": "besta-leve",
+      "name": "Besta Leve",
+      "category": "weapons",
+      "subcategory": "Arma simples à distância",
+      "priceCp": 2500,
+      "weightKg": 2.5,
+      "unit": "unidade",
+      "description": "A fonte imprime “Beste Leve”, aparente erro tipográfico.",
+      "properties": [
+        "Munição",
+        "Recarga",
+        "Duas mãos"
+      ],
+      "sourcePage": 149,
+      "aliases": [
+        "Beste Leve"
+      ],
+      "weapon": {
+        "damage": "1d8",
+        "damageType": "perfurante",
+        "range": "24/96 m"
+      }
+    },
+    {
+      "id": "dardo",
+      "name": "Dardo",
+      "category": "weapons",
+      "subcategory": "Arma simples à distância",
+      "priceCp": 5,
+      "weightKg": 0.1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Acuidade",
+        "Arremesso"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d4",
+        "damageType": "perfurante",
+        "range": "6/18 m"
+      }
+    },
+    {
+      "id": "funda",
+      "name": "Funda",
+      "category": "weapons",
+      "subcategory": "Arma simples à distância",
+      "priceCp": 10,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Munição"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d4",
+        "damageType": "concussão",
+        "range": "9/36 m"
+      }
+    },
+    {
+      "id": "alabarda",
+      "name": "Alabarda",
+      "category": "weapons",
+      "subcategory": "Arma marcial corpo a corpo",
+      "priceCp": 2000,
+      "weightKg": 3,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Pesada",
+        "Alcance",
+        "Duas mãos"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d10",
+        "damageType": "cortante",
+        "range": null
+      }
+    },
+    {
+      "id": "cimitarra",
+      "name": "Cimitarra",
+      "category": "weapons",
+      "subcategory": "Arma marcial corpo a corpo",
+      "priceCp": 2500,
+      "weightKg": 1.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Acuidade",
+        "Leve"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d6",
+        "damageType": "cortante",
+        "range": null
+      }
+    },
+    {
+      "id": "chicote",
+      "name": "Chicote",
+      "category": "weapons",
+      "subcategory": "Arma marcial corpo a corpo",
+      "priceCp": 200,
+      "weightKg": 1.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Acuidade",
+        "Alcance"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d4",
+        "damageType": "cortante",
+        "range": null
+      }
+    },
+    {
+      "id": "espada-curta",
+      "name": "Espada Curta",
+      "category": "weapons",
+      "subcategory": "Arma marcial corpo a corpo",
+      "priceCp": 1000,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Acuidade",
+        "Leve"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d6",
+        "damageType": "perfurante",
+        "range": null
+      }
+    },
+    {
+      "id": "espada-grande",
+      "name": "Espada Grande",
+      "category": "weapons",
+      "subcategory": "Arma marcial corpo a corpo",
+      "priceCp": 5000,
+      "weightKg": 3,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Pesada",
+        "Duas mãos"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "2d6",
+        "damageType": "cortante",
+        "range": null
+      }
+    },
+    {
+      "id": "espada-longa",
+      "name": "Espada Longa",
+      "category": "weapons",
+      "subcategory": "Arma marcial corpo a corpo",
+      "priceCp": 1500,
+      "weightKg": 1.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Versátil (1d10)"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d8",
+        "damageType": "cortante",
+        "range": null
+      }
+    },
+    {
+      "id": "glaive",
+      "name": "Glaive",
+      "category": "weapons",
+      "subcategory": "Arma marcial corpo a corpo",
+      "priceCp": 2000,
+      "weightKg": 3,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Pesada",
+        "Alcance",
+        "Duas mãos"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d10",
+        "damageType": "cortante",
+        "range": null
+      }
+    },
+    {
+      "id": "lanca-de-montaria",
+      "name": "Lança de Montaria",
+      "category": "weapons",
+      "subcategory": "Arma marcial corpo a corpo",
+      "priceCp": 1000,
+      "weightKg": 3,
+      "unit": "unidade",
+      "description": "A descrição da fonte chama esta arma de “lança longa”, aparente erro textual.",
+      "properties": [
+        "Alcance",
+        "Especial"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d12",
+        "damageType": "perfurante",
+        "range": null
+      }
+    },
+    {
+      "id": "lanca-longa",
+      "name": "Lança Longa",
+      "category": "weapons",
+      "subcategory": "Arma marcial corpo a corpo",
+      "priceCp": 500,
+      "weightKg": 4,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Pesada",
+        "Alcance",
+        "Duas mãos"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d10",
+        "damageType": "perfurante",
+        "range": null
+      }
+    },
+    {
+      "id": "maca-estrela",
+      "name": "Maça Estrela",
+      "category": "weapons",
+      "subcategory": "Arma marcial corpo a corpo",
+      "priceCp": 1500,
+      "weightKg": 2,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d8",
+        "damageType": "perfurante",
+        "range": null
+      }
+    },
+    {
+      "id": "machado-grande",
+      "name": "Machado Grande",
+      "category": "weapons",
+      "subcategory": "Arma marcial corpo a corpo",
+      "priceCp": 3000,
+      "weightKg": 3.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Pesada",
+        "Duas mãos"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d12",
+        "damageType": "cortante",
+        "range": null
+      }
+    },
+    {
+      "id": "machado-de-batalha",
+      "name": "Machado de Batalha",
+      "category": "weapons",
+      "subcategory": "Arma marcial corpo a corpo",
+      "priceCp": 1000,
+      "weightKg": 2,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Versátil (1d10)"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d8",
+        "damageType": "cortante",
+        "range": null
+      }
+    },
+    {
+      "id": "malho",
+      "name": "Malho",
+      "category": "weapons",
+      "subcategory": "Arma marcial corpo a corpo",
+      "priceCp": 1000,
+      "weightKg": 5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Pesada",
+        "Duas mãos"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "2d6",
+        "damageType": "concussão",
+        "range": null
+      }
+    },
+    {
+      "id": "mangual",
+      "name": "Mangual",
+      "category": "weapons",
+      "subcategory": "Arma marcial corpo a corpo",
+      "priceCp": 1000,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d8",
+        "damageType": "concussão",
+        "range": null
+      }
+    },
+    {
+      "id": "martelo-de-guerra",
+      "name": "Martelo de Guerra",
+      "category": "weapons",
+      "subcategory": "Arma marcial corpo a corpo",
+      "priceCp": 1500,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Versátil (1d10)"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d8",
+        "damageType": "concussão",
+        "range": null
+      }
+    },
+    {
+      "id": "picareta-de-guerra",
+      "name": "Picareta de Guerra",
+      "category": "weapons",
+      "subcategory": "Arma marcial corpo a corpo",
+      "priceCp": 500,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d8",
+        "damageType": "perfurante",
+        "range": null
+      }
+    },
+    {
+      "id": "rapieira",
+      "name": "Rapieira",
+      "category": "weapons",
+      "subcategory": "Arma marcial corpo a corpo",
+      "priceCp": 2500,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Acuidade"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d8",
+        "damageType": "perfurante",
+        "range": null
+      }
+    },
+    {
+      "id": "tridente",
+      "name": "Tridente",
+      "category": "weapons",
+      "subcategory": "Arma marcial corpo a corpo",
+      "priceCp": 500,
+      "weightKg": 2,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Arremesso",
+        "Versátil (1d8)"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d6",
+        "damageType": "perfurante",
+        "range": "6/18 m"
+      }
+    },
+    {
+      "id": "arco-longo",
+      "name": "Arco Longo",
+      "category": "weapons",
+      "subcategory": "Arma marcial à distância",
+      "priceCp": 5000,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Munição",
+        "Pesada",
+        "Duas mãos"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d8",
+        "damageType": "perfurante",
+        "range": "45/180 m"
+      }
+    },
+    {
+      "id": "besta-de-mao",
+      "name": "Besta de Mão",
+      "category": "weapons",
+      "subcategory": "Arma marcial à distância",
+      "priceCp": 7500,
+      "weightKg": 1.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Munição",
+        "Leve",
+        "Recarga"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d6",
+        "damageType": "perfurante",
+        "range": "9/36 m"
+      }
+    },
+    {
+      "id": "besta-pesada",
+      "name": "Besta Pesada",
+      "category": "weapons",
+      "subcategory": "Arma marcial à distância",
+      "priceCp": 5000,
+      "weightKg": 4.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Munição",
+        "Pesada",
+        "Recarga",
+        "Duas mãos"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1d10",
+        "damageType": "perfurante",
+        "range": "30/120 m"
+      }
+    },
+    {
+      "id": "rede",
+      "name": "Rede",
+      "category": "weapons",
+      "subcategory": "Arma marcial à distância",
+      "priceCp": 100,
+      "weightKg": 1.5,
+      "unit": "unidade",
+      "description": "Criatura Grande ou menor fica impedida; escapa com Força CD 10. A rede tem CA 10 e é destruída com 5 de dano cortante.",
+      "properties": [
+        "Especial",
+        "Arremesso"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "—",
+        "damageType": "—",
+        "range": "1,5/4,5 m"
+      }
+    },
+    {
+      "id": "zarabatana",
+      "name": "Zarabatana",
+      "category": "weapons",
+      "subcategory": "Arma marcial à distância",
+      "priceCp": 1000,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [
+        "Munição",
+        "Recarga"
+      ],
+      "sourcePage": 149,
+      "aliases": [],
+      "weapon": {
+        "damage": "1",
+        "damageType": "perfurante",
+        "range": "7,5/30 m"
+      }
+    },
+    {
+      "id": "abaco",
+      "name": "Ábaco",
+      "category": "gear",
+      "subcategory": "Escrita e estudo",
+      "priceCp": 200,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "acido-vidro",
+      "name": "Ácido (vidro)",
+      "category": "gear",
+      "subcategory": "Consumíveis e alquimia",
+      "priceCp": 2500,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "Ataque à distância; causa 2d6 de dano ácido ao acertar.",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "agua-benta-frasco",
+      "name": "Água benta (frasco)",
+      "category": "gear",
+      "subcategory": "Consumíveis e alquimia",
+      "priceCp": 2500,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "Causa 2d6 de dano radiante a corruptor ou morto-vivo.",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": ["Água benta"]
+    },
+    {
+      "id": "algemas",
+      "name": "Algemas",
+      "category": "gear",
+      "subcategory": "Ferramentas e utilidades",
+      "priceCp": 200,
+      "weightKg": 2,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "algibeira",
+      "name": "Algibeira",
+      "category": "gear",
+      "subcategory": "Recipientes e armazenamento",
+      "priceCp": 500,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "aljava",
+      "name": "Aljava",
+      "category": "gear",
+      "subcategory": "Recipientes e armazenamento",
+      "priceCp": 100,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "ampulheta",
+      "name": "Ampulheta",
+      "category": "gear",
+      "subcategory": "Medição e comércio",
+      "priceCp": 2500,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "antidoto-vidro",
+      "name": "Antídoto (vidro)",
+      "category": "gear",
+      "subcategory": "Consumíveis e alquimia",
+      "priceCp": 5000,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Concede vantagem contra venenos por 1 hora; não beneficia mortos-vivos ou constructos.",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": ["Antídoto"]
+    },
+    {
+      "id": "apito-de-advertencia",
+      "name": "Apito de advertência",
+      "category": "gear",
+      "subcategory": "Sinalização e comunicação",
+      "priceCp": 2500,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "ariete-portatil",
+      "name": "Aríete portátil",
+      "category": "gear",
+      "subcategory": "Ferramentas e utilidades",
+      "priceCp": 400,
+      "weightKg": 17.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "armadilha-de-caca",
+      "name": "Armadilha de caça",
+      "category": "gear",
+      "subcategory": "Exploração e escalada",
+      "priceCp": 500,
+      "weightKg": 12.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "arpeu",
+      "name": "Arpéu",
+      "category": "gear",
+      "subcategory": "Exploração e escalada",
+      "priceCp": 200,
+      "weightKg": 2,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "balanca-de-mercador",
+      "name": "Balança de mercador",
+      "category": "gear",
+      "subcategory": "Medição e comércio",
+      "priceCp": 500,
+      "weightKg": 1.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "components": [
+        { "itemId": "pratos-de-balanca", "quantity": null },
+        { "itemId": "pesos-de-balanca-ate-1-kg", "quantity": null }
+      ],
+      "aliases": []
+    },
+    {
+      "id": "balde",
+      "name": "Balde",
+      "category": "gear",
+      "subcategory": "Recipientes e armazenamento",
+      "priceCp": 5,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "barril",
+      "name": "Barril",
+      "category": "gear",
+      "subcategory": "Recipientes e armazenamento",
+      "priceCp": 200,
+      "weightKg": 35,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "bau",
+      "name": "Baú",
+      "category": "gear",
+      "subcategory": "Recipientes e armazenamento",
+      "priceCp": 500,
+      "weightKg": 12.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "bolsa-de-componentes",
+      "name": "Bolsa de componentes",
+      "category": "gear",
+      "subcategory": "Recipientes e armazenamento",
+      "priceCp": 2500,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "caixa-de-fogo",
+      "name": "Caixa de Fogo",
+      "category": "gear",
+      "subcategory": "Iluminação e fogo",
+      "priceCp": 50,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "components": [
+        { "itemId": "pederneira", "quantity": 1 },
+        { "itemId": "isqueiro-de-caixa-de-fogo", "quantity": 1 },
+        { "itemId": "pavio-para-caixa-de-fogo", "quantity": 1 }
+      ],
+      "aliases": []
+    },
+    {
+      "id": "caneca",
+      "name": "Caneca",
+      "category": "gear",
+      "subcategory": "Alimentação e acampamento",
+      "priceCp": 2,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "caneta-tinteiro",
+      "name": "Caneta tinteiro",
+      "category": "gear",
+      "subcategory": "Escrita e estudo",
+      "priceCp": 2,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": [
+        "Pena"
+      ]
+    },
+    {
+      "id": "cantil",
+      "name": "Cantil",
+      "category": "gear",
+      "subcategory": "Recipientes e armazenamento",
+      "priceCp": 20,
+      "weightKg": 2.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "cesto",
+      "name": "Cesto",
+      "category": "gear",
+      "subcategory": "Recipientes e armazenamento",
+      "priceCp": 40,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "A fonte imprime o preço como “4pp”, sem espaço.",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "cobertor-de-inverno",
+      "name": "Cobertor de inverno",
+      "category": "gear",
+      "subcategory": "Alimentação e acampamento",
+      "priceCp": 50,
+      "weightKg": 1.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "corda-de-canhamo",
+      "name": "Corda de cânhamo (15 metros)",
+      "category": "gear",
+      "subcategory": "Exploração e escalada",
+      "priceCp": 100,
+      "weightKg": 5,
+      "unit": "15 m",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": ["Corda de cânhamo (15 m)"]
+    },
+    {
+      "id": "corda-de-seda-15-metros",
+      "name": "Corda de seda (15 metros)",
+      "category": "gear",
+      "subcategory": "Exploração e escalada",
+      "priceCp": 1000,
+      "weightKg": 2.5,
+      "unit": "15 m",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": ["Corda de seda (15 m)"]
+    },
+    {
+      "id": "corrente-3-metros",
+      "name": "Corrente (3 metros)",
+      "category": "gear",
+      "subcategory": "Ferramentas e utilidades",
+      "priceCp": 500,
+      "weightKg": 5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "equipamento-de-pescaria",
+      "name": "Equipamento de pescaria",
+      "category": "gear",
+      "subcategory": "Exploração e escalada",
+      "priceCp": 100,
+      "weightKg": 2,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "components": [
+        { "itemId": "vara-de-pesca-de-madeira", "quantity": 1 },
+        { "itemId": "linha-de-seda-para-pesca", "quantity": null },
+        { "itemId": "boias-de-cortica", "quantity": null },
+        { "itemId": "anzois-de-aco", "quantity": null },
+        { "itemId": "chumbadas", "quantity": null },
+        { "itemId": "iscas-de-pesca", "quantity": null },
+        { "itemId": "redes-de-pesca", "quantity": null }
+      ],
+      "aliases": []
+    },
+    {
+      "id": "escada-3-metros",
+      "name": "Escada (3 metros)",
+      "category": "gear",
+      "subcategory": "Exploração e escalada",
+      "priceCp": 10,
+      "weightKg": 12.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "esferas-sacola-com-1-000",
+      "name": "Esferas (sacola com 1.000)",
+      "category": "gear",
+      "subcategory": "Exploração e escalada",
+      "priceCp": 100,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "espelho-de-aco",
+      "name": "Espelho de aço",
+      "category": "gear",
+      "subcategory": "Cuidados pessoais",
+      "priceCp": 500,
+      "weightKg": 0.25,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "estrepes-bolsa-com-20",
+      "name": "Estrepes (bolsa com 20)",
+      "category": "gear",
+      "subcategory": "Exploração e escalada",
+      "priceCp": 100,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "fechadura",
+      "name": "Fechadura",
+      "category": "gear",
+      "subcategory": "Ferramentas e utilidades",
+      "priceCp": 1000,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "foco-arcano-bastao",
+      "name": "Foco arcano — Bastão",
+      "category": "gear",
+      "subcategory": "Foco arcano",
+      "priceCp": 1000,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "foco-arcano-cajado",
+      "name": "Foco arcano — Cajado",
+      "category": "gear",
+      "subcategory": "Foco arcano",
+      "priceCp": 500,
+      "weightKg": 2,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "foco-arcano-cristal",
+      "name": "Foco arcano — Cristal",
+      "category": "gear",
+      "subcategory": "Foco arcano",
+      "priceCp": 1000,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "foco-arcano-orbe",
+      "name": "Foco arcano — Orbe",
+      "category": "gear",
+      "subcategory": "Foco arcano",
+      "priceCp": 2000,
+      "weightKg": 1.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "foco-arcano-varinha",
+      "name": "Foco arcano — Varinha",
+      "category": "gear",
+      "subcategory": "Foco arcano",
+      "priceCp": 1000,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "foco-druidico-cajado-de-madeira",
+      "name": "Foco druídico — Cajado de madeira",
+      "category": "gear",
+      "subcategory": "Foco druídico",
+      "priceCp": 500,
+      "weightKg": 2,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "foco-druidico-ramo-de-visco",
+      "name": "Foco druídico — Ramo de visco",
+      "category": "gear",
+      "subcategory": "Foco druídico",
+      "priceCp": 100,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "foco-druidico-totem",
+      "name": "Foco druídico — Totem",
+      "category": "gear",
+      "subcategory": "Foco druídico",
+      "priceCp": 100,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "foco-druidico-varinha-de-teixo",
+      "name": "Foco druídico — Varinha de teixo",
+      "category": "gear",
+      "subcategory": "Foco druídico",
+      "priceCp": 1000,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "fogo-alquimico-frasco",
+      "name": "Fogo alquímico (frasco)",
+      "category": "gear",
+      "subcategory": "Consumíveis e alquimia",
+      "priceCp": 5000,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": ["Fogo alquímico"]
+    },
+    {
+      "id": "frasco",
+      "name": "Frasco",
+      "category": "gear",
+      "subcategory": "Recipientes e armazenamento",
+      "priceCp": 2,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "garrafa-de-vidro",
+      "name": "Garrafa de vidro",
+      "category": "gear",
+      "subcategory": "Recipientes e armazenamento",
+      "priceCp": 100,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "giz-1-peca",
+      "name": "Giz (1 peça)",
+      "category": "gear",
+      "subcategory": "Escrita e estudo",
+      "priceCp": 1,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "grimorio",
+      "name": "Grimório",
+      "category": "gear",
+      "subcategory": "Escrita e estudo",
+      "priceCp": 5000,
+      "weightKg": 1.5,
+      "unit": "unidade",
+      "description": "Livro de magias usado por magos.",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": [
+        "Spellbook",
+        "Livro de magias"
+      ]
+    },
+    {
+      "id": "jarra",
+      "name": "Jarra",
+      "category": "gear",
+      "subcategory": "Recipientes e armazenamento",
+      "priceCp": 4,
+      "weightKg": 2,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "kit-de-escalada",
+      "name": "Kit de escalada",
+      "category": "gear",
+      "subcategory": "Exploração e escalada",
+      "priceCp": 2500,
+      "weightKg": 6,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "components": [
+        { "itemId": "pitons-especiais", "quantity": null },
+        { "itemId": "botas-com-solas-pontiagudas", "quantity": null },
+        { "itemId": "luvas-de-escalada", "quantity": null },
+        { "itemId": "cinto-de-escalada", "quantity": 1 }
+      ],
+      "aliases": []
+    },
+    {
+      "id": "kit-de-primeiros-socorros",
+      "name": "Kit de primeiros-socorros",
+      "category": "gear",
+      "subcategory": "Consumíveis e alquimia",
+      "priceCp": 500,
+      "weightKg": 1.5,
+      "unit": "unidade",
+      "description": "Possui 10 usos; um uso estabiliza uma criatura com 0 PV.",
+      "properties": [],
+      "sourcePage": 150,
+      "maxUses": 10,
+      "components": [
+        { "itemId": "bolsa-de-couro-para-primeiros-socorros", "quantity": 1 },
+        { "itemId": "ataduras", "quantity": null },
+        { "itemId": "pomadas", "quantity": null },
+        { "itemId": "talas", "quantity": null }
+      ],
+      "aliases": []
+    },
+    {
+      "id": "lampada",
+      "name": "Lâmpada",
+      "category": "gear",
+      "subcategory": "Iluminação e fogo",
+      "priceCp": 50,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "lanterna-coberta",
+      "name": "Lanterna coberta",
+      "category": "gear",
+      "subcategory": "Iluminação e fogo",
+      "priceCp": 500,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "lanterna-furta-fogo",
+      "name": "Lanterna furta-fogo",
+      "category": "gear",
+      "subcategory": "Iluminação e fogo",
+      "priceCp": 1000,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "lente-de-aumento",
+      "name": "Lente de aumento",
+      "category": "gear",
+      "subcategory": "Escrita e estudo",
+      "priceCp": 10000,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "livro",
+      "name": "Livro",
+      "category": "gear",
+      "subcategory": "Escrita e estudo",
+      "priceCp": 2500,
+      "weightKg": 2.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": [
+        "Livro de estudo"
+      ]
+    },
+    {
+      "id": "luneta",
+      "name": "Luneta",
+      "category": "gear",
+      "subcategory": "Exploração e escalada",
+      "priceCp": 100000,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "manto",
+      "name": "Manto",
+      "category": "gear",
+      "subcategory": "Vestuário",
+      "priceCp": 100,
+      "weightKg": 2,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "marreta",
+      "name": "Marreta",
+      "category": "gear",
+      "subcategory": "Ferramentas e utilidades",
+      "priceCp": 200,
+      "weightKg": 5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "martelo",
+      "name": "Martelo",
+      "category": "gear",
+      "subcategory": "Ferramentas e utilidades",
+      "priceCp": 100,
+      "weightKg": 1.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "mochila",
+      "name": "Mochila",
+      "category": "gear",
+      "subcategory": "Recipientes e armazenamento",
+      "priceCp": 200,
+      "weightKg": 2.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "balas-de-funda",
+      "name": "Balas de Funda (20)",
+      "category": "gear",
+      "subcategory": "Munição",
+      "priceCp": 4,
+      "weightKg": 0.75,
+      "unit": "20 balas",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "flechas",
+      "name": "Flechas (20)",
+      "category": "gear",
+      "subcategory": "Munição",
+      "priceCp": 100,
+      "weightKg": 0.5,
+      "unit": "20 flechas",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "virotes",
+      "name": "Virotes (20)",
+      "category": "gear",
+      "subcategory": "Munição",
+      "priceCp": 100,
+      "weightKg": 0.75,
+      "unit": "20 virotes",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "municao-de-zarabatana",
+      "name": "Munição de Zarabatana (50)",
+      "category": "gear",
+      "subcategory": "Munição",
+      "priceCp": 100,
+      "weightKg": 0.5,
+      "unit": "50 agulhas",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "oleo-frasco",
+      "name": "Óleo (frasco)",
+      "category": "gear",
+      "subcategory": "Iluminação e fogo",
+      "priceCp": 10,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "pa",
+      "name": "Pá",
+      "category": "gear",
+      "subcategory": "Ferramentas e utilidades",
+      "priceCp": 200,
+      "weightKg": 2.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "panela-de-ferro",
+      "name": "Panela de ferro",
+      "category": "gear",
+      "subcategory": "Alimentação e acampamento",
+      "priceCp": 200,
+      "weightKg": 5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "papel-uma-folha",
+      "name": "Papel (uma folha)",
+      "category": "gear",
+      "subcategory": "Escrita e estudo",
+      "priceCp": 20,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "parafina",
+      "name": "Parafina",
+      "category": "gear",
+      "subcategory": "Iluminação e fogo",
+      "priceCp": 50,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "pe-de-cabra",
+      "name": "Pé de cabra",
+      "category": "gear",
+      "subcategory": "Ferramentas e utilidades",
+      "priceCp": 200,
+      "weightKg": 2.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "pedra-de-amolar",
+      "name": "Pedra de amolar",
+      "category": "gear",
+      "subcategory": "Ferramentas e utilidades",
+      "priceCp": 1,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "perfume-frasco",
+      "name": "Perfume (frasco)",
+      "category": "gear",
+      "subcategory": "Cuidados pessoais",
+      "priceCp": 500,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "pergaminho-uma-folha",
+      "name": "Pergaminho (uma folha)",
+      "category": "gear",
+      "subcategory": "Escrita e estudo",
+      "priceCp": 10,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "picareta-de-minerador",
+      "name": "Picareta de minerador",
+      "category": "gear",
+      "subcategory": "Ferramentas e utilidades",
+      "priceCp": 200,
+      "weightKg": 5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "piton",
+      "name": "Píton",
+      "category": "gear",
+      "subcategory": "Exploração e escalada",
+      "priceCp": 5,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "pocao-de-cura",
+      "name": "Poção de cura",
+      "category": "gear",
+      "subcategory": "Consumíveis e alquimia",
+      "priceCp": 5000,
+      "weightKg": 0.25,
+      "unit": "unidade",
+      "description": "Recupera 2d4 + 2 pontos de vida.",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "porta-mapas-ou-pergaminhos",
+      "name": "Porta mapas ou pergaminhos",
+      "category": "gear",
+      "subcategory": "Recipientes e armazenamento",
+      "priceCp": 100,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "porta-virotes",
+      "name": "Porta virotes",
+      "category": "gear",
+      "subcategory": "Recipientes e armazenamento",
+      "priceCp": 100,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "pregos-de-ferro-10",
+      "name": "Pregos de ferro (10)",
+      "category": "gear",
+      "subcategory": "Ferramentas e utilidades",
+      "priceCp": 100,
+      "weightKg": 2.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "racoes-de-viagem",
+      "name": "Rações de viagem (1 dia)",
+      "category": "gear",
+      "subcategory": "Alimentação e acampamento",
+      "priceCp": 50,
+      "weightKg": 1,
+      "unit": "1 dia",
+      "description": "A descrição dos pacotes imprime “viajem”, aparente erro textual; a tabela imprime “viagem”.",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": ["Rações (1 dia)"]
+    },
+    {
+      "id": "robes",
+      "name": "Robes",
+      "category": "gear",
+      "subcategory": "Vestuário",
+      "priceCp": 100,
+      "weightKg": 2,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": [
+        "Vestes",
+        "Vestimentas"
+      ]
+    },
+    {
+      "id": "roldana-e-polia",
+      "name": "Roldana e polia",
+      "category": "gear",
+      "subcategory": "Exploração e escalada",
+      "priceCp": 100,
+      "weightKg": 2.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "roupas-comuns",
+      "name": "Roupas comuns",
+      "category": "gear",
+      "subcategory": "Vestuário",
+      "priceCp": 50,
+      "weightKg": 1.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": [
+        "Roupas comuns escuras com capuz"
+      ]
+    },
+    {
+      "id": "roupas-de-viajante",
+      "name": "Roupas de viajante",
+      "category": "gear",
+      "subcategory": "Vestuário",
+      "priceCp": 200,
+      "weightKg": 2,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "roupas-de-entretenimento",
+      "name": "Roupas de entretenimento",
+      "category": "gear",
+      "subcategory": "Vestuário",
+      "priceCp": 500,
+      "weightKg": 2,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": [
+        "Fantasias",
+        "Fantasia",
+        "Traje de artista"
+      ]
+    },
+    {
+      "id": "roupas-finas",
+      "name": "Roupas finas",
+      "category": "gear",
+      "subcategory": "Vestuário",
+      "priceCp": 1500,
+      "weightKg": 3,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "sabao",
+      "name": "Sabão",
+      "category": "gear",
+      "subcategory": "Cuidados pessoais",
+      "priceCp": 2,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "saco",
+      "name": "Saco",
+      "category": "gear",
+      "subcategory": "Recipientes e armazenamento",
+      "priceCp": 1,
+      "weightKg": 0.25,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "saco-de-dormir",
+      "name": "Saco de dormir",
+      "category": "gear",
+      "subcategory": "Alimentação e acampamento",
+      "priceCp": 100,
+      "weightKg": 3.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "simbolo-sagrado-amuleto",
+      "name": "Símbolo sagrado — Amuleto",
+      "category": "gear",
+      "subcategory": "Símbolo sagrado",
+      "priceCp": 500,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "simbolo-sagrado-emblema",
+      "name": "Símbolo sagrado — Emblema",
+      "category": "gear",
+      "subcategory": "Símbolo sagrado",
+      "priceCp": 500,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "simbolo-sagrado-relicario",
+      "name": "Símbolo sagrado — Relicário",
+      "category": "gear",
+      "subcategory": "Símbolo sagrado",
+      "priceCp": 500,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "sinete",
+      "name": "Sinete",
+      "category": "gear",
+      "subcategory": "Escrita e estudo",
+      "priceCp": 500,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": [
+        "Anel de sinete"
+      ]
+    },
+    {
+      "id": "sino",
+      "name": "Sino",
+      "category": "gear",
+      "subcategory": "Sinalização e comunicação",
+      "priceCp": 100,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "tenda-para-duas-pessoas",
+      "name": "Tenda para duas pessoas",
+      "category": "gear",
+      "subcategory": "Alimentação e acampamento",
+      "priceCp": 200,
+      "weightKg": 10,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": ["Tenda (duas pessoas)"]
+    },
+    {
+      "id": "tocha",
+      "name": "Tocha",
+      "category": "gear",
+      "subcategory": "Iluminação e fogo",
+      "priceCp": 1,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "tinta-frasco-de-30ml",
+      "name": "Tinta (frasco de 30ml)",
+      "category": "gear",
+      "subcategory": "Escrita e estudo",
+      "priceCp": 1000,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": [
+        "Tinta escura",
+        "Vidro de tinta"
+      ]
+    },
+    {
+      "id": "vara-3-metros",
+      "name": "Vara (3 metros)",
+      "category": "gear",
+      "subcategory": "Exploração e escalada",
+      "priceCp": 5,
+      "weightKg": 3.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "vela",
+      "name": "Vela",
+      "category": "gear",
+      "subcategory": "Iluminação e fogo",
+      "priceCp": 1,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    {
+      "id": "veneno-basico-frasco",
+      "name": "Veneno básico (frasco)",
+      "category": "gear",
+      "subcategory": "Consumíveis e alquimia",
+      "priceCp": 10000,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 150,
+      "aliases": []
+    },
+    { "id": "pratos-de-balanca", "name": "Pratos de balança", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "unidade", "description": "", "properties": [], "sourcePage": 152, "aliases": [] },
+    { "id": "pesos-de-balanca-ate-1-kg", "name": "Pesos de balança (até 1 kg)", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "conjunto", "description": "", "properties": [], "sourcePage": 152, "aliases": [] },
+    { "id": "pederneira", "name": "Pederneira", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "unidade", "description": "", "properties": [], "sourcePage": 151, "aliases": [] },
+    { "id": "isqueiro-de-caixa-de-fogo", "name": "Isqueiro de caixa de fogo", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "unidade", "description": "", "properties": [], "sourcePage": 151, "aliases": [] },
+    { "id": "pavio-para-caixa-de-fogo", "name": "Pavio para caixa de fogo", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "unidade", "description": "Pano geralmente seco embebido em óleo.", "properties": [], "sourcePage": 151, "aliases": [] },
+    { "id": "vara-de-pesca-de-madeira", "name": "Vara de pesca de madeira", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "unidade", "description": "", "properties": [], "sourcePage": 151, "aliases": [] },
+    { "id": "linha-de-seda-para-pesca", "name": "Linha de seda para pesca", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "unidade", "description": "", "properties": [], "sourcePage": 151, "aliases": [] },
+    { "id": "boias-de-cortica", "name": "Boias de cortiça", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "conjunto", "description": "", "properties": [], "sourcePage": 151, "aliases": [] },
+    { "id": "anzois-de-aco", "name": "Anzóis de aço", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "conjunto", "description": "", "properties": [], "sourcePage": 151, "aliases": [] },
+    { "id": "chumbadas", "name": "Chumbadas", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "conjunto", "description": "", "properties": [], "sourcePage": 151, "aliases": [] },
+    { "id": "iscas-de-pesca", "name": "Iscas de pesca", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "conjunto", "description": "", "properties": [], "sourcePage": 151, "aliases": [] },
+    { "id": "redes-de-pesca", "name": "Redes de pesca", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "conjunto", "description": "", "properties": [], "sourcePage": 151, "aliases": [] },
+    { "id": "pitons-especiais", "name": "Pítons especiais", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "conjunto", "description": "", "properties": [], "sourcePage": 152, "aliases": [] },
+    { "id": "botas-com-solas-pontiagudas", "name": "Botas com solas pontiagudas", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "par", "description": "", "properties": [], "sourcePage": 152, "aliases": [] },
+    { "id": "luvas-de-escalada", "name": "Luvas de escalada", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "par", "description": "", "properties": [], "sourcePage": 152, "aliases": [] },
+    { "id": "cinto-de-escalada", "name": "Cinto de escalada", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "unidade", "description": "", "properties": [], "sourcePage": 152, "aliases": [] },
+    { "id": "bolsa-de-couro-para-primeiros-socorros", "name": "Bolsa de couro para primeiros-socorros", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "unidade", "description": "", "properties": [], "sourcePage": 152, "aliases": [] },
+    { "id": "ataduras", "name": "Ataduras", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "conjunto", "description": "", "properties": [], "sourcePage": 152, "aliases": [] },
+    { "id": "pomadas", "name": "Pomadas", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "conjunto", "description": "", "properties": [], "sourcePage": 152, "aliases": [] },
+    { "id": "talas", "name": "Talas", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "conjunto", "description": "", "properties": [], "sourcePage": 152, "aliases": [] },
+    { "id": "copo-de-kit-de-refeicao", "name": "Copo de kit de refeição", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "unidade", "description": "", "properties": [], "sourcePage": 152, "aliases": [] },
+    { "id": "talheres-simples", "name": "Talheres simples", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "conjunto", "description": "", "properties": [], "sourcePage": 152, "aliases": [] },
+    { "id": "bolsa-de-cosmeticos", "name": "Bolsa de cosméticos", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "unidade", "description": "", "properties": [], "sourcePage": 154, "aliases": [] },
+    { "id": "tintura-de-cabelo", "name": "Tintura de cabelo", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "unidade", "description": "", "properties": [], "sourcePage": 154, "aliases": [] },
+    { "id": "pequenos-aderecos", "name": "Pequenos adereços", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "conjunto", "description": "", "properties": [], "sourcePage": 154, "aliases": [] },
+    { "id": "selos-e-lacres", "name": "Selos e lacres", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "conjunto", "description": "", "properties": [], "sourcePage": 154, "aliases": [] },
+    { "id": "folha-de-ouro-e-prata", "name": "Folha de ouro e prata", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "unidade", "description": "", "properties": [], "sourcePage": 154, "aliases": [] },
+    { "id": "alicates", "name": "Alicates", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "unidade", "description": "", "properties": [], "sourcePage": 154, "aliases": [] },
+    { "id": "almofariz-e-pilao", "name": "Almofariz e pilão", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "conjunto", "description": "", "properties": [], "sourcePage": 154, "aliases": [] },
+    { "id": "bolsas-para-herbalismo", "name": "Bolsas para herbalismo", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "conjunto", "description": "", "properties": [], "sourcePage": 154, "aliases": [] },
+    { "id": "produtos-quimicos", "name": "Produtos químicos", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "conjunto", "description": "", "properties": [], "sourcePage": 154, "aliases": [] },
+    { "id": "pasta-pequena-para-ferramentas", "name": "Pasta pequena para ferramentas", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "unidade", "description": "", "properties": [], "sourcePage": 154, "aliases": [] },
+    { "id": "conjunto-de-chaves-mestras", "name": "Conjunto de chaves mestras", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "conjunto", "description": "", "properties": [], "sourcePage": 154, "aliases": [] },
+    { "id": "espelho-pequeno-com-alca-de-metal", "name": "Espelho pequeno com alça de metal", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "unidade", "description": "", "properties": [], "sourcePage": 154, "aliases": [] },
+    { "id": "tesouras-de-laminas-estreitas", "name": "Tesouras de lâminas estreitas", "category": "gear", "subcategory": "Componente de kit", "priceCp": null, "weightKg": null, "unit": "conjunto", "description": "", "properties": [], "sourcePage": 154, "aliases": [] },
+    {
+      "id": "ferramentas-de-carpinteiro",
+      "name": "Ferramentas de carpinteiro",
+      "category": "tools",
+      "subcategory": "Ferramentas de artesão e ofício",
+      "priceCp": 800,
+      "weightKg": 3,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "ferramentas-de-cartografo",
+      "name": "Ferramentas de cartógrafo",
+      "category": "tools",
+      "subcategory": "Ferramentas de artesão e ofício",
+      "priceCp": 1500,
+      "weightKg": 3,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "ferramentas-de-costureiro",
+      "name": "Ferramentas de costureiro",
+      "category": "tools",
+      "subcategory": "Ferramentas de artesão e ofício",
+      "priceCp": 100,
+      "weightKg": 2.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": [
+        "Ferramentas de tecelão"
+      ]
+    },
+    {
+      "id": "ferramentas-de-coureiro",
+      "name": "Ferramentas de coureiro",
+      "category": "tools",
+      "subcategory": "Ferramentas de artesão e ofício",
+      "priceCp": 500,
+      "weightKg": 2.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": [
+        "Ferramentas de couro"
+      ]
+    },
+    {
+      "id": "ferramentas-de-entalhador",
+      "name": "Ferramentas de entalhador",
+      "category": "tools",
+      "subcategory": "Ferramentas de artesão e ofício",
+      "priceCp": 100,
+      "weightKg": 2.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "ferramentas-de-ferreiro",
+      "name": "Ferramentas de ferreiro",
+      "category": "tools",
+      "subcategory": "Ferramentas de artesão e ofício",
+      "priceCp": 2000,
+      "weightKg": 4,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "ferramentas-de-funileiro",
+      "name": "Ferramentas de funileiro",
+      "category": "tools",
+      "subcategory": "Ferramentas de artesão e ofício",
+      "priceCp": 5000,
+      "weightKg": 5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "ferramentas-de-joalheiro",
+      "name": "Ferramentas de joalheiro",
+      "category": "tools",
+      "subcategory": "Ferramentas de artesão e ofício",
+      "priceCp": 2500,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "ferramentas-de-oleiro",
+      "name": "Ferramentas de oleiro",
+      "category": "tools",
+      "subcategory": "Ferramentas de artesão e ofício",
+      "priceCp": 1000,
+      "weightKg": 1.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": [
+        "Suprimentos de oleiro"
+      ]
+    },
+    {
+      "id": "ferramentas-de-pedreiro",
+      "name": "Ferramentas de pedreiro",
+      "category": "tools",
+      "subcategory": "Ferramentas de artesão e ofício",
+      "priceCp": 1000,
+      "weightKg": 4,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "ferramentas-de-pintor",
+      "name": "Ferramentas de pintor",
+      "category": "tools",
+      "subcategory": "Ferramentas de artesão e ofício",
+      "priceCp": 1000,
+      "weightKg": 2.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": [
+        "Materiais de pintor"
+      ]
+    },
+    {
+      "id": "ferramentas-de-sapateiro",
+      "name": "Ferramentas de sapateiro",
+      "category": "tools",
+      "subcategory": "Ferramentas de artesão e ofício",
+      "priceCp": 500,
+      "weightKg": 2.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "ferramentas-de-vidreiro",
+      "name": "Ferramentas de vidreiro",
+      "category": "tools",
+      "subcategory": "Ferramentas de artesão e ofício",
+      "priceCp": 3000,
+      "weightKg": 2.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "suprimentos-de-alquimista",
+      "name": "Suprimentos de alquimista",
+      "category": "tools",
+      "subcategory": "Ferramentas de artesão e ofício",
+      "priceCp": 5000,
+      "weightKg": 4,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "suprimentos-de-cervejeiro",
+      "name": "Suprimentos de cervejeiro",
+      "category": "tools",
+      "subcategory": "Ferramentas de artesão e ofício",
+      "priceCp": 2000,
+      "weightKg": 4.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "suprimentos-de-caligrafia",
+      "name": "Suprimentos de caligrafia",
+      "category": "tools",
+      "subcategory": "Ferramentas de artesão e ofício",
+      "priceCp": 1000,
+      "weightKg": 2.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": [
+        "Suprimentos de calígrafo",
+        "Ferramentas de calígrafo"
+      ]
+    },
+    {
+      "id": "utensilios-de-cozinheiro",
+      "name": "Utensílios de cozinheiro",
+      "category": "tools",
+      "subcategory": "Ferramentas de artesão e ofício",
+      "priceCp": 100,
+      "weightKg": 4,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": [
+        "Ferramentas de cozinheiro"
+      ]
+    },
+    {
+      "id": "ferramentas-de-navegacao",
+      "name": "Ferramentas de navegação",
+      "category": "tools",
+      "subcategory": "Ferramentas de artesão e ofício",
+      "priceCp": 2500,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": [
+        "Ferramentas de navegador"
+      ]
+    },
+    {
+      "id": "ferramentas-de-ladrao",
+      "name": "Ferramentas de ladrão",
+      "category": "tools",
+      "subcategory": "Ferramentas de artesão e ofício",
+      "priceCp": 2500,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "components": [
+        { "itemId": "pasta-pequena-para-ferramentas", "quantity": 1 },
+        { "itemId": "conjunto-de-chaves-mestras", "quantity": 1 },
+        { "itemId": "espelho-pequeno-com-alca-de-metal", "quantity": 1 },
+        { "itemId": "tesouras-de-laminas-estreitas", "quantity": 1 },
+        { "itemId": "alicates", "quantity": 1 }
+      ],
+      "aliases": []
+    },
+    {
+      "id": "kit-de-disfarce",
+      "name": "Kit de disfarce",
+      "category": "tools",
+      "subcategory": "Kit",
+      "priceCp": 2500,
+      "weightKg": 1.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "components": [
+        { "itemId": "bolsa-de-cosmeticos", "quantity": 1 },
+        { "itemId": "tintura-de-cabelo", "quantity": null },
+        { "itemId": "pequenos-aderecos", "quantity": null }
+      ],
+      "aliases": []
+    },
+    {
+      "id": "kit-de-falsificacao",
+      "name": "Kit de falsificação",
+      "category": "tools",
+      "subcategory": "Kit",
+      "priceCp": 1500,
+      "weightKg": 2.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "components": [
+        { "itemId": "papel-uma-folha", "quantity": null },
+        { "itemId": "pergaminho-uma-folha", "quantity": null },
+        { "itemId": "caneta-tinteiro", "quantity": null },
+        { "itemId": "tinta-frasco-de-30ml", "quantity": null },
+        { "itemId": "selos-e-lacres", "quantity": null },
+        { "itemId": "folha-de-ouro-e-prata", "quantity": 1 }
+      ],
+      "aliases": []
+    },
+    {
+      "id": "kit-de-herbalismo",
+      "name": "Kit de herbalismo",
+      "category": "tools",
+      "subcategory": "Kit",
+      "priceCp": 500,
+      "weightKg": 1.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "components": [
+        { "itemId": "alicates", "quantity": null },
+        { "itemId": "almofariz-e-pilao", "quantity": 1 },
+        { "itemId": "bolsas-para-herbalismo", "quantity": null },
+        { "itemId": "frasco", "quantity": null }
+      ],
+      "aliases": []
+    },
+    {
+      "id": "baralho-de-cartas",
+      "name": "Baralho de cartas",
+      "category": "tools",
+      "subcategory": "Kit de jogo",
+      "priceCp": 50,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": [
+        "Jogo de cartas"
+      ]
+    },
+    {
+      "id": "conjunto-de-dados",
+      "name": "Conjunto de dados",
+      "category": "tools",
+      "subcategory": "Kit de jogo",
+      "priceCp": 10,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": [
+        "Jogo de dados"
+      ]
+    },
+    {
+      "id": "jogo-dos-tres-dragoes",
+      "name": "Jogo dos três dragões",
+      "category": "tools",
+      "subcategory": "Kit de jogo",
+      "priceCp": 500,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": [
+        "Conjunto de Três Dragões"
+      ]
+    },
+    {
+      "id": "xadrez-do-dragao",
+      "name": "Xadrez do dragão",
+      "category": "tools",
+      "subcategory": "Kit de jogo",
+      "priceCp": 100,
+      "weightKg": 0.25,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": [
+        "Xadrez de dragão",
+        "Xadrez dracônico"
+      ]
+    },
+    {
+      "id": "kit-de-venenos",
+      "name": "Kit de venenos",
+      "category": "tools",
+      "subcategory": "Kit",
+      "priceCp": 5000,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "components": [
+        { "itemId": "frasco", "quantity": null },
+        { "itemId": "produtos-quimicos", "quantity": null }
+      ],
+      "aliases": []
+    },
+    {
+      "id": "alaude",
+      "name": "Alaúde",
+      "category": "instruments",
+      "subcategory": "Instrumento musical",
+      "priceCp": 3500,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "flauta",
+      "name": "Flauta",
+      "category": "instruments",
+      "subcategory": "Instrumento musical",
+      "priceCp": 200,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "flauta-de-pa",
+      "name": "Flauta de pã",
+      "category": "instruments",
+      "subcategory": "Instrumento musical",
+      "priceCp": 1200,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "gaita-de-foles",
+      "name": "Gaita de foles",
+      "category": "instruments",
+      "subcategory": "Instrumento musical",
+      "priceCp": 3000,
+      "weightKg": 3,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "lira",
+      "name": "Lira",
+      "category": "instruments",
+      "subcategory": "Instrumento musical",
+      "priceCp": 3000,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "oboe",
+      "name": "Oboé",
+      "category": "instruments",
+      "subcategory": "Instrumento musical",
+      "priceCp": 200,
+      "weightKg": 0.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "tambor",
+      "name": "Tambor",
+      "category": "instruments",
+      "subcategory": "Instrumento musical",
+      "priceCp": 600,
+      "weightKg": 1.5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "trombeta",
+      "name": "Trombeta",
+      "category": "instruments",
+      "subcategory": "Instrumento musical",
+      "priceCp": 300,
+      "weightKg": 1,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "violino",
+      "name": "Violino",
+      "category": "instruments",
+      "subcategory": "Instrumento musical",
+      "priceCp": 3000,
+      "weightKg": 3,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "xilofone",
+      "name": "Xilofone",
+      "category": "instruments",
+      "subcategory": "Instrumento musical",
+      "priceCp": 2500,
+      "weightKg": 5,
+      "unit": "unidade",
+      "description": "",
+      "properties": [],
+      "sourcePage": 154,
+      "aliases": []
+    },
+    {
+      "id": "salterio",
+      "name": "Saltério",
+      "category": "instruments",
+      "subcategory": "Instrumento musical",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Opção de instrumento do antecedente. Sem preço ou peso na tabela fornecida.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "chifre",
+      "name": "Chifre",
+      "category": "instruments",
+      "subcategory": "Instrumento musical",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Opção de instrumento do antecedente. Sem preço ou peso na tabela fornecida.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "charamela",
+      "name": "Charamela",
+      "category": "instruments",
+      "subcategory": "Instrumento musical",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Opção de instrumento do antecedente. Sem preço ou peso na tabela fornecida.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "viola",
+      "name": "Viola",
+      "category": "instruments",
+      "subcategory": "Instrumento musical",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Opção de instrumento do antecedente. Sem preço ou peso na tabela fornecida.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "linha-3-metros",
+      "name": "Linha (3 metros)",
+      "category": "gear",
+      "subcategory": "Conteúdo de pacote",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "3 m",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "saquinho-de-areia",
+      "name": "Saquinho de areia",
+      "category": "gear",
+      "subcategory": "Conteúdo de pacote",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "faca-pequena",
+      "name": "Faca pequena",
+      "category": "gear",
+      "subcategory": "Item pessoal",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "kit-de-refeicao",
+      "name": "Kit de refeição",
+      "category": "gear",
+      "subcategory": "Conteúdo de pacote",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "components": [
+        { "itemId": "copo-de-kit-de-refeicao", "quantity": 1 },
+        { "itemId": "talheres-simples", "quantity": null }
+      ],
+      "aliases": []
+    },
+    {
+      "id": "caixa-de-esmolas",
+      "name": "Caixa de esmolas",
+      "category": "gear",
+      "subcategory": "Conteúdo de pacote",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "bloco-de-incenso",
+      "name": "Bloco de incenso",
+      "category": "gear",
+      "subcategory": "Conteúdo de pacote",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "incensario",
+      "name": "Incensário",
+      "category": "gear",
+      "subcategory": "Conteúdo de pacote",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "carta-de-apresentacao-da-guilda",
+      "name": "Carta de apresentação da guilda",
+      "category": "gear",
+      "subcategory": "Item de antecedente",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "mula",
+      "name": "Mula",
+      "category": "gear",
+      "subcategory": "Montaria e veículo",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Montaria concedida pelo antecedente Mercador de Guilda. O documento não inclui a tabela de montarias.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "carroca",
+      "name": "Carroça",
+      "category": "gear",
+      "subcategory": "Montaria e veículo",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "presente-de-um-admirador",
+      "name": "Presente de um admirador",
+      "category": "gear",
+      "subcategory": "Item de antecedente",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "ferramentas-do-golpe-escolhido",
+      "name": "Ferramentas do golpe escolhido",
+      "category": "gear",
+      "subcategory": "Item de antecedente",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "conjunto",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "estojo-de-pergaminhos-com-oracoes-e-estudos",
+      "name": "Estojo de pergaminhos com orações e estudos",
+      "category": "gear",
+      "subcategory": "Item de antecedente",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "fetiche-de-um-animal-morto",
+      "name": "Fetiche de um animal morto",
+      "category": "gear",
+      "subcategory": "Item de antecedente",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "amuleto-da-sorte",
+      "name": "Amuleto da sorte",
+      "category": "gear",
+      "subcategory": "Item de antecedente",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "pergaminho-de-linhagem",
+      "name": "Pergaminho de linhagem",
+      "category": "gear",
+      "subcategory": "Item de antecedente",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "estandarte-de-casa-nobre",
+      "name": "Estandarte de casa nobre",
+      "category": "gear",
+      "subcategory": "Item de antecedente",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": [
+        "Estandarte ou outro símbolo de uma casa nobre"
+      ]
+    },
+    {
+      "id": "mapa-da-cidade-natal",
+      "name": "Mapa da cidade natal",
+      "category": "gear",
+      "subcategory": "Item de antecedente",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "rato-de-estimacao",
+      "name": "Rato de estimação",
+      "category": "gear",
+      "subcategory": "Animal de estimação",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "lembranca-dos-pais",
+      "name": "Lembrança dos pais",
+      "category": "gear",
+      "subcategory": "Item de antecedente",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "carta-de-colega-falecido",
+      "name": "Carta de colega falecido",
+      "category": "gear",
+      "subcategory": "Item de antecedente",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "insignia-da-patente",
+      "name": "Insígnia da patente",
+      "category": "gear",
+      "subcategory": "Item de antecedente",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "fetiche-de-inimigo-caido",
+      "name": "Fetiche de inimigo caído",
+      "category": "gear",
+      "subcategory": "Item de antecedente",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "livro-de-preces",
+      "name": "Livro de preces",
+      "category": "gear",
+      "subcategory": "Item religioso",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Uma das alternativas de equipamento do Acólito.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "contas-de-oracoes",
+      "name": "Contas de orações",
+      "category": "gear",
+      "subcategory": "Item religioso",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "vareta-de-incenso",
+      "name": "Vareta de incenso",
+      "category": "gear",
+      "subcategory": "Item religioso",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "livro-das-sombras",
+      "name": "Livro das Sombras",
+      "category": "gear",
+      "subcategory": "Concessão de característica",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": [
+        "Book of Shadows"
+      ]
+    },
+    {
+      "id": "totem-espiritual",
+      "name": "Totem espiritual",
+      "category": "gear",
+      "subcategory": "Concessão de característica",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "brinquedo-mecanico",
+      "name": "Brinquedo mecânico",
+      "category": "gear",
+      "subcategory": "Engenhoca",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "isqueiro",
+      "name": "Isqueiro",
+      "category": "gear",
+      "subcategory": "Engenhoca",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    },
+    {
+      "id": "caixa-de-musica",
+      "name": "Caixa de música",
+      "category": "gear",
+      "subcategory": "Engenhoca",
+      "priceCp": null,
+      "weightKg": null,
+      "unit": "unidade",
+      "description": "Item sem preço ou peso especificado na fonte aplicável.",
+      "properties": [],
+      "sourcePage": null,
+      "aliases": []
+    }
+  ],
+  "packs": [
+    {
+      "id": "artist",
+      "name": "Pacote de Artista",
+      "priceCp": 4000,
+      "sourcePage": 151,
+      "items": [
+        {
+          "itemId": "mochila",
+          "quantity": 1
+        },
+        {
+          "itemId": "saco-de-dormir",
+          "quantity": 1
+        },
+        {
+          "itemId": "roupas-de-entretenimento",
+          "quantity": 2
+        },
+        {
+          "itemId": "vela",
+          "quantity": 5
+        },
+        {
+          "itemId": "racoes-de-viagem",
+          "quantity": 5
+        },
+        {
+          "itemId": "cantil",
+          "quantity": 1
+        },
+        {
+          "itemId": "kit-de-disfarce",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "burglar",
+      "name": "Pacote de Assaltante",
+      "priceCp": 1600,
+      "sourcePage": 151,
+      "items": [
+        {
+          "itemId": "mochila",
+          "quantity": 1
+        },
+        {
+          "itemId": "esferas-sacola-com-1-000",
+          "quantity": 1
+        },
+        {
+          "itemId": "linha-3-metros",
+          "quantity": 1
+        },
+        {
+          "itemId": "sino",
+          "quantity": 1
+        },
+        {
+          "itemId": "vela",
+          "quantity": 5
+        },
+        {
+          "itemId": "pe-de-cabra",
+          "quantity": 1
+        },
+        {
+          "itemId": "martelo",
+          "quantity": 1
+        },
+        {
+          "itemId": "piton",
+          "quantity": 10
+        },
+        {
+          "itemId": "lanterna-coberta",
+          "quantity": 1
+        },
+        {
+          "itemId": "oleo-frasco",
+          "quantity": 2
+        },
+        {
+          "itemId": "racoes-de-viagem",
+          "quantity": 5
+        },
+        {
+          "itemId": "caixa-de-fogo",
+          "quantity": 1
+        },
+        {
+          "itemId": "cantil",
+          "quantity": 1
+        },
+        {
+          "itemId": "corda-de-canhamo",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "dungeoneer",
+      "name": "Pacote de Aventureiro",
+      "priceCp": 1200,
+      "sourcePage": 151,
+      "items": [
+        {
+          "itemId": "mochila",
+          "quantity": 1
+        },
+        {
+          "itemId": "pe-de-cabra",
+          "quantity": 1
+        },
+        {
+          "itemId": "martelo",
+          "quantity": 1
+        },
+        {
+          "itemId": "piton",
+          "quantity": 10
+        },
+        {
+          "itemId": "tocha",
+          "quantity": 10
+        },
+        {
+          "itemId": "caixa-de-fogo",
+          "quantity": 1
+        },
+        {
+          "itemId": "racoes-de-viagem",
+          "quantity": 10
+        },
+        {
+          "itemId": "cantil",
+          "quantity": 1
+        },
+        {
+          "itemId": "corda-de-canhamo",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "diplomat",
+      "name": "Pacote de Diplomata",
+      "priceCp": 3900,
+      "sourcePage": 151,
+      "items": [
+        {
+          "itemId": "bau",
+          "quantity": 1
+        },
+        {
+          "itemId": "porta-mapas-ou-pergaminhos",
+          "quantity": 2
+        },
+        {
+          "itemId": "roupas-finas",
+          "quantity": 1
+        },
+        {
+          "itemId": "tinta-frasco-de-30ml",
+          "quantity": 1
+        },
+        {
+          "itemId": "caneta-tinteiro",
+          "quantity": 1
+        },
+        {
+          "itemId": "lampada",
+          "quantity": 1
+        },
+        {
+          "itemId": "oleo-frasco",
+          "quantity": 2
+        },
+        {
+          "itemId": "papel-uma-folha",
+          "quantity": 5
+        },
+        {
+          "itemId": "perfume-frasco",
+          "quantity": 1
+        },
+        {
+          "itemId": "parafina",
+          "quantity": 1
+        },
+        {
+          "itemId": "sabao",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "scholar",
+      "name": "Pacote de Estudioso",
+      "priceCp": 4000,
+      "sourcePage": 151,
+      "items": [
+        {
+          "itemId": "mochila",
+          "quantity": 1
+        },
+        {
+          "itemId": "livro",
+          "quantity": 1
+        },
+        {
+          "itemId": "tinta-frasco-de-30ml",
+          "quantity": 1
+        },
+        {
+          "itemId": "caneta-tinteiro",
+          "quantity": 1
+        },
+        {
+          "itemId": "pergaminho-uma-folha",
+          "quantity": 10
+        },
+        {
+          "itemId": "saquinho-de-areia",
+          "quantity": 1
+        },
+        {
+          "itemId": "faca-pequena",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "explorer",
+      "name": "Pacote de Explorador",
+      "priceCp": 1000,
+      "sourcePage": 151,
+      "items": [
+        {
+          "itemId": "mochila",
+          "quantity": 1
+        },
+        {
+          "itemId": "saco-de-dormir",
+          "quantity": 1
+        },
+        {
+          "itemId": "kit-de-refeicao",
+          "quantity": 1
+        },
+        {
+          "itemId": "caixa-de-fogo",
+          "quantity": 1
+        },
+        {
+          "itemId": "tocha",
+          "quantity": 10
+        },
+        {
+          "itemId": "racoes-de-viagem",
+          "quantity": 10
+        },
+        {
+          "itemId": "cantil",
+          "quantity": 1
+        },
+        {
+          "itemId": "corda-de-canhamo",
+          "quantity": 1
+        }
+      ]
+    },
+    {
+      "id": "priest",
+      "name": "Pacote de Sacerdote",
+      "priceCp": 1900,
+      "sourcePage": 151,
+      "items": [
+        {
+          "itemId": "mochila",
+          "quantity": 1
+        },
+        {
+          "itemId": "cobertor-de-inverno",
+          "quantity": 1
+        },
+        {
+          "itemId": "vela",
+          "quantity": 10
+        },
+        {
+          "itemId": "caixa-de-fogo",
+          "quantity": 1
+        },
+        {
+          "itemId": "caixa-de-esmolas",
+          "quantity": 1
+        },
+        {
+          "itemId": "bloco-de-incenso",
+          "quantity": 2
+        },
+        {
+          "itemId": "incensario",
+          "quantity": 1
+        },
+        {
+          "itemId": "robes",
+          "quantity": 1
+        },
+        {
+          "itemId": "racoes-de-viagem",
+          "quantity": 2
+        },
+        {
+          "itemId": "cantil",
+          "quantity": 1
+        }
+      ]
+    }
+  ]
+}

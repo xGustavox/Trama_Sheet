@@ -1,0 +1,291 @@
+import data from './equipment-catalog.json'
+
+export type EquipmentItem = {
+  id: string
+  name: string
+  category: 'armor' | 'weapons' | 'tools' | 'instruments' | 'gear'
+  subcategory: string
+  priceCp: number | null
+  weightKg: number | null
+  unit: string
+  description: string
+  properties: string[]
+  sourcePage: number | null
+  aliases: string[]
+  components?: { itemId: string; quantity: number | null }[]
+  maxUses?: number
+  armor?: { ac: number; dexterity: 'full' | 'max2' | 'none'; strength: number | null; stealthDisadvantage: boolean; shield: boolean }
+  weapon?: { damage: string; damageType: string; range: string | null }
+}
+export type ItemQuantity = { itemId: string; quantity: number }
+export type EquipmentPack = { id: string; name: string; priceCp: number; sourcePage: number; items: ItemQuantity[] }
+export type EquipmentCatalog = { items: EquipmentItem[]; packs: EquipmentPack[] }
+export const equipmentCatalog = data as EquipmentCatalog
+export const normalizeEquipment = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
+export const findEquipment = (catalog: EquipmentCatalog, name: string) => catalog.items.find(item =>
+  [item.id, item.name, ...item.aliases].some(alias => normalizeEquipment(alias) === normalizeEquipment(name)))
+export const isEquippable = (item: EquipmentItem | undefined) => Boolean(item?.armor || item?.weapon)
+
+export function calculateArmorClass(armor: EquipmentItem | undefined, shield: EquipmentItem | undefined, dexterityModifier: number, unarmoredBonus = 0) {
+  if (!armor?.armor) return 10 + dexterityModifier + unarmoredBonus + (shield?.armor?.ac ?? 0)
+  const armorDexterityBonus = armor.armor.dexterity === 'none'
+    ? 0
+    : armor.armor.dexterity === 'max2' ? Math.min(2, dexterityModifier) : dexterityModifier
+  return armor.armor.ac + armorDexterityBonus + (shield?.armor?.ac ?? 0)
+}
+
+const simpleWeaponClasses = new Set(['barbaro', 'bardo', 'bruxo', 'clerigo', 'druida', 'guerreiro', 'ladino', 'monge', 'paladino', 'patrulheiro'])
+const martialWeaponClasses = new Set(['barbaro', 'guerreiro', 'paladino', 'patrulheiro'])
+const namedWeaponProficiencies: Record<string, string[]> = {
+  bardo: ['besta de mao', 'espada longa', 'rapieira', 'espada curta'],
+  druida: ['clava grande', 'adaga', 'dardo', 'azagaia', 'maca', 'bordao', 'cimitarra', 'foice curta', 'funda', 'lanca'],
+  feiticeiro: ['adaga', 'dardo', 'funda', 'bordao', 'besta leve'],
+  ladino: ['besta de mao', 'espada longa', 'rapieira', 'espada curta'],
+  mago: ['adaga', 'dardo', 'funda', 'bordao', 'besta leve'],
+  monge: ['espada curta'],
+}
+
+function normalizedWeaponName(value: string) {
+  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+}
+
+export function getWeaponAttackModifier(
+  item: EquipmentItem | undefined,
+  classId: string,
+  subclassId: string,
+  classLevel: number,
+  strengthModifier: number,
+  dexterityModifier: number,
+  proficiencyBonus: number,
+  wearingArmor: boolean,
+  wearingShield: boolean,
+) {
+  if (!item?.weapon) return null
+
+  const normalizedClassId = normalizedWeaponName(classId)
+  const normalizedSubclassId = normalizedWeaponName(subclassId)
+  const subcategory = normalizedWeaponName(item.subcategory)
+  const properties = item.properties.map(normalizedWeaponName)
+  const isSimple = subcategory.includes('simples')
+  const isMartial = subcategory.includes('marcial')
+  const name = normalizedWeaponName(item.name)
+  const hasSimpleProficiency = simpleWeaponClasses.has(normalizedClassId) && isSimple
+  const hasMartialProficiency = martialWeaponClasses.has(normalizedClassId) && isMartial
+  const hasSubclassMartialProficiency = (normalizedClassId === 'bardo' && classLevel >= 3 && normalizedSubclassId === 'colegio-da-bravura'
+    || normalizedClassId === 'clerigo' && ['dominio-da-guerra', 'dominio-da-tempestade'].includes(normalizedSubclassId)) && isMartial
+  const hasNamedProficiency = (namedWeaponProficiencies[normalizedClassId] ?? []).includes(name)
+  const isMonkWeapon = normalizedClassId === 'monge'
+    && classLevel >= 1
+    && !wearingArmor
+    && !wearingShield
+    && (isSimple && subcategory.includes('corpo a corpo') || name === 'espada curta')
+    && !properties.some((property) => property.includes('pesada') || property.includes('duas maos'))
+  const ability = subcategory.includes('a distancia')
+    ? 'dexterity'
+    : properties.includes('acuidade') || isMonkWeapon
+      ? (dexterityModifier > strengthModifier ? 'dexterity' : 'strength')
+      : 'strength'
+  const abilityModifier = ability === 'dexterity' ? dexterityModifier : strengthModifier
+  const proficient = hasSimpleProficiency || hasMartialProficiency || hasSubclassMartialProficiency || hasNamedProficiency || isMonkWeapon
+
+  return { ability, proficient, modifier: abilityModifier + (proficient ? proficiencyBonus : 0) }
+}
+
+export type InventoryEntry = {
+  id: string
+  itemId: string | null
+  name: string
+  category?: EquipmentItem['category']
+  quantity: number
+  equipped: boolean
+  notes: string
+  attackBonus?: number
+  remainingUses?: number
+  source: string
+  sourceLabel: string
+}
+export type Inventory = {
+  version: 2
+  initialEquipmentConfirmed: boolean
+  entries: InventoryEntry[]
+  choices: Record<string, string>
+  applied: Record<string, string>
+  currencyCp: number
+  legacyNotes: string
+}
+
+export function equipOneInventoryUnit(inventory: Inventory, entryId: string): Inventory {
+  const requested = inventory.entries.find(entry => entry.id === entryId && !entry.equipped)
+  if (!requested) return inventory
+  const requestedItem = requested.itemId ? equipmentCatalog.items.find(item => item.id === requested.itemId) : findEquipment(equipmentCatalog, requested.name)
+  const replacesArmorSlot = requestedItem?.armor ? requestedItem.armor.shield : null
+  const availableInventory = replacesArmorSlot === null ? inventory : {
+    ...inventory,
+    entries: inventory.entries.map(entry => {
+      if (entry.id === entryId || !entry.equipped) return entry
+      const item = entry.itemId ? equipmentCatalog.items.find(candidate => candidate.id === entry.itemId) : findEquipment(equipmentCatalog, entry.name)
+      return item?.armor && item.armor.shield === replacesArmorSlot ? { ...entry, equipped: false } : entry
+    }),
+  }
+  const target = availableInventory.entries.find(entry => entry.id === entryId && !entry.equipped)
+  if (!target) return inventory
+  if (target.quantity <= 1) {
+    return { ...availableInventory, entries: availableInventory.entries.map(entry => entry.id === entryId ? { ...entry, equipped: true } : entry) }
+  }
+  const equippedUses = target.remainingUses === undefined ? undefined : Math.ceil(target.remainingUses / target.quantity)
+  const equippedCopy: InventoryEntry = {
+    ...target,
+    id: createInventoryEntryId(),
+    quantity: 1,
+    equipped: true,
+    ...(equippedUses === undefined ? {} : { remainingUses: equippedUses }),
+  }
+  return {
+    ...availableInventory,
+    entries: availableInventory.entries.flatMap(entry => entry.id === entryId
+      ? [{ ...entry, quantity: entry.quantity - 1, ...(equippedUses === undefined ? {} : { remainingUses: entry.remainingUses! - equippedUses }) }, equippedCopy]
+      : [entry]),
+  }
+}
+
+export type EquipmentGrant = { key: string; label: string; items: ItemQuantity[]; unlistedItems?: { name: string; quantity: number }[]; currencyCp?: number }
+export const emptyInventory = (): Inventory => ({ version: 2, initialEquipmentConfirmed: false, entries: [], choices: {}, applied: {}, currencyCp: 0, legacyNotes: '' })
+
+function createInventoryEntryId() {
+  const browserCrypto = globalThis.crypto
+  if (browserCrypto && typeof browserCrypto.randomUUID === 'function') return browserCrypto.randomUUID()
+
+  const bytes = new Uint8Array(16)
+  if (browserCrypto && typeof browserCrypto.getRandomValues === 'function') browserCrypto.getRandomValues(bytes)
+  else bytes.forEach((_, index) => { bytes[index] = Math.floor(Math.random() * 256) })
+  bytes[6] = (bytes[6] & 0x0f) | 0x40
+  bytes[8] = (bytes[8] & 0x3f) | 0x80
+  const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('')
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+export function equipmentGrantFingerprint(grant: EquipmentGrant) {
+  return JSON.stringify({ items: [...grant.items].sort((a, b) => a.itemId.localeCompare(b.itemId) || a.quantity - b.quantity), ...(grant.unlistedItems?.length ? { unlistedItems: grant.unlistedItems } : {}), currencyCp: grant.currencyCp ?? 0 })
+}
+
+export function addInventoryItem(inventory: Inventory, item: EquipmentItem, quantity = 1, source = 'manual', sourceLabel = 'Adicionado pelo jogador'): Inventory {
+  const existing = inventory.entries.find(entry => entry.itemId === item.id && entry.source === source && !entry.equipped)
+  return { ...inventory, entries: existing
+    ? inventory.entries.map(entry => entry.id === existing.id ? { ...entry, quantity: entry.quantity + quantity, ...(item.maxUses ? { remainingUses: (entry.remainingUses ?? entry.quantity * item.maxUses) + quantity * item.maxUses } : {}) } : entry)
+    : [...inventory.entries, { id: createInventoryEntryId(), itemId: item.id, name: item.name, category: item.category, quantity, equipped: false, notes: '', source, sourceLabel, ...(item.maxUses ? { remainingUses: quantity * item.maxUses } : {}) }] }
+}
+
+export function addPack(inventory: Inventory, catalog: EquipmentCatalog, packId: string): Inventory {
+  const pack = catalog.packs.find(pack => pack.id === packId)
+  if (!pack) return inventory
+  return pack.items.reduce((next, line) => {
+    const item = catalog.items.find(item => item.id === line.itemId)
+    if (!item) throw new Error(`Item ausente no catálogo: ${line.itemId}`)
+    return addInventoryItem(next, item, line.quantity, `pack:${pack.id}`, pack.name)
+  }, inventory)
+}
+
+// Applied fingerprints survive removal/consumption. Unchanged grants never resurrect items.
+// Changing a creation choice replaces only that source, preserving manual and other grants.
+export function reconcileEquipment(inventory: Inventory, grants: EquipmentGrant[], catalog: EquipmentCatalog): Inventory {
+  let next = { ...inventory, entries: [...inventory.entries], applied: { ...inventory.applied } }
+  const active = new Set(grants.map(grant => grant.key))
+  for (const key of Object.keys(next.applied)) {
+    if (active.has(key)) continue
+    const previous = JSON.parse(next.applied[key]) as { currencyCp?: number }
+    next.currencyCp = Math.max(0, next.currencyCp - (previous.currencyCp ?? 0))
+    next.entries = next.entries.filter(entry => entry.source !== key)
+    delete next.applied[key]
+  }
+  for (const grant of grants) {
+    const fingerprint = equipmentGrantFingerprint(grant)
+    if (next.applied[grant.key] === fingerprint) continue
+    const previous = next.applied[grant.key] ? JSON.parse(next.applied[grant.key]) as { currencyCp: number } : null
+    next.entries = next.entries.filter(entry => entry.source !== grant.key)
+    next.currencyCp = Math.max(0, next.currencyCp + (grant.currencyCp ?? 0) - (previous?.currencyCp ?? 0))
+    for (const line of grant.items) {
+      const item = catalog.items.find(item => item.id === line.itemId)
+      if (!item) throw new Error(`Item ausente no catálogo: ${line.itemId}`)
+      next = addInventoryItem(next, item, line.quantity, grant.key, grant.label)
+    }
+    for (const item of grant.unlistedItems ?? []) {
+      next.entries.push({ id: createInventoryEntryId(), itemId: null, name: item.name, quantity: item.quantity, equipped: false, notes: '', source: grant.key, sourceLabel: grant.label })
+    }
+    next.applied[grant.key] = fingerprint
+  }
+  return next
+}
+
+export function readInventory(value: string, catalog = equipmentCatalog): Inventory {
+  let parsed: unknown
+  try { parsed = JSON.parse(value) } catch { /* Legacy free text is preserved below. */ }
+  if (isRecord(parsed) && parsed.version === 2 && Array.isArray(parsed.entries)) {
+    const choices = isRecord(parsed.choices)
+      ? Object.fromEntries(Object.entries(parsed.choices).filter((entry): entry is [string, string] => typeof entry[1] === 'string'))
+      : {}
+    const applied = isRecord(parsed.applied)
+      ? Object.fromEntries(Object.entries(parsed.applied).filter((entry): entry is [string, string] => {
+        if (typeof entry[1] !== 'string') return false
+        try { return isRecord(JSON.parse(entry[1])) } catch { return false }
+      }))
+      : {}
+    return {
+      ...emptyInventory(),
+      initialEquipmentConfirmed: parsed.initialEquipmentConfirmed === true,
+      choices,
+      applied,
+      currencyCp: typeof parsed.currencyCp === 'number' && Number.isFinite(parsed.currencyCp) ? Math.max(0, parsed.currencyCp) : 0,
+      legacyNotes: typeof parsed.legacyNotes === 'string' ? parsed.legacyNotes : '',
+      entries: parsed.entries.map((rawEntry, index) => {
+        const entry = isRecord(rawEntry) ? rawEntry : {}
+        return {
+          id: typeof entry.id === 'string' ? entry.id : `legacy:${index}`,
+          itemId: typeof entry.itemId === 'string' ? entry.itemId : null,
+          name: typeof entry.name === 'string' ? entry.name : 'Item legado',
+          ...(entry.category === 'armor' || entry.category === 'weapons' || entry.category === 'tools' || entry.category === 'instruments' || entry.category === 'gear' ? { category: entry.category } : {}),
+          quantity: typeof entry.quantity === 'number' && Number.isSafeInteger(entry.quantity) && entry.quantity > 0 ? entry.quantity : 1,
+          equipped: entry.equipped === true,
+          notes: typeof entry.notes === 'string' ? entry.notes : '',
+          ...(typeof entry.attackBonus === 'number' && Number.isFinite(entry.attackBonus) ? { attackBonus: entry.attackBonus } : {}),
+          ...(typeof entry.remainingUses === 'number' && Number.isSafeInteger(entry.remainingUses) && entry.remainingUses >= 0 ? { remainingUses: entry.remainingUses } : {}),
+          source: typeof entry.source === 'string' ? entry.source : 'legacy',
+          sourceLabel: typeof entry.sourceLabel === 'string' ? entry.sourceLabel : 'Inventário anterior',
+        }
+      }),
+    }
+  }
+  let inventory = emptyInventory()
+  if (parsed && typeof parsed === 'object' && 'packs' in parsed && Array.isArray(parsed.packs)) {
+    for (const category of ['armor', 'weapons', 'tools', 'instruments', 'miscellaneous']) {
+      const text = (parsed as Record<string, unknown>)[category]
+      if (typeof text !== 'string') continue
+      for (const line of text.split('\n').map(line => line.trim()).filter(Boolean)) {
+        const item = findEquipment(catalog, line)
+        if (item) inventory = addInventoryItem(inventory, item)
+        else inventory.entries.push({ id: crypto.randomUUID(), itemId: null, name: line, quantity: 1, equipped: false, notes: '', source: 'legacy', sourceLabel: 'Inventário anterior' })
+      }
+    }
+    for (const pack of new Set(parsed.packs)) if (typeof pack === 'string') inventory = addPack(inventory, catalog, pack)
+  } else inventory.legacyNotes = value
+  return inventory
+}
+
+export function formatPrice(cp: number | null) {
+  if (cp === null) return '—'
+  if (cp % 100 === 0) return `${cp / 100} po`
+  if (cp % 10 === 0) return `${cp / 10} pp`
+  return `${cp} pc`
+}
+
+export function equipmentDetails(item: EquipmentItem) {
+  if (item.armor) {
+    const armor = item.armor
+    return `CA ${armor.shield ? '+' : ''}${armor.ac}${armor.dexterity === 'full' ? ' + Des' : armor.dexterity === 'max2' ? ' + Des (máx. 2)' : ''}${armor.strength ? ` · For ${armor.strength}` : ''}${armor.stealthDisadvantage ? ' · Desvantagem em Furtividade' : ''}`
+  }
+  if (item.weapon) return `${item.weapon.damage} ${item.weapon.damageType} · ${item.properties.join(', ')}`
+  return item.properties.join(', ') || item.unit
+}

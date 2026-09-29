@@ -1,0 +1,2536 @@
+[
+  {
+    "name": "ACALMAR EMOÇÕES",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "ADIVINHAÇÃO",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S, M (incenso e uma oferenda apropriada para sacrifício à sua religião, juntos valendo, no mínimo, 25 po, consumidos pela magia)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "AJUDA",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (uma pequena fita de tecido branco)",
+    "duration": "8 horas"
+  },
+  {
+    "name": "ALARME",
+    "castingTime": "1 minuto",
+    "range": "9 metros",
+    "components": "V, S, M (um pequeno sino e um pequeno fio de prata)",
+    "duration": "8 horas"
+  },
+  {
+    "name": "ALIADO PLANAR",
+    "castingTime": "10 minutos",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "ALJAVA VELOZ",
+    "castingTime": "1 ação bônus",
+    "range": "Toque",
+    "components": "V, S, M (uma aljava contendo, pelo menos, uma munição)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "ALTERAR FORMA",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S, M (uma argola de jade valendo, no mínimo, 1.500 po, que você deve colocar na sua cabeça antes de conjurar a magia)",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "ALTERAR-SE",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "AMIZADE",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "S, M (uma pequena quantidade de maquiagem aplicada ao rosto durante a conjuração da magia)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "AMIZADE ANIMAL",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (um punhado de comida)",
+    "duration": "24 horas"
+  },
+  {
+    "name": "AMPLIAR PLANTAS",
+    "castingTime": "1 ação ou 8 horas",
+    "range": "45 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "ÂNCORA PLANAR",
+    "castingTime": "1 hora",
+    "range": "18 metros",
+    "components": "V, S, M (uma joia valendo, no mínimo, 1.000 po, consumida pela magia)",
+    "duration": "24 horas"
+  },
+  {
+    "name": "ANDAR NA ÁGUA",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (uma rolha)",
+    "duration": "1 hora"
+  },
+  {
+    "name": "ANIMAR MORTOS",
+    "castingTime": "1 minuto",
+    "range": "3 metros",
+    "components": "V, S, M (uma gota de sangue, um pedaço de carne e uma punhado de pó de osso)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "ANIMAR OBJETOS",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "ANTIPATIA/SIMPATIA",
+    "castingTime": "1 hora",
+    "range": "18 metros",
+    "components": "V, S, M (ou um pedaço de alume embebido em vinagre para o efeito de antipatia, ou uma gota de mel para o efeito de simpatia)",
+    "duration": "10 dias"
+  },
+  {
+    "name": "APRIMORAR HABILIDADE",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (pelo ou penas de uma besta)",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "APRISIONAMENTO",
+    "castingTime": "1 minuto",
+    "range": "9 metros",
+    "components": "V, S, M (um pergaminho de representação ou uma estatueta esculpida para se parecer com o alvo e um componente especial, que varia de acordo com a versão da magia que você escolher, valendo, no mínimo, 500 po por Dado de Vida)",
+    "duration": "Até ser dissipada"
+  },
+  {
+    "name": "ARCA SECRETA DE LEOMUND",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (um baú requintado, de 90 cm por 60 cm por 60 cm, construído com materiais raros valendo, no mínimo, 5.000 po e uma réplica Miúda feita do mesmo material valendo, no mínimo, 50 po)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "ÁREA ESCORREGADIA",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S, M (um pouco de pele de porco ou manteiga)",
+    "duration": "1 minuto"
+  },
+  {
+    "name": "ARMA ELEMENTAL",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "ARMA ESPIRITUAL",
+    "castingTime": "1 ação bônus",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "1 minuto"
+  },
+  {
+    "name": "ARMA MÁGICA",
+    "castingTime": "1 ação bônus",
+    "range": "Toque",
+    "components": "V, S",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "ARMADURA ARCANA",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (um pedaço de couro curado)",
+    "duration": "8 horas"
+  },
+  {
+    "name": "ARMADURA DE AGATHYS",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S, M (um copo de água)",
+    "duration": "1 hora"
+  },
+  {
+    "name": "ARROMBAR",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "ASSASSINO FANTASMAGÓRICO",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "ATAQUE CERTEIRO",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "S",
+    "duration": "Concentração, até 1 rodada"
+  },
+  {
+    "name": "ATAQUE VISUAL",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "AUGÚRIO",
+    "castingTime": "1 minuto",
+    "range": "Pessoal",
+    "components": "V, S, M (varetas, ossos ou objetos similarmente marcados valendo, no mínimo, 25 po)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "AUMENTAR/REDUZIR",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (um pouco de pó de ferro)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "AURA DE PUREZA",
+    "castingTime": "1 ação",
+    "range": "Pessoal (9 metros de raio)",
+    "components": "V",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "AURA DE VIDA",
+    "castingTime": "1 ação",
+    "range": "Pessoal (9 metros de raio)",
+    "components": "V",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "AURA DE VITALIDADE",
+    "castingTime": "1 ação",
+    "range": "Pessoal (9 metros de raio)",
+    "components": "V",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "AURA MÁGICA DE NYSTUL",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (um pequeno quadrado de seda)",
+    "duration": "24 horas"
+  },
+  {
+    "name": "AURA SAGRADA",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S, M (um minúsculo relicário valendo, no mínimo, 1.000 po, contendo uma relíquia sagrada, como um pedaço de tecido do robe de um santo ou um pedaço de pergaminho de um texto religioso)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "AUXÍLIO DIVINO",
+    "castingTime": "1 ação bônus",
+    "range": "Pessoal",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "BANIMENTO",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (um item desagradável ao alvo)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "BANQUETE DE HERÓIS",
+    "castingTime": "10 minutos",
+    "range": "9 metros",
+    "components": "V, S, M (uma tigela encrustada de gemas valendo, no mínimo, 1.000 po, que é consumida pela magia)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "BARREIRA DE LÂMINAS",
+    "castingTime": "1 ação",
+    "range": "24 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "BÊNÇÃO",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (um borrifo de água benta)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "BOCA ENCANTADA",
+    "castingTime": "1 minuto",
+    "range": "9 metros",
+    "components": "V, S, M (um pedaço de favo de mel e pó de jade valendo, no mínimo, 10 po, consumidos pela magia)",
+    "duration": "Até ser dissipada"
+  },
+  {
+    "name": "BOLA DE FOGO",
+    "castingTime": "1 ação",
+    "range": "45 metros",
+    "components": "V, S, M (uma minúscula bola de guano de morcego e enxofre)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "BOLA DE FOGO CONTROLÁVEL",
+    "castingTime": "1 ação",
+    "range": "45 metros",
+    "components": "V, S, M (uma minúscula bola de guano de morcego e enxofre)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "BOM FRUTO",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (um raminho de visco)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "BORDÃO MÍSTICO",
+    "castingTime": "1 ação bônus",
+    "range": "Toque",
+    "components": "V, S, M (visco, uma folha de trevo e uma clava ou bordão)",
+    "duration": "1 minuto"
+  },
+  {
+    "name": "BRAÇOS DE HADAR",
+    "castingTime": "1 ação",
+    "range": "Pessoal (3 metros de raio)",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "BRUXARIA",
+    "castingTime": "1 ação bônus",
+    "range": "18 metros",
+    "components": "V, S, M (o olho petrificado de um tritão)",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "CAMINHAR EM ÁRVORES",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "CAMINHAR NO VENTO",
+    "castingTime": "1 minuto",
+    "range": "9 metros",
+    "components": "V, S, M (fogo e água benta)",
+    "duration": "8 horas"
+  },
+  {
+    "name": "CAMPO ANTIMAGIA",
+    "castingTime": "1 ação",
+    "range": "Pessoal (3 metros de raio)",
+    "components": "V, S, M (um punhado de pó de ferro ou limalhas de ferro)",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "CÃO FIEL DE MORDENKAINEN",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (um minúsculo apito de prata, um pedaço de osso e um fio)",
+    "duration": "8 horas"
+  },
+  {
+    "name": "CATIVAR",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "1 minuto"
+  },
+  {
+    "name": "CARNE PARA PEDRA",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S, M (uma pitada de cal, água e terra)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "CEGUEIRA/SURDEZ",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V",
+    "duration": "1 minuto"
+  },
+  {
+    "name": "CHAMA CONTÍNUA",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (pó de rubi no valor de 50 po, consumido pela magia)",
+    "duration": "Até ser dissipada"
+  },
+  {
+    "name": "CHAMA SAGRADA",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CHICOTE DE ESPINHOS",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (um muda de uma planta com espinhos)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CHUVA DE METEOROS",
+    "castingTime": "1 ação",
+    "range": "1,6 quilometro",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CÍRCULO DA MORTE",
+    "castingTime": "1 ação",
+    "range": "45 metros",
+    "components": "V, S, M (o pó de uma pérola negra esmagada valendo, no mínimo, 500 po)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CÍRCULO DE PODER",
+    "castingTime": "1 ação",
+    "range": "Pessoal (9 metros de raio)",
+    "components": "V",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "CÍRCULO DE TELETRANSPORTE",
+    "castingTime": "1 minuto",
+    "range": "3 metros",
+    "components": "V, M (giz e tintas raros infundidos com pedras preciosas no valor de 50 po, consumidos pela magia)",
+    "duration": "1 rodada"
+  },
+  {
+    "name": "CÍRCULO MÁGICO",
+    "castingTime": "1 minuto",
+    "range": "3 metros",
+    "components": "V, S, M (água benta ou pó de prata e ferro valendo, no mínimo, 100 po, consumidos pela magia)",
+    "duration": "1 hora"
+  },
+  {
+    "name": "CLARIVIDÊNCIA",
+    "castingTime": "10 minutos",
+    "range": "1,5 quilômetro",
+    "components": "V, S, M (um foco valendo, no mínimo, 100 po, também um chifre cravejado de joias para ouvir ou um olho de vidro para ver)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "CLONE",
+    "castingTime": "1 hora",
+    "range": "Toque",
+    "components": "V, S, M (um diamante valendo, no mínimo, 1.000 po e, no mínimo 3 centímetros cúbicos de carne da criatura que será clonada, consumida pela magia, e um receptáculo valendo, no mínimo, 2.000 po que tenha uma tampa selada e seja grande o suficiente para comportar uma criatura Média, como uma urna enorme, um caixão, um cisto cheio de lama no solo ou um recipiente de cristal cheio de água salgada)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "COLUNA DE CHAMAS",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S, M (uma pitada de enxofre)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "COMANDO",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V",
+    "duration": "1 rodada"
+  },
+  {
+    "name": "COMPREENDER IDIOMAS",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S, M (um pitada de fuligem e sal)",
+    "duration": "1 hora"
+  },
+  {
+    "name": "COMPULSÃO",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "COMUNHÃO",
+    "castingTime": "1 minuto",
+    "range": "Pessoal",
+    "components": "V, S, M (incenso e um frasco de água benta ou profana)",
+    "duration": "1 minuto"
+  },
+  {
+    "name": "COMUNHÃO COM A NATUREZA",
+    "castingTime": "1 minuto",
+    "range": "Pessoal",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CONE DE FRIO",
+    "castingTime": "1 ação",
+    "range": "Pessoal (cone de 18 metros)",
+    "components": "V, S, M (um pequeno cristal ou cone de vidro)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CONFUSÃO",
+    "castingTime": "1 ação",
+    "range": "27 metros",
+    "components": "V, S, M (três cascas de noz)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "CONHECIMENTO LENDÁRIO",
+    "castingTime": "10 minutos",
+    "range": "Pessoal",
+    "components": "V, S, M (incenso valendo, no mínimo, 250 po, consumido pela magia e quatro tiras de marfim valendo, no mínimo, 50 po cada)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CONJURAR ANIMAIS",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "CONJURAR CELESTIAL",
+    "castingTime": "1 ação",
+    "range": "27 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "CONJURAR ELEMENTAIS MENORES",
+    "castingTime": "1 minuto",
+    "range": "27 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "CONJURAR ELEMENTAL",
+    "castingTime": "1 ação",
+    "range": "27 metros",
+    "components": "V, S, M (incenso aceso para ar, argila mole para terra, enxofre e fósforo para fogo ou água e areia para água)",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "CONJURAR FADA",
+    "castingTime": "1 ação",
+    "range": "27 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "CONJURAR RAJADA",
+    "castingTime": "1 ação",
+    "range": "Pessoal (cone de 18 metros)",
+    "components": "V, S, M (uma munição ou arma de arremesso)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CONJURAR SARAIVADA",
+    "castingTime": "1 ação",
+    "range": "45 metros",
+    "components": "V, S, M (uma munição ou arma de arremesso)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CONJURAR SERES DA FLORESTA",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S, M (um fruto sagrado por criatura invocada)",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "CONSAGRAR",
+    "castingTime": "24 horas",
+    "range": "Toque",
+    "components": "V, S, M (ervas, óleos e incenso valendo, no mínimo, 1.000 po, consumidos pela magia)",
+    "duration": "Até ser dissipada"
+  },
+  {
+    "name": "CONSERTAR",
+    "castingTime": "1 minuto",
+    "range": "Toque",
+    "components": "V, S, M (dois ímãs)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CONSTRIÇÃO",
+    "castingTime": "1 ação",
+    "range": "27 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "CONTATO EXTRAPLANAR",
+    "castingTime": "1 minuto",
+    "range": "Pessoal",
+    "components": "V",
+    "duration": "1 minuto"
+  },
+  {
+    "name": "CONTRAMÁGICA",
+    "castingTime": "1 reação, que você realiza quando vê uma criatura a até 18 metros conjurando uma magia",
+    "range": "18 metros",
+    "components": "S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CONTINGÊNCIA",
+    "castingTime": "10 minutos",
+    "range": "Pessoal",
+    "components": "V, S, M (uma estátua sua esculpida em marfim e decorada com gemas valendo, no mínimo, 1.500 po)",
+    "duration": "10 dias"
+  },
+  {
+    "name": "CONTROLAR A ÁGUA",
+    "castingTime": "1 ação",
+    "range": "90 metros",
+    "components": "V, S, M (uma gota de água e uma pitada de poeira)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "CONTROLAR O CLIMA",
+    "castingTime": "10 minutos",
+    "range": "Pessoal (8 quilômetros de raio)",
+    "components": "V, S, M (incenso aceso e pedaços de terra e madeira misturados em água)",
+    "duration": "Concentração, até 8 horas"
+  },
+  {
+    "name": "CONVOCAR FAMILIAR",
+    "castingTime": "1 hora",
+    "range": "3 metros",
+    "components": "V, S, M (carvão, incenso e ervas no valor de 10 po, que devem ser consumidos pelo fogo em um braseiro de bronze)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CONVOCAR MONTARIA",
+    "castingTime": "10 minutos",
+    "range": "9 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CONVOCAR RELÂMPAGOS",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "COROA DA LOUCURA",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "CORDÃO DE FLECHAS",
+    "castingTime": "1 ação",
+    "range": "1,5 metro",
+    "components": "V, S, M (quatro ou mais flechas ou virotes)",
+    "duration": "8 horas"
+  },
+  {
+    "name": "CORRENTE DE RELÂMPAGOS",
+    "castingTime": "1 ação",
+    "range": "45 metros",
+    "components": "V, S, M (um pouco de pelo; um pedaço de âmbar, vidro ou um bastão de cristal; e três pinos de prata)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CRESCER ESPINHOS",
+    "castingTime": "1 ação",
+    "range": "45 metros",
+    "components": "V, S, M (sete espinhos afiados ou sete gravetos, todos com uma ponta afiada)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "CRIAÇÃO",
+    "castingTime": "1 minuto",
+    "range": "9 metros",
+    "components": "V, S, M (um pequeno pedaço de material do mesmo tipo do item que você planeja criar)",
+    "duration": "Especial"
+  },
+  {
+    "name": "CRIAR ALIMENTOS",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CRIAR CHAMAS",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S",
+    "duration": "10 minutos"
+  },
+  {
+    "name": "CRIAR MORTOS-VIVOS",
+    "castingTime": "1 minuto",
+    "range": "3 metros",
+    "components": "V, S, M (um pote de barro cheio de terra de sepultura, um pote de barro cheio de água salobra, e uma ônix negra no valor de 150 po, para cada corpo)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CRIAR OU DESTRUIR ÁGUA",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (uma gota de água se estiver criando ou alguns grãos de areia se estiver destruindo)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CRIAR PASSAGEM",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (algumas sementes de gergelim)",
+    "duration": "1 hora"
+  },
+  {
+    "name": "CÚPULA ANTIVIDA",
+    "castingTime": "1 ação",
+    "range": "Pessoal (3 metros de raio)",
+    "components": "V, S",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "CURA COMPLETA",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CURA COMPLETA EM MASSA",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CURAR FERIMENTOS",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "CURAR FERIMENTOS EM MASSA",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "DANÇA IRRESISTÍVEL DE OTTO",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "DEDO DA MORTE",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "DESEJO",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "DESINTEGRAR",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S, M (um ímã e uma pitada de poeira)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "DESPEDAÇAR",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S, M (uma lasca de mica)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "DESPERTAR",
+    "castingTime": "8 horas",
+    "range": "Toque",
+    "components": "V, S, M (uma ágata valendo, no mínimo, 1.000 po que será consumida pela magia)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "DESPISTAR",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "S",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "DESTRUIÇÃO BANIDORA",
+    "castingTime": "1 ação bônus",
+    "range": "Pessoal",
+    "components": "V",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "DESTRUIÇÃO CEGANTE",
+    "castingTime": "1 ação bônus",
+    "range": "Pessoal",
+    "components": "V",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "DESTRUIÇÃO COLÉRICA",
+    "castingTime": "1 ação bônus",
+    "range": "Pessoal",
+    "components": "V",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "DESTRUIÇÃO ESTONTEANTE",
+    "castingTime": "1 ação bônus",
+    "range": "Pessoal",
+    "components": "V",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "DESTRUIÇÃO LANCINANTE",
+    "castingTime": "1 ação bônus",
+    "range": "Pessoal",
+    "components": "V",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "DESTRUIÇÃO TROVEJANTE",
+    "castingTime": "1 ação bônus",
+    "range": "Pessoal",
+    "components": "V",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "DETECTAR O BEM E MAL",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "DETECTAR MAGIA",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "DETECTAR PENSAMENTOS",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S, M (um pedaço de cobre)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "DETECTAR VENENO E DOENÇA",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S, M (uma folha de teixo)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "DIFICULTAR DETECÇÃO",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (um pouco de pó de diamante valendo 25 po polvilhado sobre o alvo, consumido pela magia)",
+    "duration": "8 horas"
+  },
+  {
+    "name": "DISCO FLUTUANTE DE TENSER",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (uma gota de mercúrio)",
+    "duration": "1 hora"
+  },
+  {
+    "name": "DISFARÇAR-SE",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S",
+    "duration": "1 hora"
+  },
+  {
+    "name": "DISSIPAR MAGIA",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "DISSIPAR O BEM E MAL",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S, M (água benta ou pó de prata e ferro)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "DOENÇA PLENA",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "DOMINAR BESTA",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "DOMINAR MONSTRO",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "DOMINAR PESSOA",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "DRUIDISMO",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "DUELO COMPELIDO",
+    "castingTime": "1 ação bônus",
+    "range": "9 metros",
+    "components": "V",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "ENCARNAÇÃO FANTASMAGÓRICA",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "ENCONTRAR ARMADILHAS",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "ENCONTRAR O CAMINHO",
+    "castingTime": "1 minuto",
+    "range": "Pessoal",
+    "components": "V, S, M (um conjunto de ferramentas de adivinhação – como ossos, bastões de marfim, dentes ou runas esculpidas – no valor de 100 po e um objeto do lugar que você deseja encontrar)",
+    "duration": "Concentração, até 1 dia"
+  },
+  {
+    "name": "ENFEITIÇAR PESSOA",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S",
+    "duration": "1 hora"
+  },
+  {
+    "name": "ENFRAQUECER INTELECTO",
+    "castingTime": "1 ação",
+    "range": "45 metros",
+    "components": "V, S, M (um punhado de barro, cristal, vidro ou esferas minerais)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "ENVIAR MENSAGEM",
+    "castingTime": "1 ação",
+    "range": "Ilimitado",
+    "components": "V, S, M (um pequeno e fino pedaço de fio de cobre)",
+    "duration": "1 rodada"
+  },
+  {
+    "name": "ESCRITA ILUSÓRIA",
+    "castingTime": "1 minuto",
+    "range": "Toque",
+    "components": "S, M (uma tinta à base de chumbo valendo, no mínimo, 10 po, que é consumida pela magia)",
+    "duration": "10 dias"
+  },
+  {
+    "name": "ESCUDO ARCANO",
+    "castingTime": "1 reação, que você faz quando é atingido por um ataque ou alvo da magia mísseis mágicos",
+    "range": "Pessoal",
+    "components": "V, S",
+    "duration": "1 rodada"
+  },
+  {
+    "name": "ESCUDO DA FÉ",
+    "castingTime": "1 ação bônus",
+    "range": "18 metros",
+    "components": "V, S, M (um pequeno pergaminho com alguns textos sagrados escritos nele)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "ESCUDO DE FOGO",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S, M (um pouco de fósforo ou um vaga-lume)",
+    "duration": "10 minutos"
+  },
+  {
+    "name": "ESCURIDÃO",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, M (pelo de morcego e uma gota de piche ou pedaço de carvão)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "ESFERA CONGELANTE DE OTILUKE",
+    "castingTime": "1 ação",
+    "range": "90 metros",
+    "components": "V, S, M (uma pequena esfera de cristal)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "ESFERA FLAMEJANTE",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S, M (um pouco de seco, uma pitada de enxofre e uma camada de pó de ferro)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "ESFERA RESILIENTE DE OTILUKE",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (uma peça hemisférica de cristal transparente e uma peça hemisférica que combine de goma arábica)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "ESPADA DE MORDENKAINEN",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S, M (espada de platina em miniatura com cabo e pomo de cobre e zinco valendo, no mínimo, 250 po)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "ESPÍRITOS GUARDIÕES",
+    "castingTime": "1 ação",
+    "range": "Pessoal (4,5 metros de raio)",
+    "components": "V, S, M (um símbolo sagrado)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "ESPIRRO ÁCIDO",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "ESQUENTAR METAL",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S, M (um pedaço de ferro e uma chama)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "ESTABILIZAR",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "EXPLOSÃO SOLAR",
+    "castingTime": "1 ação",
+    "range": "45 metros",
+    "components": "V, S, M (fogo e um pedaço de pedra do sol)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "FABRICAR",
+    "castingTime": "10 minutos",
+    "range": "36 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "FALAR COM ANIMAIS",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S",
+    "duration": "10 minutos"
+  },
+  {
+    "name": "FALAR COM OS MORTOS",
+    "castingTime": "1 ação",
+    "range": "3 metros",
+    "components": "V, S, M (incenso aceso)",
+    "duration": "10 minutos"
+  },
+  {
+    "name": "FALAR COM PLANTAS",
+    "castingTime": "1 ação",
+    "range": "Pessoal (9 metros de raio)",
+    "components": "V, S",
+    "duration": "10 minutos"
+  },
+  {
+    "name": "FLECHA ÁCIDA DE MELF",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S, M (folha de ruibarbo em pó e o estômago de uma víbora)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "FLECHA RELAMPEJANTE",
+    "castingTime": "1 ação bônus",
+    "range": "Pessoal",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "FOGO DAS FADAS",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "FOME DE HADAR",
+    "castingTime": "1 ação",
+    "range": "45 metros",
+    "components": "V, S, M (um tentáculo de polvo em conserva)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "FORÇA FANTASMAGÓRICA",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S, M (um pouco de lã)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "FORJAR MORTE",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (uma pitada de terra de cemitério)",
+    "duration": "1 hora"
+  },
+  {
+    "name": "FORMA ETÉREA",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S",
+    "duration": "até 8 horas"
+  },
+  {
+    "name": "FORMA GASOSA",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (um pouco de gaze e um pouco de fumaça)",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "FORMAS ANIMAIS",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 24 horas"
+  },
+  {
+    "name": "GLIFO DE VIGILÂNCIA",
+    "castingTime": "1 hora",
+    "range": "Toque",
+    "components": "V, S, M (incenso e pó de diamante valendo, no mínimo, 200 po, consumidos pela magia)",
+    "duration": "Até ser dissipada ou ativada"
+  },
+  {
+    "name": "GLOBO DE INVULNERABILIDADE",
+    "castingTime": "1 ação",
+    "range": "Pessoal (3 metros de raio)",
+    "components": "V, S, M (uma perola de vidro ou cristal que se despedaça quando a magia termina)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "GLOBOS DE LUZ",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S, M (um pouco de fósforo ou wychwood ou um inseto luminoso)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "GOLPE CONSTRITOR",
+    "castingTime": "1 ação bônus",
+    "range": "Pessoal",
+    "components": "V",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "GUARDIÃO DA FÉ",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V",
+    "duration": "8 horas"
+  },
+  {
+    "name": "HEROÍSMO",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "IDENTIFICAÇÃO",
+    "castingTime": "1 minuto",
+    "range": "Toque",
+    "components": "V, S, M (uma perola valendo, no mínimo, 100 po e uma pena de coruja)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "IDIOMAS",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, M (uma pequena estátua de argila de um zigurate)",
+    "duration": "1 hora"
+  },
+  {
+    "name": "ILUSÃO MENOR",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, M (um pouco de lã)",
+    "duration": "1 minuto"
+  },
+  {
+    "name": "ILUSÃO PROGRAMADA",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S, M (um pouco de lã e pó de jade valendo, no mínimo, 25 po)",
+    "duration": "Até ser dissipada"
+  },
+  {
+    "name": "IMAGEM MAIOR",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S, M (um pedaço de lã)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "IMAGEM SILENCIOSA",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S, M (um pouco de lã)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "IMOBILIZAR MONSTRO",
+    "castingTime": "1 ação",
+    "range": "27 metros",
+    "components": "V, S, M (uma pequena peça de ferro reta)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "IMOBILIZAR PESSOA",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S, M (uma pequena peça de ferro reta)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "INFLIGIR FERIMENTOS",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "INSETO GIGANTE",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "INVERTER A GRAVIDADE",
+    "castingTime": "1 ação",
+    "range": "30 metros",
+    "components": "V, S, M (um ímã e limalhas de ferro)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "INVISIBILIDADE",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (uma pestana envolta em goma-arábica)",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "INVISIBILIDADE MAIOR",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "INVOCAÇÃO INSTANTÂNEA DE DRAWMIJ",
+    "castingTime": "1 minuto",
+    "range": "Toque",
+    "components": "V, S, M (uma safira no valor de 1.000 po)",
+    "duration": "Até ser dissipada"
+  },
+  {
+    "name": "ISOLAMENTO",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (um composto de pós de diamante, esmeralda, rubi e safira valendo, no mínimo, 5.000 po, consumidos pela magia)",
+    "duration": "Até ser dissipada"
+  },
+  {
+    "name": "LABIRINTO",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "LÂMINA FLAMEJANTE",
+    "castingTime": "1 ação bônus",
+    "range": "Pessoal",
+    "components": "V, S, M (folha de sumagre)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "LENTIDÃO",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S, M (uma gota de melaço)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "LEQUE CROMÁTICO",
+    "castingTime": "1 ação",
+    "range": "Pessoal (cone de 4,5 metros)",
+    "components": "V, S, M (um punhado de pó ou areia nas cores vermelha, amarela e azul)",
+    "duration": "1 rodada"
+  },
+  {
+    "name": "LEVITAÇÃO",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S, M (uma pequena presilha de couro ou um pedaço de fio dourado dobrado em forma de copo com uma haste longa em uma extremidade)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "LIGAÇÃO TELEPÁTICA DE RARY",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (pedaços de cascas de ovos de dois tipos diferentes de criatura)",
+    "duration": "1 hora"
+  },
+  {
+    "name": "LIMPAR A MENTE",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S",
+    "duration": "24 horas"
+  },
+  {
+    "name": "LOCALIZAR ANIMAIS OU PLANTAS",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S, M (um pouco de pelo de um cão de caça)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "LOCALIZAR CRIATURA",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S, M (um pouco de pelo de um cão de caça)",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "LOCALIZAR OBJETO",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S, M (um galho bifurcado)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "LOQUACIDADE",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V",
+    "duration": "1 hora"
+  },
+  {
+    "name": "LUFADA DE VENTO",
+    "castingTime": "1 ação",
+    "range": "Pessoal (linha de 18 metros)",
+    "components": "V, S, M (uma semente de legume)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "LUZ",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, M (um vaga-lume ou musgo fosforescente)",
+    "duration": "Concentração, até 1"
+  },
+  {
+    "name": "LUZ DO DIA",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "1 hora"
+  },
+  {
+    "name": "MALOGRO",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "MANSÃO MAGNÍFICA DE MORDENKAINEN",
+    "castingTime": "1 minuto",
+    "range": "90 metros",
+    "components": "V, S, M (um portal em miniatura esculpido em marfim, um pedaço de mármore polido e uma pequena colher de prata, cada item valendo, no mínimo, 5 po)",
+    "duration": "24 horas"
+  },
+  {
+    "name": "MANTO DO CRUZADO",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "MÃO DE BIGBY",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S, M (uma casca de ovo e uma luva de couro de cobra)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "MÃOS FLAMEJANTES",
+    "castingTime": "1 ação",
+    "range": "Pessoal (cone de 4,5 metros)",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "MÃOS MÁGICAS",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S",
+    "duration": "1 minuto"
+  },
+  {
+    "name": "MARCA DA PUNIÇÃO",
+    "castingTime": "1 ação bônus",
+    "range": "Pessoal",
+    "components": "V",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "MARCA DO CAÇADOR",
+    "castingTime": "1 ação bônus",
+    "range": "27 metros",
+    "components": "V",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "MEDO",
+    "castingTime": "1 ação",
+    "range": "Pessoal (cone de 9 metros)",
+    "components": "V, S, M (uma pena branca ou o coração de uma galinha)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "MENSAGEIRO ANIMAL",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (um punhado de comida)",
+    "duration": "24 horas"
+  },
+  {
+    "name": "MENSAGEM",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S, M (um pedaço curto de fio de cobre)",
+    "duration": "1 rodada"
+  },
+  {
+    "name": "MESCLAR-SE ÀS ROCHAS",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S",
+    "duration": "8 horas"
+  },
+  {
+    "name": "METAMORFOSE",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S, M (um casulo de lagarta)",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "METAMORFOSE VERDADEIRA",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (uma gota de mercúrio, uma porção de goma arábica e um pouco de fumaça)",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "MIRAGEM",
+    "castingTime": "10 minutos",
+    "range": "Visão",
+    "components": "V, S",
+    "duration": "10 dias"
+  },
+  {
+    "name": "MISSÃO",
+    "castingTime": "1 minuto",
+    "range": "18 metros",
+    "components": "V",
+    "duration": "30 dias"
+  },
+  {
+    "name": "MÍSSEIS MÁGICOS",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "MODIFICAR MEMÓRIA",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "MOLDAR ROCHAS",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (barro mole, que deve ser trabalhado aproximadamente com a forma desejada para o objeto de pedra)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "MONTARIA FANTASMAGÓRICA",
+    "castingTime": "1 minuto",
+    "range": "9 metros",
+    "components": "V, S",
+    "duration": "1 hora"
+  },
+  {
+    "name": "MOVER TERRA",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S, M (uma lâmina de ferro e uma pequena sacola contendo uma mistura de solos – argila, barro e areia)",
+    "duration": "Concentração, até 2 horas"
+  },
+  {
+    "name": "MOVIMENTAÇÃO LIVRE",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (uma fita de couro, enrolada no braço ou apêndice similar)",
+    "duration": "1 hora"
+  },
+  {
+    "name": "MURALHA DE ENERGIA",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S, M (um pouco de pó feito de uma gema transparente esmagada)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "MURALHA DE ESPINHOS",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S, M (um punhado de espinhos)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "MURALHA DE FOGO",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S, M (um pequeno pedaço de fósforo)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "MURALHA DE GELO",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S, M (um pequeno pedaço de quartzo)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "MURALHA DE PEDRA",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S, M (um pequeno bloco de granito)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "MURALHA DE VENTO",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S, M (um leque minúsculo e uma pena de origem exótica)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "MURALHA PRISMÁTICA",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "10 minutos"
+  },
+  {
+    "name": "NEVASCA",
+    "castingTime": "1 ação",
+    "range": "45 metros",
+    "components": "V, S, M (um punhado de poeira e algumas gotas de água)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "NÉVOA FÉTIDA",
+    "castingTime": "1 ação",
+    "range": "27 metros",
+    "components": "V, S, M (um ovo podre ou várias folhas de repolho)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "NÉVOA MORTAL",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "NÉVOA OBSCURECENTE",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "NUBLAR",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "NUVEM DE ADAGAS",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S, M (uma lasca de vidro)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "NUVEM INCENDIÁRIA",
+    "castingTime": "1 ação",
+    "range": "45 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "OLHO ARCANO",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (um punhado de pelo de morcego)",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "ONDA DESTRUTIVA",
+    "castingTime": "1 ação",
+    "range": "Pessoal (9 metros de raio)",
+    "components": "V",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "ONDA TROVEJANTE",
+    "castingTime": "1 ação",
+    "range": "Pessoal (cubo de 4,5 metros)",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "ORAÇÃO CURATIVA",
+    "castingTime": "10 minutos",
+    "range": "9 metros",
+    "components": "V",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "ORBE CROMÁTICA",
+    "castingTime": "1 ação",
+    "range": "27 metros",
+    "components": "V, S, M (um diamante valendo, no mínimo, 50 po)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "ORIENTAÇÃO",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "PADRÃO HIPNÓTICO",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "S, M (uma vareta brilhante de incenso ou um frasco de cristal cheio de material fosforescente)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "PALAVRA CURATIVA",
+    "castingTime": "1 ação bônus",
+    "range": "18 metros",
+    "components": "V",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "PALAVRA CURATIVA EM MASSA",
+    "castingTime": "1 ação bônus",
+    "range": "18 metros",
+    "components": "V",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "PALAVRA DE PODER ATORDOAR",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "PALAVRA DE PODER CURAR",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "PALAVRA DE PODER MATAR",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "PALAVRA DE RECORDAÇÃO",
+    "castingTime": "1 ação",
+    "range": "1,5 metro",
+    "components": "V",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "PALAVRA DIVINA",
+    "castingTime": "1 ação bônus",
+    "range": "9 metros",
+    "components": "V",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "PARAR O TEMPO",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "PASSO NEBULOSO",
+    "castingTime": "1 ação bônus",
+    "range": "Pessoal",
+    "components": "V",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "PASSOS LONGOS",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (um pouco de barro)",
+    "duration": "1 hora"
+  },
+  {
+    "name": "PASSOS SEM PEGADAS",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S, M (cinzas de uma folha de visco queimada e um ramo de pinheiro)",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "PATAS DE ARANHA",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (uma gota de betume e uma aranha)",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "PELE DE ÁRVORE",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (um pedaço de casca de carvalho)",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "PELE DE PEDRA",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (pó de diamante no valor de 100 po, consumido pela magia)",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "PEQUENA CABANA DE LEOMUND",
+    "castingTime": "1 minuto",
+    "range": "Pessoal (hemisfério de 3 metros de raio)",
+    "components": "V, S, M (uma pequena conta de cristal)",
+    "duration": "8 horas"
+  },
+  {
+    "name": "PERDIÇÃO",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (uma gota de sangue)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "PISCAR",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S",
+    "duration": "1 minuto"
+  },
+  {
+    "name": "PORTA DIMENSIONAL",
+    "castingTime": "1 ação",
+    "range": "150 metros",
+    "components": "V",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "PORTAL",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S, M (um diamante valendo, no mínimo, 5.000 po)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "PORTAL ARCANO",
+    "castingTime": "1 ação",
+    "range": "150 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "PRAGA",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S",
+    "duration": "7 dias"
+  },
+  {
+    "name": "PRAGA DE INSETOS",
+    "castingTime": "1 ação",
+    "range": "90 metros",
+    "components": "V, S, M (alguns grãos de açúcar, alguns miolos de grão e uma mancha de gordura)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "PRESTIDIGITAÇÃO",
+    "castingTime": "1 ação",
+    "range": "3 metros",
+    "components": "V, S",
+    "duration": "Até 1 hora"
+  },
+  {
+    "name": "PREVENÇÃO DIVINA",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S",
+    "duration": "1 rodada"
+  },
+  {
+    "name": "PRISÃO DE ENERGIA",
+    "castingTime": "1 ação",
+    "range": "30 metros",
+    "components": "V, S, M (pó de rubi no valor de 1.500 po)",
+    "duration": "1 hora"
+  },
+  {
+    "name": "PROIBIÇÃO",
+    "castingTime": "10 minutos",
+    "range": "Toque",
+    "components": "V, S, M (uma borrifada de água benta, incensos raros e pó de rubi valendo, no mínimo, 1.000 po)",
+    "duration": "1 dia"
+  },
+  {
+    "name": "PROJEÇÃO ASTRAL",
+    "castingTime": "1 hora",
+    "range": "3 metros",
+    "components": "V, S, M (para cada criatura que você afetar com essa magia, você deve fornecer um jacinto valendo, no mínimo, 1.000 po e uma barra de prata com ornamentos esculpidos valendo, no mínimo, 100 po, todos consumidos pela magia)",
+    "duration": "Especial"
+  },
+  {
+    "name": "PROJETAR IMAGEM",
+    "castingTime": "1 ação",
+    "range": "800 quilômetros",
+    "components": "V, S, M (uma pequena réplica sua feita com materiais valendo, no mínimo, 5 po)",
+    "duration": "Concentração, até 1 dia"
+  },
+  {
+    "name": "PROTEÇÃO CONTRA A MORTE",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S",
+    "duration": "8 horas"
+  },
+  {
+    "name": "PROTEÇÃO CONTRA ENERGIA",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "PROTEÇÃO CONTRA LÂMINAS",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S",
+    "duration": "1 rodada"
+  },
+  {
+    "name": "PROTEÇÃO CONTRA O BEM E MAL",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (água benta ou pó de prata e ferro, consumidos pela magia)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "PROTEÇÃO CONTRA VENENO",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S",
+    "duration": "1 hora"
+  },
+  {
+    "name": "PROTEGER FORTALEZA",
+    "castingTime": "10 minutos",
+    "range": "Toque",
+    "components": "V, S, M (incenso aceso, uma porção de enxofre e óleo, uma corda amarrada, uma porção de sangue de tribulo brutal e um pequeno bastão de prata valendo, no mínimo, 10 po)",
+    "duration": "24 horas"
+  },
+  {
+    "name": "PURIFICAR ALIMENTOS",
+    "castingTime": "1 ação",
+    "range": "3 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "QUEDA SUAVE",
+    "castingTime": "1 reação, que você realiza quando você ou uma criatura a até 18 metros cair",
+    "range": "18 metros",
+    "components": "V, M (uma pequena pena ou penugem similar)",
+    "duration": "1 minuto"
+  },
+  {
+    "name": "RAIO ADOECENTE",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "RAIO ARDENTE",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "RAIO DE BRUXA",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (um galho de uma árvore que tenha sido atingida por um relâmpago)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "RAIO DE FOGO",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "RAIO DE GELO",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "RAIO DO ENFRAQUECIMENTO",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "RAIO GUIADOR",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S",
+    "duration": "1 rodada"
+  },
+  {
+    "name": "RAIO LUNAR",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S, M (várias sementes de qualquer planta lunar e um pedaço de feldspato opalescente)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "RAIO SOLAR",
+    "castingTime": "1 ação",
+    "range": "Pessoal (linha de 18 metros)",
+    "components": "V, S, M (uma lente de aumento)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "RAJADA DE VENENO",
+    "castingTime": "1 ação",
+    "range": "3 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "RAJADA MÍSTICA",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "RAJADA PRISMÁTICA",
+    "castingTime": "1 ação",
+    "range": "Pessoal (cone de 18 metros)",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "RECIPIENTE ARCANO",
+    "castingTime": "1 minuto",
+    "range": "Pessoal",
+    "components": "V, S, M (uma gema, cristal, relicário ou algum outro tipo de recipiente ornamental valendo, no mínimo, 500 po)",
+    "duration": "Até ser dissipada"
+  },
+  {
+    "name": "RECUO ACELERADO",
+    "castingTime": "1 ação bônus",
+    "range": "Pessoal",
+    "components": "V, S",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "REENCARNAÇÃO",
+    "castingTime": "1 hora",
+    "range": "Toque",
+    "components": "V, S, M (óleos e unguentos raros valendo, no mínimo, 1.000 po, consumidos pela magia)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "REFLEXOS",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S",
+    "duration": "1 minuto"
+  },
+  {
+    "name": "REGENERAÇÃO",
+    "castingTime": "1 minuto",
+    "range": "Toque",
+    "components": "V, S, M (uma conta de oração e água benta)",
+    "duration": "1 hora"
+  },
+  {
+    "name": "RELÂMPAGO",
+    "castingTime": "1 ação",
+    "range": "Pessoal (linha de 30 metros)",
+    "components": "V, S, M (um pouco de pelo e uma haste de âmbar, cristal ou vidro)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "REMOVER MALDIÇÃO",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "REPOUSO TRANQUILO",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (uma pitada de sal e uma peça de cobre colocada em cada um dos olhos do corpo, que devem permanecer ai pela duração)",
+    "duration": "10 dias"
+  },
+  {
+    "name": "REPREENSÃO INFERNAL",
+    "castingTime": "1 reação, que você faz em resposta ao sofre dano de uma criatura a até 18 metros de você e que você possa ver",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "RESISTÊNCIA",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (um manto em miniatura)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "RESPIRAR NA ÁGUA",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (um pedaço de cana ou palha)",
+    "duration": "24 horas"
+  },
+  {
+    "name": "RESSURREIÇÃO",
+    "castingTime": "1 hora",
+    "range": "Toque",
+    "components": "V, S, M (um diamante valendo, no mínimo, 1.000 po, consumido pela magia)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "RESSURREIÇÃO VERDADEIRA",
+    "castingTime": "1 hora",
+    "range": "Toque",
+    "components": "V, S, M (um borrifo de água benta e diamantes valendo, no mínimo, 25.000 po, consumidos pela magia)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "RESTAURAÇÃO MAIOR",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (pó de diamante valendo, no mínimo, 100 po, consumido pela magia)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "RESTAURAÇÃO MENOR",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "REVIVER OS MORTOS",
+    "castingTime": "1 hora",
+    "range": "Toque",
+    "components": "V, S, M (um diamante valendo, no mínimo, 500 po, consumido pela magia)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "REVIVIFICAR",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (um diamante no valor de 300 po, consumido pela magia)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "RISO HISTÉRICO DE TASHA",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S, M (pequenas tortas e uma pena que é balançada no ar)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "ROGAR MALDIÇÃO",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "SALTO",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (uma perna de gafanhoto)",
+    "duration": "1 minuto"
+  },
+  {
+    "name": "SANTUÁRIO",
+    "castingTime": "1 ação bônus",
+    "range": "9 metros",
+    "components": "V, S, M (um pequeno espelho de prata)",
+    "duration": "1 minuto"
+  },
+  {
+    "name": "SANTUÁRIO PARTICULAR DE MORDENKAINEN",
+    "castingTime": "10 minutos",
+    "range": "36 metros",
+    "components": "V, S, M (uma folha de chumbo, um pedaço de vidro opaco, um chumaço de algodão ou pano e pó de crisólita)",
+    "duration": "24 horas"
+  },
+  {
+    "name": "SARAIVADA DE ESPINHOS",
+    "castingTime": "1 ação bônus",
+    "range": "Pessoal",
+    "components": "V",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "SEMIPLANO",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V",
+    "duration": "1 hora"
+  },
+  {
+    "name": "SENTIDO BESTIAL",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "S",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "SERVO INVISÍVEL",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S, M (um pedaço de barbante e um pouco de madeira)",
+    "duration": "1 hora"
+  },
+  {
+    "name": "SEXTO SENTIDO",
+    "castingTime": "1 minuto",
+    "range": "Toque",
+    "components": "V, S, M (uma pena de colibri)",
+    "duration": "8 horas"
+  },
+  {
+    "name": "SILÊNCIO",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "SÍMBOLO",
+    "castingTime": "1 minuto",
+    "range": "Toque",
+    "components": "V, S, M (mercúrio, fósforo e pó de diamante e opala, com um valor total de, no mínimo, 1.000 po, consumidos pela magia)",
+    "duration": "Até ser dissipada ou ativada"
+  },
+  {
+    "name": "SIMILARIDADE",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S",
+    "duration": "8 horas"
+  },
+  {
+    "name": "SIMULACRO",
+    "castingTime": "12 horas",
+    "range": "Toque",
+    "components": "V, S, M (neve ou gelo em quantidade suficiente para fazer uma cópia em tamanho real da criatura duplicada; algum cabelo, recortes de unha ou outro pedaço do corpo da criatura, colocado dentro da neve ou gelo; e pó de rubi no valor de 1.500 po, polvilhado sobre a duplicata e consumido pela magia)",
+    "duration": "Até ser dissipada"
+  },
+  {
+    "name": "SINAL DE ESPERANÇA",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "SONHO",
+    "castingTime": "1 minuto",
+    "range": "Especial",
+    "components": "V, S, M (um punhado de areia, um pouco de tinta e uma pena de escrita arrancada de um pássaro adormecido)",
+    "duration": "8 horas"
+  },
+  {
+    "name": "SONO",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S, M (um punhado de areia fina, pétalas de rosas ou um grilo)",
+    "duration": "1 minuto"
+  },
+  {
+    "name": "SUGESTÃO",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V, M (uma língua de cobra e, ou um pedaço de favo de mel ou uma gota de azeite doce)",
+    "duration": "Concentração, até 8 horas"
+  },
+  {
+    "name": "SUGESTÃO EM MASSA",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, M (uma língua de cobra e, ou um pedaço de favo de mel ou uma gota de azeite doce)",
+    "duration": "24 horas"
+  },
+  {
+    "name": "SUSSURROS DISSONANTES",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "TAUMATURGIA",
+    "castingTime": "1 ação",
+    "range": "9 metros",
+    "components": "V",
+    "duration": "Até 1 minuto"
+  },
+  {
+    "name": "TEIA",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S, M (um pedaço de teia de aranha)",
+    "duration": "Concentração, até 1 hora"
+  },
+  {
+    "name": "TELECINÉSIA",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "TELEPATIA",
+    "castingTime": "1 ação",
+    "range": "Ilimitado",
+    "components": "V, S, M (um par de anéis de prata unidos)",
+    "duration": "24 horas"
+  },
+  {
+    "name": "TELETRANSPORTE",
+    "castingTime": "1 ação",
+    "range": "3 metros",
+    "components": "V",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "TELETRANSPORTE POR ÁRVORES",
+    "castingTime": "1 ação",
+    "range": "3 metros",
+    "components": "V, S",
+    "duration": "1 rodada"
+  },
+  {
+    "name": "TEMPESTADE DA VINGANÇA",
+    "castingTime": "1 ação",
+    "range": "Visão",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "TEMPESTADE DE FOGO",
+    "castingTime": "1 ação",
+    "range": "45 metros",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "TEMPESTADE DE GELO",
+    "castingTime": "1 ação",
+    "range": "90 metros",
+    "components": "V, S, M (um pouco de poeira e algumas gotas de água)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "TENTÁCULOS NEGROS DE EVARD",
+    "castingTime": "1 ação",
+    "range": "27 metros",
+    "components": "V, S, M (um pedaço de tentáculo de um polvo gigante ou lula gigante)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "TERREMOTO",
+    "castingTime": "1 ação",
+    "range": "150 metros",
+    "components": "V, S, M (um pouco de poeira, uma pedra e um pedaço de barro)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "TERRENO ALUCINÓGENO",
+    "castingTime": "10 minutos",
+    "range": "90 metros",
+    "components": "V, S, M (uma pedra, um galho e um pouco de planta verde)",
+    "duration": "24 horas"
+  },
+  {
+    "name": "TOQUE ARREPIANTE",
+    "castingTime": "1 ação",
+    "range": "36 metros",
+    "components": "V, S",
+    "duration": "1 rodada"
+  },
+  {
+    "name": "TOQUE CHOCANTE",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "TOQUE VAMPÍRICO",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "TRANCA ARCANA",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (pó de ouro valendo, no mínimo, 25 po, consumido pela magia)",
+    "duration": "Até ser dissipada"
+  },
+  {
+    "name": "TRUQUE DE CORDA",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (pó de extrato de milho e um laço de pergaminho trançado)",
+    "duration": "1 hora"
+  },
+  {
+    "name": "TSUNAMI",
+    "castingTime": "1 minuto",
+    "range": "Visão",
+    "components": "V, S",
+    "duration": "Concentração, até 6 rodadas"
+  },
+  {
+    "name": "VELOCIDADE",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S, M (uma raspa de raiz de alcaçuz)",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "VER O INVISÍVEL",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S, M (um pouco de talco e um pó de prata polvilhado)",
+    "duration": "1 hora"
+  },
+  {
+    "name": "VIAGEM PLANAR",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (uma haste metálica bifurcada valendo, no mínimo, 250 po, sintonizada com um plano de existência em particular)",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "VIDÊNCIA",
+    "castingTime": "10 minutos",
+    "range": "Pessoal",
+    "components": "V, S, M (um foco valendo, no mínimo, 1.000 po, como uma bola de cristal, espelho de prata ou fonte cheia de água benta)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "VÍNCULO PROTETOR",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (um par de anéis de platina valendo, no mínimo, 50 po cada, que você e o alvo devem usar pela duração)",
+    "duration": "1 hora"
+  },
+  {
+    "name": "VINHA ESMAGADORA",
+    "castingTime": "1 ação bônus",
+    "range": "9 metros",
+    "components": "V, S",
+    "duration": "Concentração, até 1 minuto"
+  },
+  {
+    "name": "VISÃO DA VERDADE",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (unguento para os olhos no valor de 25 po; ele é feito de pó de cogumelo, açafrão e gordura; e é consumido pela magia)",
+    "duration": "1 hora"
+  },
+  {
+    "name": "VISÃO NO ESCURO",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (ou um pedaço de cenoura seca ou uma ágata)",
+    "duration": "8 horas"
+  },
+  {
+    "name": "VITALIDADE FALSA",
+    "castingTime": "1 ação",
+    "range": "Pessoal",
+    "components": "V, S, M (uma pequena quantidade de álcool ou bebidas destiladas)",
+    "duration": "1 hora"
+  },
+  {
+    "name": "VOO",
+    "castingTime": "1 ação",
+    "range": "Toque",
+    "components": "V, S, M (uma pena da asa de qualquer pássaro)",
+    "duration": "Concentração, até 10 minutos"
+  },
+  {
+    "name": "ZOMBARIA VICIOSA",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V",
+    "duration": "Instantânea"
+  },
+  {
+    "name": "ZONA DA VERDADE",
+    "castingTime": "1 ação",
+    "range": "18 metros",
+    "components": "V, S",
+    "duration": "10 minutos"
+  }
+]

@@ -1,0 +1,55 @@
+:root {
+  --primary: #46200B;
+  --primary-hover: #5B2D17;
+  --primary-surface: #F4ECE7;
+  --canvas: #f9f9f9;
+  --paper-50: #ffffff;
+  --ink: #171a20;
+  --ink-muted: #747b87;
+  --line: #e3e6ed;
+  --line-strong: #cbd1dc;
+  --forest-950: #13070c;
+  --forest-900: #13070c;
+  --forest-800: #13070c;
+  --forest-700: #13070c;
+  --brass-700: #13070c;
+  --brass-500: #13070c;
+  --brass-400: #13070c;
+  --brass-300: #13070c;
+  --brass-200: #f2e9ec;
+  --accent: #13070c;
+  --success: #3E5641;
+  --warning: #D17A22;
+  --paper-texture: url('/images/papiru.jpg');
+  --font-display: 'PT Serif', Georgia, 'Times New Roman', serif;
+  --font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    'Segoe UI', sans-serif;
+
+  color: var(--ink);
+  background-color: var(--canvas);
+  background-image: linear-gradient(rgb(249 249 249 / 92%), rgb(249 249 249 / 92%)), url('/images/app-background-texture.png');
+  background-attachment: fixed;
+  background-position: center;
+  background-size: cover;
+  font-family: var(--font-ui);
+  font-synthesis: none;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+}
+
+button {
+  font-family: inherit;
+}

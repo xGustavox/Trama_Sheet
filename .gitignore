@@ -1,0 +1,17 @@
+# Local environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Dependencies and build output
+node_modules/
+dist/
+build/
+.next/
+
+# Local tooling
+.DS_Store
+Thumbs.db
+
+# Browser profiles, visual captures, and reference files used during local checks
+/artifacts/
