@@ -23,6 +23,7 @@
 }
 
 .app-modal--drawer {
+  box-sizing: border-box;
   inset: 0 0 0 auto;
   width: min(680px, 94vw);
   height: 100dvh;

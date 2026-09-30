@@ -9,6 +9,9 @@ export async function openEquipmentTestDatabase() {
   await db.exec(readFileSync(new URL('../../supabase/migrations/20260930160000_equipment_components_normalized.sql', import.meta.url), 'utf8'))
   await db.exec(readFileSync(new URL('../../supabase/migrations/20260930170000_magic_items.sql', import.meta.url), 'utf8'))
   await db.exec(readFileSync(new URL('../../supabase/migrations/20260930180000_magic_items_part_2.sql', import.meta.url), 'utf8'))
+  await db.exec(readFileSync(new URL('../../supabase/migrations/20260930190000_magic_items_part_3.sql', import.meta.url), 'utf8'))
+  await db.exec(readFileSync(new URL('../../supabase/migrations/20260930200000_magic_items_part_4.sql', import.meta.url), 'utf8'))
+  await db.exec(readFileSync(new URL('../../supabase/migrations/20260930210000_magic_items_part_5.sql', import.meta.url), 'utf8'))
   return db
 }
 

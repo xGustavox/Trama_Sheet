@@ -4,7 +4,7 @@ import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/css'
 import { classFeatures, getSpellSlotsAtClassLevel } from '../lib/classFeatures'
 import type { CharacterDetails, CharacterPlayState } from '../lib/characterData'
-import { addInventoryItem, calculateArmorClass, equipOneInventoryUnit, formatPrice, getCurrencyDisplay, getWeaponAttackModifier, isEquippable, readInventory, type EquipmentItem, type InventoryEntry } from '../lib/equipment'
+import { addInventoryItem, calculateArmorClass, convertCurrency, currencyDenominations, equipOneInventoryUnit, formatPrice, getArmorClassBreakdown, getCurrencyBalances, getCurrencyDisplay, getWeaponAttackModifier, isEquippable, readInventory, type CurrencyBalances, type CurrencyCode, type EquipmentItem, type InventoryEntry } from '../lib/equipment'
 import { useEquipmentCatalog } from '../lib/useEquipmentCatalog'
 import { applyHitPointAdjustment, applyHitPointDamage, availableSpellSlotLevels, availableSpellSlots, getInitialCharacterPlayState, healHitPoints, recoverFromLongRest, recoverFromShortRest, setTemporaryHitPoints, toggleSpellSlot } from '../lib/characterPlay'
 import { levelForExperience } from '../lib/experience'
@@ -124,7 +124,7 @@ function FrameColorDialog({ frameColor, frameSvg, landscape, theme, onCancel, on
           <span className="play-sheet__frame-color-preview-glass" />
           <span className="play-sheet__frame-color-preview-label">FORÇA</span>
           <strong>+3</strong>
-          <small>DESTREZA +1</small>
+          <small>14</small>
           <span aria-hidden="true" className="play-sheet__frame-color-preview-frame" style={previewFrameStyle} />
         </div>
       </div>
@@ -174,6 +174,130 @@ function selectedSpells(value: string, classId: string) {
   }
 }
 
+type CurrencyDraft = Record<CurrencyCode, string>
+
+function currencyDraftFromCp(currencyCp: number): CurrencyDraft {
+  const balances = getCurrencyBalances(currencyCp)
+  return Object.fromEntries(currencyDenominations.map(({ code }) => [code, String(balances[code])])) as CurrencyDraft
+}
+
+function CurrencyManagementDrawer({ initialCurrencyCp, theme, onClose, onSave }: {
+  initialCurrencyCp: number
+  theme: 'light' | 'dark'
+  onClose: () => void
+  onSave: (currencyCp: number) => Promise<boolean>
+}) {
+  const [draft, setDraft] = useState(() => currencyDraftFromCp(initialCurrencyCp))
+  const [conversionOpen, setConversionOpen] = useState(false)
+  const [source, setSource] = useState<CurrencyCode>('gp')
+  const [target, setTarget] = useState<CurrencyCode>('sp')
+  const [sourceAmount, setSourceAmount] = useState('1')
+  const [adjustments, setAdjustments] = useState<Partial<Record<CurrencyCode, number>>>({})
+  const [visibleCounters, setVisibleCounters] = useState<Partial<Record<CurrencyCode, boolean>>>({})
+  const [error, setError] = useState('')
+  const [saving, setSaving] = useState(false)
+  const savingRef = useRef(false)
+  const adjustmentTimers = useRef<Partial<Record<CurrencyCode, number>>>({})
+  const values = Object.fromEntries(currencyDenominations.map(({ code }) => [code, Number(draft[code])])) as CurrencyBalances
+  const validDraft = currencyDenominations.every(({ code }) => Number.isSafeInteger(values[code]) && values[code] >= 0)
+  const conversion = validDraft ? convertCurrency(values, source, target, Number(sourceAmount)) : null
+  const targetAmount = conversion ? conversion[target] - values[target] : 0
+  const sourceMaximum = validDraft ? values[source] : 0
+
+  useEffect(() => () => {
+    for (const timer of Object.values(adjustmentTimers.current)) if (timer !== undefined) window.clearTimeout(timer)
+  }, [])
+
+  function clearCounter(code: CurrencyCode) {
+    const timer = adjustmentTimers.current[code]
+    if (timer !== undefined) window.clearTimeout(timer)
+    delete adjustmentTimers.current[code]
+    setAdjustments((current) => ({ ...current, [code]: 0 }))
+    setVisibleCounters((current) => ({ ...current, [code]: false }))
+  }
+
+  function changeCoin(code: CurrencyCode, change: number) {
+    const current = Number(draft[code])
+    const next = Math.max(0, (Number.isSafeInteger(current) ? current : 0) + change)
+    if (!Number.isSafeInteger(next)) return
+    setDraft((balances) => ({ ...balances, [code]: String(next) }))
+    setAdjustments((balances) => ({ ...balances, [code]: (balances[code] ?? 0) + change }))
+    setVisibleCounters((balances) => ({ ...balances, [code]: true }))
+    const previousTimer = adjustmentTimers.current[code]
+    if (previousTimer !== undefined) window.clearTimeout(previousTimer)
+    adjustmentTimers.current[code] = window.setTimeout(() => {
+      setAdjustments((balances) => ({ ...balances, [code]: 0 }))
+      setVisibleCounters((balances) => ({ ...balances, [code]: false }))
+      delete adjustmentTimers.current[code]
+    }, 3000)
+  }
+
+  function changeCoinInput(code: CurrencyCode, value: string) {
+    clearCounter(code)
+    setDraft((current) => ({ ...current, [code]: value }))
+  }
+
+  function applyConversion() {
+    if (!conversion) {
+      setError('Informe uma quantidade válida disponível e escolha outra moeda de destino.')
+      return
+    }
+    setDraft(Object.fromEntries(currencyDenominations.map(({ code }) => [code, String(conversion[code])])) as CurrencyDraft)
+    for (const { code } of currencyDenominations) clearCounter(code)
+    setError('')
+    setConversionOpen(false)
+  }
+
+  async function saveAndClose() {
+    if (savingRef.current) return
+    if (!validDraft) {
+      setError('Informe valores inteiros e não negativos para todas as moedas.')
+      setConversionOpen(false)
+      return
+    }
+    const currencyCp = currencyDenominations.reduce((total, { code, valueCp }) => total + values[code] * valueCp, 0)
+    if (!Number.isSafeInteger(currencyCp)) {
+      setError('O total de moedas é muito alto para ser salvo.')
+      return
+    }
+    savingRef.current = true
+    setSaving(true)
+    const saved = await onSave(currencyCp)
+    savingRef.current = false
+    setSaving(false)
+    if (saved) onClose()
+    else setError('Não foi possível salvar o dinheiro. Tente novamente.')
+  }
+
+  const footer = conversionOpen
+    ? <div className="play-sheet__currency-footer"><Button disabled={saving} onClick={() => { setConversionOpen(false); setError('') }} variant="secondary">Cancelar</Button><Button disabled={!conversion || saving} onClick={applyConversion}>Converter</Button></div>
+    : <div className="play-sheet__currency-footer"><Button disabled={saving} onClick={() => { setError(''); setConversionOpen(true) }} variant="secondary">Converter moedas</Button><Button disabled={saving} onClick={() => void saveAndClose()}>{saving ? 'Salvando…' : 'Concluir'}</Button></div>
+
+  return <Modal open title={conversionOpen ? 'Converter moedas' : 'Seu dinheiro'} theme={theme} onClose={() => void saveAndClose()} footer={footer} variant="drawer">
+    <div className="play-sheet__currency-drawer">
+      {conversionOpen ? <div className="play-sheet__currency-converter">
+        <div className="play-sheet__currency-converter-row"><label><input aria-label="Quantidade de moedas de origem" max={sourceMaximum} min="1" onChange={(event) => setSourceAmount(event.target.value)} step="1" type="number" value={sourceAmount} /><small>Máx. {sourceMaximum}</small></label><select aria-label="Moeda de origem" onChange={(event) => setSource(event.target.value as CurrencyCode)} value={source}>{currencyDenominations.map(({ code, label }) => <option key={code} value={code}>{label}</option>)}</select></div>
+        <span className="play-sheet__currency-converter-to">para</span>
+        <div className="play-sheet__currency-converter-row"><input aria-label="Quantidade de moedas de destino" disabled value={targetAmount} /><select aria-label="Moeda de destino" onChange={(event) => setTarget(event.target.value as CurrencyCode)} value={target}>{currencyDenominations.map(({ code, label }) => <option key={code} value={code}>{label}</option>)}</select></div>
+      </div> : <div aria-label="Saldos de moedas" className="play-sheet__currency-list">
+        {currencyDenominations.map(({ code, label }) => <article className={`play-sheet__currency-card${visibleCounters[code] ? ' play-sheet__currency-card--counter' : ''}`} key={code}>
+          <img alt="" src={`/images/coins/${code}.png`} />
+          <strong>{label}</strong>
+          <div className="play-sheet__currency-adjuster">
+            <button aria-label={`Diminuir moedas de ${label}`} disabled={saving || Number(draft[code]) <= 0} onClick={() => changeCoin(code, -1)} type="button">−</button>
+            <div className="play-sheet__currency-value">
+              {visibleCounters[code] && (adjustments[code] ?? 0) !== 0 && <small className={(adjustments[code] ?? 0) > 0 ? 'play-sheet__currency-adjustment--positive' : 'play-sheet__currency-adjustment--negative'}>{(adjustments[code] ?? 0) > 0 ? '+' : ''}{adjustments[code]}</small>}
+              <input aria-label={`Quantidade de moedas de ${label}`} disabled={saving} min="0" onChange={(event) => changeCoinInput(code, event.target.value)} step="1" type="number" value={draft[code]} />
+            </div>
+            <button aria-label={`Aumentar moedas de ${label}`} disabled={saving} onClick={() => changeCoin(code, 1)} type="button">+</button>
+          </div>
+        </article>)}
+      </div>}
+      {error && <p className="play-sheet__currency-error" role="alert">{error}</p>}
+    </div>
+  </Modal>
+}
+
 export function CharacterPlaySheet({
   character,
   characterClass,
@@ -210,6 +334,7 @@ export function CharacterPlaySheet({
   const [conditionSavePending, setConditionSavePending] = useState(false)
   const [levelUpTarget, setLevelUpTarget] = useState<{ experience: number; level: number } | null>(null)
   const [hpDialogOpen, setHpDialogOpen] = useState(false)
+  const [detailsDialog, setDetailsDialog] = useState<'armorClass' | 'initiative' | null>(null)
   const [hpAmount, setHpAmount] = useState('')
   const [hpDraft, setHpDraft] = useState<CharacterPlayState>(() => getInitialCharacterPlayState(character))
   const [hpAdjustment, setHpAdjustment] = useState(0)
@@ -223,6 +348,7 @@ export function CharacterPlaySheet({
   const [pendingSpellSlots, setPendingSpellSlots] = useState<string[]>([])
   const [storedSearchOpen, setStoredSearchOpen] = useState(false)
   const [storedSearch, setStoredSearch] = useState('')
+  const [currencyDrawerOpen, setCurrencyDrawerOpen] = useState(false)
   const [equipmentDrawerOpen, setEquipmentDrawerOpen] = useState(false)
   const [equipmentSearch, setEquipmentSearch] = useState('')
   const [equipmentFilter, setEquipmentFilter] = useState<'all' | 'weapons' | 'armor' | 'magic' | 'general'>('all')
@@ -265,6 +391,9 @@ export function CharacterPlaySheet({
   const hpStartingStateRef = useRef<CharacterPlayState>(playState)
   const hpDraftRef = useRef<CharacterPlayState>(playState)
   const hpAdjustmentRef = useRef(0)
+  const canRestoreTemporaryHp = hpAdjustmentVisible
+    && hpAdjustment < 0
+    && hpDraft.temporaryHp < hpStartingStateRef.current.temporaryHp
   const currentConditionIcon = activeConditionNames.length
     ? conditions.find(([name]) => name === activeConditionNames[conditionIconIndex % activeConditionNames.length])?.[1] ?? 'sick'
     : 'sick'
@@ -316,6 +445,7 @@ export function CharacterPlaySheet({
   const walkingSpeed = baseSpeed + unarmoredMovement
   const unarmoredBonus = classId === 'barbaro' ? modifier(character.abilities.constitution) : classId === 'monge' && !equippedShield ? modifier(character.abilities.wisdom) : 0
   const armorClass = calculateArmorClass(equippedArmor, equippedShield, dexterityModifier, unarmoredBonus)
+  const armorClassBreakdown = getArmorClassBreakdown(equippedArmor, equippedShield, dexterityModifier, unarmoredBonus)
 
   useEffect(() => {
     if (activeConditionNames.length < 2) return
@@ -525,8 +655,9 @@ export function CharacterPlaySheet({
   function persistInventory(nextInventory: ReturnType<typeof readInventory>) {
     const nextEquipment = JSON.stringify(nextInventory)
     setOptimisticEquipment({ base: character.equipment, value: nextEquipment })
-    void save({ ...character, equipment: nextEquipment }).then((saved) => {
+    return save({ ...character, equipment: nextEquipment }).then((saved) => {
       if (!saved) setOptimisticEquipment((current) => current?.value === nextEquipment ? null : current)
+      return saved
     })
   }
 
@@ -701,12 +832,13 @@ export function CharacterPlaySheet({
   function renderAbilities() {
     const proficientSaves = savingThrowsByClass[classId] ?? []
     const passiveSkills = ['Percepção', 'Investigação', 'Intuição']
-    return <div className="play-sheet__abilities">
+    return <>
+      <div className="play-sheet__abilities">
       <div className="play-sheet__overview">
         {renderAbilityScores()}
         <div className="play-sheet__vitals">
-          <div className="play-sheet__vital--default"><div aria-hidden="true" className="play-sheet__vital-glass" /><div aria-hidden="true" className="play-sheet__vital-frame" style={frameStyle('defaultStat', frameSvgPaths.defaultStat)} /><strong>{signed(initiative)}</strong><span>Iniciativa</span></div><div className="play-sheet__vital--default"><div aria-hidden="true" className="play-sheet__vital-glass" /><div aria-hidden="true" className="play-sheet__vital-frame" style={frameStyle('defaultStat', frameSvgPaths.defaultStat)} /><strong>{walkingSpeed}m</strong><span>DSL</span></div>
-          <div className="play-sheet__vital--armor"><div aria-hidden="true" className="play-sheet__vital-glass" /><div aria-hidden="true" className="play-sheet__vital-frame" style={frameStyle('armorClass', frameSvgPaths.armorClass)} /><strong>{armorClass}</strong><span>CA</span></div>
+          <div aria-haspopup="dialog" aria-label={`Iniciativa ${signed(initiative)}, abrir explicação`} className="play-sheet__vital--default play-sheet__vital--interactive" onClick={() => setDetailsDialog('initiative')} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setDetailsDialog('initiative') } }} role="button" tabIndex={0}><div aria-hidden="true" className="play-sheet__vital-glass" /><div aria-hidden="true" className="play-sheet__vital-frame" style={frameStyle('defaultStat', frameSvgPaths.defaultStat)} /><strong>{signed(initiative)}</strong><span>Iniciativa</span></div><div className="play-sheet__vital--default"><div aria-hidden="true" className="play-sheet__vital-glass" /><div aria-hidden="true" className="play-sheet__vital-frame" style={frameStyle('defaultStat', frameSvgPaths.defaultStat)} /><strong>{walkingSpeed}m</strong><span>DSL</span></div>
+          <div aria-haspopup="dialog" aria-label={`Classe de armadura ${armorClass}, abrir detalhes`} className="play-sheet__vital--armor play-sheet__vital--interactive" onClick={() => setDetailsDialog('armorClass')} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setDetailsDialog('armorClass') } }} role="button" tabIndex={0}><div aria-hidden="true" className="play-sheet__vital-glass" /><div aria-hidden="true" className="play-sheet__vital-frame" style={frameStyle('armorClass', frameSvgPaths.armorClass)} /><strong>{armorClass}</strong><span>CA</span></div>
         </div>
       </div>
       <section className="play-sheet__panel play-sheet__checks">
@@ -749,7 +881,20 @@ export function CharacterPlaySheet({
         </div>)}
         </FramedGlassPanel>
       </section>
-    </div>
+      </div>
+      {detailsDialog && <Modal open title={detailsDialog === 'initiative' ? 'Iniciativa' : 'Classe de Armadura'} theme={darkMode ? 'dark' : 'light'} onClose={() => setDetailsDialog(null)} footer={<Button onClick={() => setDetailsDialog(null)} variant="secondary">Fechar</Button>}>
+        {detailsDialog === 'initiative'
+          ? <div className="play-sheet__stat-details">
+            <p className="play-sheet__initiative-explanation">No início de todos os combates, você joga sua iniciativa realizando um teste de Destreza. A iniciativa determina a ordem dos turnos das criaturas envolvidas no combate, como descrito no capítulo 9.</p>
+            <div className="play-sheet__stat-detail-row"><span>Modificador de Destreza</span><strong>{signed(initiative)}</strong></div>
+          </div>
+          : <div className="play-sheet__stat-details">
+            <p className="play-sheet__armor-class-total">Classe de Armadura atual <strong>{armorClass}</strong></p>
+            <div className="play-sheet__armor-class-breakdown">{armorClassBreakdown.map(({ key, label, value }) => <div className="play-sheet__stat-detail-row" key={key}><span>{label}</span><strong>{key === 'base' ? value : signed(value)}</strong></div>)}</div>
+            {equippedArmor?.armor && <p className="play-sheet__armor-class-note">{equippedArmor.armor.strength ? `Requisito de Força ${equippedArmor.armor.strength}. ` : ''}{equippedArmor.armor.stealthDisadvantage ? 'Esta armadura impõe desvantagem em Furtividade.' : ''}</p>}
+          </div>}
+      </Modal>}
+    </>
   }
 
   function renderFeatures() {
@@ -836,7 +981,7 @@ export function CharacterPlaySheet({
             : Boolean(entry.itemId) && isEquippable(item)
               ? <button onClick={() => toggleEquipped(entry.id)} type="button">Equipar</button>
               : <span aria-label="Não equipável" title="Apenas armas e armaduras podem ser equipadas">—</span>}
-          {!equipped && <button aria-label={`Excluir ${entry.name}`} className="play-sheet__inventory-delete" onClick={() => deleteStoredEquipment(entry.id)} title={`Excluir ${entry.name}`} type="button"><span aria-hidden="true" className="material-symbols-rounded">delete</span></button>}
+          {!equipped && <button aria-label={`Excluir ${entry.name}`} className="play-sheet__inventory-delete" onClick={() => setInventoryEntryToDelete(entry)} title={`Excluir ${entry.name}`} type="button"><span aria-hidden="true" className="material-symbols-rounded">delete</span></button>}
         </span>
       </div>
     }
@@ -857,7 +1002,7 @@ export function CharacterPlaySheet({
         {storedSearchOpen && <input aria-label="Pesquisar equipamentos guardados" onChange={(event) => setStoredSearch(event.target.value)} placeholder="Pesquisar equipamento" ref={storedSearchRef} type="search" value={storedSearch} />}
         <button aria-label={storedSearchOpen ? 'Fechar pesquisa' : 'Pesquisar equipamentos guardados'} onClick={() => { if (storedSearchOpen) { setStoredSearch(''); setStoredSearchOpen(false) } else setStoredSearchOpen(true) }} type="button"><span aria-hidden="true" className="material-symbols-rounded">{storedSearchOpen ? 'close' : 'search'}</span></button>
         <button aria-label="Adicionar equipamento" onClick={() => { setStoredSearch(''); setEquipmentSearch(''); setEquipmentFilter('all'); setEquipmentItemToAdd(null); setEquipmentDrawerOpen(true) }} type="button"><span aria-hidden="true" className="material-symbols-rounded">add</span></button>
-        <span aria-label={`${currency.amount} moedas de ${currency.name}`} className="play-sheet__currency-balance" role="img"><img alt="" src={`/images/coins/${currency.code}.png`} />{currency.amount}</span>
+        <button aria-label={`Gerenciar dinheiro: ${currency.amount} moedas de ${currency.name}`} className="play-sheet__currency-balance" onClick={() => setCurrencyDrawerOpen(true)} type="button"><img alt="" src={`/images/coins/${currency.code}.png`} />{currency.amount}</button>
       </div></header>
         <div className="play-sheet__inventory-table"><div className="play-sheet__inventory-row play-sheet__inventory-row--heading"><span>Item</span><span>Ataque</span><span>Quant.</span><span>Peso</span><span>Ações</span></div>
           {storedItems.map((entry) => renderInventoryRow(entry, false))}
@@ -888,6 +1033,7 @@ export function CharacterPlaySheet({
           </>}
         </div>
       </dialog>
+      {currencyDrawerOpen && <CurrencyManagementDrawer initialCurrencyCp={inventory.currencyCp} onClose={() => setCurrencyDrawerOpen(false)} onSave={(currencyCp) => persistInventory({ ...inventory, currencyCp })} theme={darkMode ? 'dark' : 'light'} />}
     </div>
   }
 
@@ -991,6 +1137,7 @@ export function CharacterPlaySheet({
         initialSlide={tabs.indexOf(activeTab)}
         noSwipingSelector="button, a, input, select, textarea, [role='dialog'], .play-sheet__inventory-table"
         onSlideChange={(swiper) => setActiveTab(tabs[swiper.activeIndex])}
+        onSlideChangeTransitionEnd={(swiper) => swiper.updateAutoHeight(0)}
         onSwiper={(swiper) => { sheetSwiperRef.current = swiper }}
         speed={300}
       >
@@ -1047,7 +1194,7 @@ export function CharacterPlaySheet({
         <span className="play-sheet__condition-option-text"><strong>{name}</strong><small>{description}</small></span>
       </label>)}{saveError && <p className="play-sheet__conditions-save-error" role="alert">{saveError}</p>}</div>
     </Modal>}
-    {selectedInventoryEntry && <Modal open title={selectedInventoryEntry.name} theme={darkMode ? 'dark' : 'light'} onClose={() => setSelectedInventoryEntry(null)} footer={<Button onClick={() => setSelectedInventoryEntry(null)} variant="secondary">Fechar</Button>}>
+    {selectedInventoryEntry && <Modal open title={selectedInventoryEntry.name} theme={darkMode ? 'dark' : 'light'} onClose={() => setSelectedInventoryEntry(null)} footer={<Button onClick={() => setSelectedInventoryEntry(null)} variant="secondary">Fechar</Button>} variant="drawer">
       <div className="play-sheet__inventory-details">
         <dl>
           <div><dt>Quantidade no inventário</dt><dd>{selectedInventoryEntry.quantity}</dd></div>
@@ -1078,7 +1225,7 @@ export function CharacterPlaySheet({
         <div className="play-sheet__hp-adjuster">
           <button aria-label="Diminuir pontos de vida; segure para diminuir de cinco em cinco" onClick={() => { if (hpHoldTriggeredRef.current) { hpHoldTriggeredRef.current = false; return } changeHpByButtons(-1) }} onPointerCancel={stopHpButtonHold} onPointerDown={() => startHpButtonHold(-1)} onPointerLeave={stopHpButtonHold} onPointerUp={stopHpButtonHold} type="button">−</button>
           <div aria-live="polite" className="play-sheet__hp-current-value">{hpAdjustmentVisible && hpAdjustment !== 0 && <small className={`play-sheet__hp-adjustment${hpAdjustment > 0 ? ' play-sheet__hp-adjustment--positive' : ' play-sheet__hp-adjustment--negative'}`}>{hpAdjustment > 0 ? '+' : ''}{hpAdjustment}</small>}<span className="play-sheet__hp-current-total"><strong>{hpDraft.currentHp}</strong>{hpDraft.temporaryHp > 0 && <span className="play-sheet__hp-temporary-value">+{hpDraft.temporaryHp}</span>}<span> / {maxHp}</span></span></div>
-          <button aria-label="Aumentar pontos de vida; segure para aumentar de cinco em cinco" onClick={() => { if (hpHoldTriggeredRef.current) { hpHoldTriggeredRef.current = false; return } changeHpByButtons(1) }} onPointerCancel={stopHpButtonHold} onPointerDown={() => startHpButtonHold(1)} onPointerLeave={stopHpButtonHold} onPointerUp={stopHpButtonHold} type="button">+</button>
+          <button aria-label="Aumentar pontos de vida; segure para aumentar de cinco em cinco" disabled={hpDraft.currentHp >= maxHp && !canRestoreTemporaryHp} onClick={() => { if (hpHoldTriggeredRef.current) { hpHoldTriggeredRef.current = false; return } changeHpByButtons(1) }} onPointerCancel={stopHpButtonHold} onPointerDown={() => startHpButtonHold(1)} onPointerLeave={stopHpButtonHold} onPointerUp={stopHpButtonHold} type="button">+</button>
         </div>
         <div className="play-sheet__hp-actions">
           <button className="play-sheet__hp-damage" disabled={!Number(hpAmount) || Number(hpAmount) <= 0} onClick={() => applyHpAmount(applyHitPointDamage)} type="button">Dano</button>

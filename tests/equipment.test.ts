@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { addInventoryItem, addPack, calculateArmorClass, emptyInventory, equipOneInventoryUnit, equipmentGrantFingerprint, findEquipment, getCurrencyDisplay, getWeaponAttackModifier, isEquippable, readInventory, reconcileEquipment } from '../src/lib/equipment'
+import { addInventoryItem, addPack, calculateArmorClass, convertCurrency, currencyDenominations, emptyInventory, equipOneInventoryUnit, equipmentGrantFingerprint, findEquipment, getArmorClassBreakdown, getCurrencyBalances, getCurrencyDisplay, getWeaponAttackModifier, isEquippable, readInventory, reconcileEquipment } from '../src/lib/equipment'
 import { startingEquipmentPlan, type EquipmentContext } from '../src/lib/startingEquipment'
 import { loadEquipmentCatalogFixture } from './fixtures/equipmentCatalog'
 
@@ -14,6 +14,10 @@ const context = (className = 'Mago'): EquipmentContext => ({
 })
 const count = (inventory: ReturnType<typeof emptyInventory>, id: string) => inventory.entries.filter(entry => entry.itemId === id).reduce((sum, entry) => sum + entry.quantity, 0)
 
+test('currency denominations are ordered from lowest to highest value', () => {
+  assert.deepEqual(currencyDenominations.map(({ code }) => code), ['cp', 'sp', 'ep', 'gp', 'pp'])
+})
+
 test('currency display chooses the largest exact coin denomination without rounding', () => {
   assert.deepEqual(getCurrencyDisplay(1000), { amount: 1, code: 'pp', name: 'platina' })
   assert.deepEqual(getCurrencyDisplay(200), { amount: 2, code: 'gp', name: 'ouro' })
@@ -21,6 +25,24 @@ test('currency display chooses the largest exact coin denomination without round
   assert.deepEqual(getCurrencyDisplay(60), { amount: 6, code: 'sp', name: 'prata' })
   assert.deepEqual(getCurrencyDisplay(25), { amount: 25, code: 'cp', name: 'cobre' })
   assert.deepEqual(getCurrencyDisplay(0), { amount: 0, code: 'gp', name: 'ouro' })
+})
+
+test('currency balances split total copper into denomination counts without losing value', () => {
+  const balances = getCurrencyBalances(1726)
+  assert.deepEqual(balances, { gp: 7, sp: 2, ep: 0, cp: 6, pp: 1 })
+  assert.equal(currencyDenominations.reduce((total, { code, valueCp }) => total + balances[code] * valueCp, 0), 1726)
+})
+
+test('currency conversion spends only complete source-coin groups and preserves total value', () => {
+  const balances = { gp: 3, sp: 17, ep: 1, cp: 4, pp: 0 }
+  const converted = convertCurrency(balances, 'sp', 'gp', 17)
+  assert.deepEqual(converted, { ...balances, sp: 7, gp: 4 })
+  assert.equal(currencyDenominations.reduce((total, { code, valueCp }) => total + converted![code] * valueCp, 0),
+    currencyDenominations.reduce((total, { code, valueCp }) => total + balances[code] * valueCp, 0))
+  assert.deepEqual(convertCurrency(balances, 'gp', 'sp', 2), { ...balances, gp: 1, sp: 37 })
+  assert.equal(convertCurrency(balances, 'cp', 'gp', 4), null)
+  assert.equal(convertCurrency(balances, 'sp', 'gp', 18), null)
+  assert.equal(convertCurrency(balances, 'gp', 'gp', 1), null)
 })
 
 test('only catalog weapons and armor can be equipped', () => {
@@ -92,6 +114,18 @@ test('armor class uses the equipped armor, its Dexterity limit and the shield', 
   assert.equal(calculateArmorClass(chainShirt, undefined, -1), 12)
   assert.equal(calculateArmorClass(halfPlate, shield, 3), 19)
   assert.equal(calculateArmorClass(undefined, undefined, 2, 3), 15)
+
+  assert.deepEqual(getArmorClassBreakdown(halfPlate, shield, 3).map(({ key, value }) => [key, value]), [
+    ['base', 15],
+    ['dexterity', 2],
+    ['shield', 2],
+  ])
+  assert.deepEqual(getArmorClassBreakdown(undefined, shield, 2, 3).map(({ key, value }) => [key, value]), [
+    ['base', 10],
+    ['dexterity', 2],
+    ['unarmored-defense', 3],
+    ['shield', 2],
+  ])
 })
 
 test('catalog contains every concrete PDF table row and references real pack components', () => {

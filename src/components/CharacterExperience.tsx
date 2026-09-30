@@ -60,35 +60,41 @@ export function ExperienceDialog({
   onCancel: () => void
   onConfirm: (experiencePoints: number) => Promise<boolean>
 }) {
-  const [draftPoints, setDraftPoints] = useState(experiencePoints)
+  const [draftPoints, setDraftPoints] = useState(String(experiencePoints))
   const [amount, setAmount] = useState('')
   const [saving, setSaving] = useState(false)
-  const currentLevel = levelForExperience(draftPoints)
+  const parsedDraftPoints = Number(draftPoints)
+  const draftIsValid = draftPoints !== '' && Number.isSafeInteger(parsedDraftPoints) && parsedDraftPoints >= 0
+  const currentPoints = draftIsValid ? parsedDraftPoints : 0
+  const parsedAmount = Number(amount)
+  const amountIsValid = amount !== '' && Number.isSafeInteger(parsedAmount) && parsedAmount > 0
+  const currentLevel = levelForExperience(currentPoints)
   const nextLevelThreshold = experienceThresholds[currentLevel]
 
   function adjustExperience(direction: -1 | 1) {
-    const parsed = Number(amount)
-    const whole = Math.trunc(parsed)
-    if (!Number.isFinite(parsed) || whole <= 0) return
-    setDraftPoints((current) => Math.max(0, current + direction * whole))
+    if (!draftIsValid || !amountIsValid) return
+    setDraftPoints(String(Math.max(0, currentPoints + direction * parsedAmount)))
     setAmount('')
   }
 
   async function confirm() {
+    if (!draftIsValid || saving) return
     setSaving(true)
-    const saved = await onConfirm(draftPoints)
+    const saved = await onConfirm(currentPoints)
     setSaving(false)
     if (saved) onCancel()
   }
 
-  return <Modal open title="Pontos de experiência" theme={theme} onClose={() => { if (!saving) onCancel() }} footer={<Button disabled={saving} onClick={() => void confirm()}>{saving ? 'Salvando…' : 'Concluir'}</Button>}>
+  return <Modal open title="Gerenciar pontos de experiência" theme={theme} onClose={() => { if (!saving) onCancel() }} footer={<div className="play-sheet__experience-footer"><Button disabled={saving} onClick={onCancel} variant="secondary">Cancelar</Button><Button disabled={!draftIsValid || saving} onClick={() => void confirm()}>{saving ? 'Salvando…' : 'Concluir'}</Button></div>}>
     <div className="play-sheet__experience-dialog">
-      <p className="play-sheet__experience-current">XP atual: <strong>{formatExperience(draftPoints)}</strong></p>
-      <p className="play-sheet__experience-current">{nextLevelThreshold === undefined ? 'Nível máximo alcançado.' : `Faltam ${formatExperience(nextLevelThreshold - draftPoints)} XP para o nível ${currentLevel + 1}.`}</p>
+      <div className="play-sheet__experience-summary">
+        <input aria-label="Pontos de experiência atuais" autoFocus className="play-sheet__experience-total-input" inputMode="numeric" min="0" onChange={(event) => setDraftPoints(event.target.value)} step="1" type="number" value={draftPoints} />
+        <p aria-live="polite" className="play-sheet__experience-current">{!draftIsValid ? 'Informe um valor inteiro de XP igual ou maior que zero.' : nextLevelThreshold === undefined ? 'Nível máximo alcançado.' : `Faltam ${formatExperience(nextLevelThreshold - currentPoints)} XP para o nível ${currentLevel + 1}.`}</p>
+      </div>
       <div className="play-sheet__experience-controls">
-        <button className="play-sheet__experience-remove" disabled={!amount || Number(amount) <= 0 || saving || draftPoints === 0} onClick={() => void adjustExperience(-1)} type="button">Remover XP</button>
-        <input aria-label="Quantidade de XP" autoFocus inputMode="numeric" min="1" onChange={(event) => setAmount(event.target.value)} step="1" type="number" value={amount} />
-        <button className="play-sheet__experience-add" disabled={!amount || Number(amount) <= 0 || saving} onClick={() => void adjustExperience(1)} type="button">Adicionar XP</button>
+        <button className="play-sheet__experience-remove" disabled={!amountIsValid || !draftIsValid || saving || currentPoints === 0} onClick={() => void adjustExperience(-1)} type="button">Remover</button>
+        <input aria-label="Quantidade de XP para ajustar" inputMode="numeric" min="1" onChange={(event) => setAmount(event.target.value)} step="1" type="number" value={amount} />
+        <button className="play-sheet__experience-add" disabled={!amountIsValid || !draftIsValid || saving} onClick={() => void adjustExperience(1)} type="button">Adicionar</button>
       </div>
     </div>
   </Modal>

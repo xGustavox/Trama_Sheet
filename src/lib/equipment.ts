@@ -25,12 +25,29 @@ export const findEquipment = (catalog: EquipmentCatalog, name: string) => catalo
   [item.id, item.name, ...item.aliases].some(alias => normalizeEquipment(alias) === normalizeEquipment(name)))
 export const isEquippable = (item: EquipmentItem | undefined) => Boolean(item?.armor || item?.weapon)
 
+export function getArmorClassBreakdown(armor: EquipmentItem | undefined, shield: EquipmentItem | undefined, dexterityModifier: number, unarmoredBonus = 0) {
+  const hasArmor = Boolean(armor?.armor)
+  const armorDexterityBonus = !armor?.armor || armor.armor.dexterity === 'full'
+    ? dexterityModifier
+    : armor.armor.dexterity === 'max2' ? Math.min(2, dexterityModifier) : 0
+
+  return [
+    { key: 'base', label: armor?.armor ? `Armadura · ${armor.name}` : 'Base sem armadura', value: armor?.armor?.ac ?? 10 },
+    {
+      key: 'dexterity',
+      label: armor?.armor?.dexterity === 'none' ? 'Destreza (não aplicada)' : armor?.armor?.dexterity === 'max2' ? 'Destreza (máx. +2)' : 'Destreza',
+      value: armorDexterityBonus,
+    },
+    ...(!hasArmor && unarmoredBonus !== 0
+      ? [{ key: 'unarmored-defense', label: 'Defesa sem armadura', value: unarmoredBonus }]
+      : []),
+    { key: 'shield', label: shield?.armor ? `Escudo · ${shield.name}` : 'Escudo (não equipado)', value: shield?.armor?.ac ?? 0 },
+  ]
+}
+
 export function calculateArmorClass(armor: EquipmentItem | undefined, shield: EquipmentItem | undefined, dexterityModifier: number, unarmoredBonus = 0) {
-  if (!armor?.armor) return 10 + dexterityModifier + unarmoredBonus + (shield?.armor?.ac ?? 0)
-  const armorDexterityBonus = armor.armor.dexterity === 'none'
-    ? 0
-    : armor.armor.dexterity === 'max2' ? Math.min(2, dexterityModifier) : dexterityModifier
-  return armor.armor.ac + armorDexterityBonus + (shield?.armor?.ac ?? 0)
+  return getArmorClassBreakdown(armor, shield, dexterityModifier, unarmoredBonus)
+    .reduce((total, contribution) => total + contribution.value, 0)
 }
 
 const simpleWeaponClasses = new Set(['barbaro', 'bardo', 'bruxo', 'clerigo', 'druida', 'guerreiro', 'ladino', 'monge', 'paladino', 'patrulheiro'])
@@ -288,6 +305,44 @@ export function getCurrencyDisplay(currencyCp: number) {
   const denomination = (currencyCp > 0 && denominations.find(({ value }) => currencyCp % value === 0))
     || denominations.find(({ code }) => code === 'gp')!
   return { amount: currencyCp / denomination.value, code: denomination.code, name: denomination.name }
+}
+
+export const currencyDenominations = [
+  { code: 'cp', label: 'Cobre', valueCp: 1 },
+  { code: 'sp', label: 'Prata', valueCp: 10 },
+  { code: 'ep', label: 'Electrum', valueCp: 50 },
+  { code: 'gp', label: 'Ouro', valueCp: 100 },
+  { code: 'pp', label: 'Platina', valueCp: 1000 },
+] as const
+
+export type CurrencyCode = typeof currencyDenominations[number]['code']
+export type CurrencyBalances = Record<CurrencyCode, number>
+
+export function getCurrencyBalances(currencyCp: number): CurrencyBalances {
+  let remaining = Math.max(0, Math.trunc(currencyCp))
+  const balances = Object.fromEntries(currencyDenominations.map(({ code }) => [code, 0])) as CurrencyBalances
+  for (const { code, valueCp } of [...currencyDenominations].sort((left, right) => right.valueCp - left.valueCp)) {
+    balances[code] = Math.floor(remaining / valueCp)
+    remaining %= valueCp
+  }
+  return balances
+}
+
+export function convertCurrency(balances: CurrencyBalances, source: CurrencyCode, target: CurrencyCode, amount: number): CurrencyBalances | null {
+  if (source === target || !Number.isSafeInteger(amount) || amount < 1 || amount > balances[source]) return null
+
+  const sourceValue = currencyDenominations.find(({ code }) => code === source)!.valueCp
+  const targetValue = currencyDenominations.find(({ code }) => code === target)!.valueCp
+  const ratio = Math.max(sourceValue, targetValue) / Math.min(sourceValue, targetValue)
+  const sourceSpent = sourceValue > targetValue ? amount : Math.floor(amount / ratio) * ratio
+  const targetReceived = sourceValue > targetValue ? amount * ratio : Math.floor(amount / ratio)
+  if (targetReceived < 1 || !Number.isSafeInteger(balances[target] + targetReceived)) return null
+
+  return {
+    ...balances,
+    [source]: balances[source] - sourceSpent,
+    [target]: balances[target] + targetReceived,
+  }
 }
 
 export function equipmentDetails(item: EquipmentItem) {

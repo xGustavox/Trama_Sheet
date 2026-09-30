@@ -56,9 +56,23 @@ test('button adjustments consume temporary hit points first and reverse within t
     temporaryHp: 0,
   })
   assert.deepEqual(applyHitPointAdjustment(startingState, 0, 30), startingState)
+  assert.deepEqual(applyHitPointAdjustment(startingState, 2, 30), {
+    ...startingState,
+    currentHp: 22,
+  })
   assert.deepEqual(applyHitPointAdjustment({ ...startingState, currentHp: 30 }, 2, 30), {
     ...startingState,
     currentHp: 30,
+  })
+  assert.deepEqual(applyHitPointAdjustment({ ...startingState, currentHp: 30 }, -3, 30), {
+    ...startingState,
+    currentHp: 30,
+    temporaryHp: 7,
+  })
+  assert.deepEqual(applyHitPointAdjustment({ ...startingState, currentHp: 30 }, -2, 30), {
+    ...startingState,
+    currentHp: 30,
+    temporaryHp: 8,
   })
   assert.deepEqual(applyHitPointAdjustment({ ...startingState, currentHp: 3 }, -20, 30), {
     ...startingState,
