@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type TouchEvent } from 'react'
 import { classFeatures, getSpellSlotsAtClassLevel } from '../lib/classFeatures'
 import type { CharacterDetails, CharacterPlayState } from '../lib/characterData'
-import { addInventoryItem, calculateArmorClass, equipOneInventoryUnit, getWeaponAttackModifier, isEquippable, readInventory, type EquipmentItem, type InventoryEntry } from '../lib/equipment'
+import { addInventoryItem, calculateArmorClass, equipOneInventoryUnit, getCurrencyDisplay, getWeaponAttackModifier, isEquippable, readInventory, type EquipmentItem, type InventoryEntry } from '../lib/equipment'
 import { useEquipmentCatalog } from '../lib/useEquipmentCatalog'
 import { applyHitPointDamage, availableSpellSlotLevels, availableSpellSlots, getInitialCharacterPlayState, healHitPoints, recoverFromLongRest, recoverFromShortRest, setTemporaryHitPoints, toggleSpellSlot } from '../lib/characterPlay'
 import { levelForExperience } from '../lib/experience'
@@ -184,6 +184,7 @@ export function CharacterPlaySheet({
   const dexterityModifier = modifier(character.abilities.dexterity)
   const equipmentValue = optimisticEquipment?.base === character.equipment ? optimisticEquipment.value : character.equipment
   const inventory = useMemo(() => readInventory(equipmentValue, catalog ?? undefined), [equipmentValue, catalog])
+  const currency = getCurrencyDisplay(inventory.currencyCp)
   const equippedItems = inventory.entries.filter((entry) => entry.equipped)
   const equippedGear = equippedItems.map((entry) => ({ entry, item: entry.itemId ? catalog?.items.find((item) => item.id === entry.itemId) : undefined }))
   const equippedArmor = equippedGear.find(({ item }) => item?.armor && !item.armor.shield)?.item
@@ -558,7 +559,7 @@ export function CharacterPlaySheet({
         {storedSearchOpen && <input aria-label="Pesquisar equipamentos guardados" onChange={(event) => setStoredSearch(event.target.value)} placeholder="Pesquisar equipamento" ref={storedSearchRef} type="search" value={storedSearch} />}
         <button aria-label={storedSearchOpen ? 'Fechar pesquisa' : 'Pesquisar equipamentos guardados'} onClick={() => { if (storedSearchOpen) { setStoredSearch(''); setStoredSearchOpen(false) } else setStoredSearchOpen(true) }} type="button"><span aria-hidden="true" className="material-symbols-rounded">{storedSearchOpen ? 'close' : 'search'}</span></button>
         <button aria-label="Adicionar equipamento" onClick={() => { setStoredSearch(''); setEquipmentSearch(''); setEquipmentFilter('all'); setSelectedEquipmentIds([]); setEquipmentDrawerOpen(true) }} type="button"><span aria-hidden="true" className="material-symbols-rounded">add</span></button>
-        <span>{(inventory.currencyCp / 100).toFixed(0)} po</span>
+        <span aria-label={`${currency.amount} moedas de ${currency.name}`} className="play-sheet__currency-balance" role="img"><img alt="" src={`/images/coins/${currency.code}.png`} />{currency.amount}</span>
       </div></header>
         <div className="play-sheet__inventory-table"><div className="play-sheet__inventory-row play-sheet__inventory-row--heading"><span>Item</span><span>Ataque</span><span>Quant.</span><span>Peso</span><span>Ações</span></div>
           {storedItems.map((entry) => renderInventoryRow(entry, false))}
