@@ -54,6 +54,8 @@ export type CharacterDetails = {
   spells: string
   feats: string
   playState?: CharacterPlayState
+  frameColor?: string
+  darkMode?: boolean
 }
 
 export type CharacterDraft = {

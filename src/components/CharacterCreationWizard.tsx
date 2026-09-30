@@ -7,11 +7,15 @@ import { supabase } from '../lib/supabase'
 import { feats, getFeatAbilityBonus, getFeatPrerequisiteFailure } from '../lib/feats'
 import { canSelectSpellAtSlot, groupSpellChoicesByLevel } from '../lib/spellSelection'
 import type { AbilityScoreMethod, CharacterDetails, CharacterDraft, PrimalPath, PrimalTotem, PrimalTotemChoices } from '../lib/characterData'
+import { experienceThresholds, levelForExperience } from '../lib/experience'
 import { Button } from './Button'
 import { EquipmentEditor } from './EquipmentEditor'
-import { equipmentCatalog, equipmentGrantFingerprint, readInventory } from '../lib/equipment'
+import { Modal } from './Modal'
+import { equipmentGrantFingerprint, readInventory } from '../lib/equipment'
+import { useEquipmentCatalog } from '../lib/useEquipmentCatalog'
+import { classArmorProficiencies } from '../lib/classArmorProficiencies'
 import { startingEquipmentPlan, type EquipmentContext } from '../lib/startingEquipment'
-import { cantripsByClass, leveledSpellsByClass, spellcastingAbilityByClass } from '../lib/spellCatalog'
+import { cantripsByClass, getSpellListForSelection, spellcastingAbilityByClass } from '../lib/spellCatalog'
 import { getSpellDetails } from '../lib/spellDetails'
 import 'cropperjs/dist/cropper.css'
 import './CharacterCreationWizard.css'
@@ -168,12 +172,6 @@ const barbarianPathFeatures: Record<Exclude<PrimalPath, ''>, {
       },
     },
   ],
-}
-
-const experienceThresholds = [0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000, 85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000]
-
-function levelForExperience(experience: number) {
-  return experienceThresholds.reduce((level, threshold, index) => experience >= threshold ? index + 1 : level, 1)
 }
 
 const languageOptions = [
@@ -374,7 +372,7 @@ const classProficiencies: Record<string, { saves: string[]; skillCount: number; 
     saves: ['Força', 'Constituição'],
     skillCount: 2,
     skills: ['Adestrar Animais', 'Atletismo', 'Intimidação', 'Natureza', 'Percepção', 'Sobrevivência'],
-    armor: ['Armaduras leves', 'Armaduras médias', 'Escudos'],
+    armor: classArmorProficiencies.barbaro,
     weapons: ['Armas simples', 'Armas marciais'],
     tools: [],
   },
@@ -382,7 +380,7 @@ const classProficiencies: Record<string, { saves: string[]; skillCount: number; 
     saves: ['Destreza', 'Carisma'],
     skillCount: 3,
     skills: ['Acrobacia', 'Adestrar Animais', 'Arcanismo', 'Atletismo', 'Atuação', 'Enganação', 'Furtividade', 'História', 'Intimidação', 'Intuição', 'Investigação', 'Medicina', 'Natureza', 'Percepção', 'Persuasão', 'Prestidigitação', 'Religião', 'Sobrevivência'],
-    armor: ['Armaduras leves'],
+    armor: classArmorProficiencies.bardo,
     weapons: ['Armas simples', 'Bestas de mão', 'Espadas longas', 'Rapieiras', 'Espadas curtas'],
     instrumentChoiceCount: 3,
   },
@@ -390,19 +388,19 @@ const classProficiencies: Record<string, { saves: string[]; skillCount: number; 
     saves: ['Sabedoria', 'Carisma'],
     skillCount: 2,
     skills: ['Arcanismo', 'Enganação', 'História', 'Intimidação', 'Investigação', 'Natureza', 'Religião'],
-    armor: ['Armaduras leves'],
+    armor: classArmorProficiencies.bruxo,
     weapons: ['Armas simples'],
     tools: [],
   },
-  clerigo: { saves: ['Sabedoria', 'Carisma'], skillCount: 2, skills: ['História', 'Intuição', 'Medicina', 'Persuasão', 'Religião'], armor: ['Armaduras leves', 'Armaduras médias', 'Escudos'], weapons: ['Armas simples'], tools: [] },
-  druida: { saves: ['Inteligência', 'Sabedoria'], skillCount: 2, skills: ['Arcanismo', 'Adestrar Animais', 'Intuição', 'Medicina', 'Natureza', 'Percepção', 'Religião', 'Sobrevivência'], armor: ['Armaduras leves', 'Armaduras médias', 'Escudos'], weapons: ['Clavas', 'Adagas', 'Dardos', 'Azagaias', 'Maças', 'Bordões', 'Cimitarras', 'Foices', 'Fundas', 'Lanças'], tools: ['Kit de herbalismo'] },
-  feiticeiro: { saves: ['Constituição', 'Carisma'], skillCount: 2, skills: ['Arcanismo', 'Enganação', 'Intuição', 'Intimidação', 'Persuasão', 'Religião'], armor: [], weapons: ['Adagas', 'Dardos', 'Fundas', 'Bordões', 'Bestas leves'], tools: [] },
-  guerreiro: { saves: ['Força', 'Constituição'], skillCount: 2, skills: ['Acrobacia', 'Adestrar Animais', 'Atletismo', 'História', 'Intuição', 'Intimidação', 'Percepção', 'Sobrevivência'], armor: ['Todas as armaduras', 'Escudos'], weapons: ['Armas simples', 'Armas marciais'], tools: [] },
-  ladino: { saves: ['Destreza', 'Inteligência'], skillCount: 4, skills: ['Acrobacia', 'Atletismo', 'Atuação', 'Enganação', 'Furtividade', 'Intimidação', 'Intuição', 'Investigação', 'Percepção', 'Persuasão', 'Prestidigitação'], armor: ['Armaduras leves'], weapons: ['Armas simples', 'Bestas de mão', 'Espadas longas', 'Rapieiras', 'Espadas curtas'], tools: ['Ferramentas de ladrão'] },
-  mago: { saves: ['Inteligência', 'Sabedoria'], skillCount: 2, skills: ['Arcanismo', 'História', 'Intuição', 'Investigação', 'Medicina', 'Religião'], armor: [], weapons: ['Adagas', 'Dardos', 'Fundas', 'Bordões', 'Bestas leves'], tools: [] },
-  monge: { saves: ['Força', 'Destreza'], skillCount: 2, skills: ['Acrobacia', 'Atletismo', 'Furtividade', 'História', 'Intuição', 'Religião'], armor: [], weapons: ['Armas simples', 'Espadas curtas'], toolChoiceOptions: [...artisanTools, ...musicalInstruments] },
-  paladino: { saves: ['Sabedoria', 'Carisma'], skillCount: 2, skills: ['Atletismo', 'Intimidação', 'Intuição', 'Medicina', 'Persuasão', 'Religião'], armor: ['Todas as armaduras', 'Escudos'], weapons: ['Armas simples', 'Armas marciais'], tools: [] },
-  patrulheiro: { saves: ['Força', 'Destreza'], skillCount: 3, skills: ['Acrobacia', 'Adestrar Animais', 'Atletismo', 'Furtividade', 'Intuição', 'Investigação', 'Natureza', 'Percepção', 'Sobrevivência'], armor: ['Armaduras leves', 'Armaduras médias', 'Escudos'], weapons: ['Armas simples', 'Armas marciais'], tools: [] },
+  clerigo: { saves: ['Sabedoria', 'Carisma'], skillCount: 2, skills: ['História', 'Intuição', 'Medicina', 'Persuasão', 'Religião'], armor: classArmorProficiencies.clerigo, weapons: ['Armas simples'], tools: [] },
+  druida: { saves: ['Inteligência', 'Sabedoria'], skillCount: 2, skills: ['Arcanismo', 'Adestrar Animais', 'Intuição', 'Medicina', 'Natureza', 'Percepção', 'Religião', 'Sobrevivência'], armor: classArmorProficiencies.druida, weapons: ['Clavas', 'Adagas', 'Dardos', 'Azagaias', 'Maças', 'Bordões', 'Cimitarras', 'Foices', 'Fundas', 'Lanças'], tools: ['Kit de herbalismo'] },
+  feiticeiro: { saves: ['Constituição', 'Carisma'], skillCount: 2, skills: ['Arcanismo', 'Enganação', 'Intuição', 'Intimidação', 'Persuasão', 'Religião'], armor: classArmorProficiencies.feiticeiro, weapons: ['Adagas', 'Dardos', 'Fundas', 'Bordões', 'Bestas leves'], tools: [] },
+  guerreiro: { saves: ['Força', 'Constituição'], skillCount: 2, skills: ['Acrobacia', 'Adestrar Animais', 'Atletismo', 'História', 'Intuição', 'Intimidação', 'Percepção', 'Sobrevivência'], armor: classArmorProficiencies.guerreiro, weapons: ['Armas simples', 'Armas marciais'], tools: [] },
+  ladino: { saves: ['Destreza', 'Inteligência'], skillCount: 4, skills: ['Acrobacia', 'Atletismo', 'Atuação', 'Enganação', 'Furtividade', 'Intimidação', 'Intuição', 'Investigação', 'Percepção', 'Persuasão', 'Prestidigitação'], armor: classArmorProficiencies.ladino, weapons: ['Armas simples', 'Bestas de mão', 'Espadas longas', 'Rapieiras', 'Espadas curtas'], tools: ['Ferramentas de ladrão'] },
+  mago: { saves: ['Inteligência', 'Sabedoria'], skillCount: 2, skills: ['Arcanismo', 'História', 'Intuição', 'Investigação', 'Medicina', 'Religião'], armor: classArmorProficiencies.mago, weapons: ['Adagas', 'Dardos', 'Fundas', 'Bordões', 'Bestas leves'], tools: [] },
+  monge: { saves: ['Força', 'Destreza'], skillCount: 2, skills: ['Acrobacia', 'Atletismo', 'Furtividade', 'História', 'Intuição', 'Religião'], armor: classArmorProficiencies.monge, weapons: ['Armas simples', 'Espadas curtas'], toolChoiceOptions: [...artisanTools, ...musicalInstruments] },
+  paladino: { saves: ['Sabedoria', 'Carisma'], skillCount: 2, skills: ['Atletismo', 'Intimidação', 'Intuição', 'Medicina', 'Persuasão', 'Religião'], armor: classArmorProficiencies.paladino, weapons: ['Armas simples', 'Armas marciais'], tools: [] },
+  patrulheiro: { saves: ['Força', 'Destreza'], skillCount: 3, skills: ['Acrobacia', 'Adestrar Animais', 'Atletismo', 'Furtividade', 'Intuição', 'Investigação', 'Natureza', 'Percepção', 'Sobrevivência'], armor: classArmorProficiencies.patrulheiro, weapons: ['Armas simples', 'Armas marciais'], tools: [] },
 }
 
 const racialAbilityBonuses: Record<string, Record<string, number>> = {
@@ -856,6 +854,8 @@ type CharacterCreationWizardProps = {
   onDeletePortrait: (path: string) => Promise<void>
   onPersistDraft: (draft: Omit<CharacterDraft, 'id'> & { id?: string }) => Promise<CharacterDraft>
   onSidebarSelect: (section: SidebarSection) => void
+  theme: 'light' | 'dark'
+  onToggleTheme: () => void
   onStepChange: (step: number) => void
   onUploadPortrait: (file: File) => Promise<{ path: string; url: string }>
 }
@@ -930,10 +930,13 @@ function CharacterCreationWizardContent({
   onDeletePortrait,
   onPersistDraft,
   onSidebarSelect,
+  theme,
+  onToggleTheme,
   onStepChange,
   onUploadPortrait,
 }: CharacterCreationWizardProps) {
   const activeStep = initialStep
+  const { catalog: equipmentCatalog, loading: equipmentLoading, error: equipmentError, retry: retryEquipmentCatalog } = useEquipmentCatalog(true, activeStep >= 4)
   const [character, setCharacter] = useState(() => {
     const draft = initialCharacterData ?? initialDraft?.character
     if (!draft) return initialCharacter
@@ -994,10 +997,6 @@ function CharacterCreationWizardContent({
   const previousActiveStep = useRef(activeStep)
   const abilitiesRef = useRef<HTMLDivElement>(null)
   const firstAbilityInputRef = useRef<HTMLInputElement>(null)
-  const portraitCropDialogRef = useRef<HTMLDialogElement>(null)
-  const equipmentResetDialogRef = useRef<HTMLDialogElement>(null)
-  const cantripDialogRef = useRef<HTMLDialogElement>(null)
-  const featDialogRef = useRef<HTMLDialogElement>(null)
   const portraitCropperRef = useRef<ReactCropperElement>(null)
   const portraitCropSourceRef = useRef('')
   const className = normalizeTerm(classes.find((item) => item.id === character.characterClassId)?.name ?? '')
@@ -1045,6 +1044,10 @@ function CharacterCreationWizardContent({
     : className
   const availableCantrips = cantripsByClass[cantripClass] ?? []
   const spellCatalogClass = cantripClass
+  const circleTerrain = character.classFeatureChoices[
+    `${character.characterClassId}:circulo-da-terra:2:Terreno do Círculo:terra`
+  ]?.[0]
+  const availableLeveledSpells = getSpellListForSelection(spellCatalogClass, character.classSubclassId, circleTerrain)
   const spellcastingProgression = (() : { slots: number[]; selectionLimit: number | null; selectionKind: 'known' | 'prepared' | 'spellbook'; pactSlotLevel: number } => {
     const levelIndex = character.level - 1
     const halfCasterIndex = character.level - 3
@@ -1094,7 +1097,7 @@ function CharacterCreationWizardContent({
   })()
   const maxSpellLevel = spellcastingProgression.slots.length
   const spellLevelByName: Record<string, number> = Object.fromEntries(
-    Object.entries(leveledSpellsByClass[spellCatalogClass] ?? {}).flatMap(([level, spells]) => spells.map((spell) => [spell, Number(level)])),
+    Object.entries(availableLeveledSpells).flatMap(([level, spells]) => spells.map((spell) => [spell, Number(level)])),
   )
   const hasLearnedSpellProgression = spellcastingProgression.selectionKind !== 'prepared'
   const currentKnownSpellCount = hasLearnedSpellProgression
@@ -1174,45 +1177,10 @@ function CharacterCreationWizardContent({
   }, [onComplete, onClose, onDeletePortrait, onPersistDraft, onSidebarSelect, onStepChange, onUploadPortrait])
 
   useEffect(() => {
-    const dialog = portraitCropDialogRef.current
-    if (portraitCropSource) {
-      if (!dialog?.open) dialog?.showModal()
-    } else if (dialog?.open) {
-      dialog.close()
-    }
-    return () => dialog?.close()
-  }, [portraitCropSource])
-
-  useEffect(() => {
-    const dialog = equipmentResetDialogRef.current
-    if (equipmentResetAction) {
-      if (!dialog?.open) dialog?.showModal()
-    } else if (dialog?.open) {
-      dialog.close()
-    }
-    return () => dialog?.close()
-  }, [equipmentResetAction])
-
-  useEffect(() => {
-    const dialog = cantripDialogRef.current
-    if (cantripPanelOpen) {
-      if (!dialog?.open) dialog?.showModal()
-    } else if (dialog?.open) {
-      dialog.close()
-    }
-    return () => dialog?.close()
-  }, [cantripPanelOpen])
-
-  useEffect(() => {
-    const dialog = featDialogRef.current
-    if (featPanelOpen) {
-      if (!dialog?.open) dialog?.showModal()
-      const options = dialog?.querySelector<HTMLElement>('.wizard__cantrip-drawer-options')
-      if (options) options.scrollTop = 0
-    } else if (dialog?.open) {
-      dialog.close()
-    }
-    return () => dialog?.close()
+    if (!featPanelOpen) return
+    requestAnimationFrame(() => {
+      document.querySelector<HTMLElement>('.wizard__cantrip-drawer-options')?.scrollTo(0, 0)
+    })
   }, [featPanelOpen])
 
   useEffect(() => {
@@ -1549,10 +1517,10 @@ function CharacterCreationWizardContent({
       const candidate = update(current)
       const changesClassOrLevel = candidate.characterClassId !== current.characterClassId || candidate.level !== current.level
       const next = changesClassOrLevel ? update(resetClassAbilityScoreIncreases(current)) : candidate
-      const inventory = readInventory(current.equipment)
+      const inventory = readInventory(current.equipment, equipmentCatalog ?? undefined)
       return { ...next, equipment: JSON.stringify({ ...inventory, initialEquipmentConfirmed: false, choices: {} }) }
     })
-    if (readInventory(character.equipment).initialEquipmentConfirmed) setEquipmentResetAction(() => apply)
+    if (readInventory(character.equipment, equipmentCatalog ?? undefined).initialEquipmentConfirmed) setEquipmentResetAction(() => apply)
     else apply()
   }
 
@@ -2097,11 +2065,16 @@ function CharacterCreationWizardContent({
       }
     }
     if (step === 4) {
-      const inventory = readInventory(character.equipment)
-      const plan = startingEquipmentPlan(equipmentCatalog, getEquipmentContext(), inventory)
-      if (plan.missing.length) errors.equipment = `Complete as escolhas do equipamento inicial: ${plan.missing.join('; ')}.`
-      else if (!inventory.initialEquipmentConfirmed) errors.equipment = 'Confirme o equipamento inicial antes de continuar.'
-      else if (plan.grants.some(grant => inventory.applied[grant.key] !== equipmentGrantFingerprint(grant)) || Object.keys(inventory.applied).some(key => !plan.grants.some(grant => grant.key === key))) errors.equipment = 'Abra Equipamentos e aguarde a montagem do inventário antes de continuar.'
+      if (!equipmentCatalog) errors.equipment = equipmentError
+         ? 'Não foi possível carregar os equipamentos do Supabase. Tente novamente antes de continuar.'
+         : 'Aguarde o carregamento dos equipamentos antes de continuar.'
+      else {
+         const inventory = readInventory(character.equipment, equipmentCatalog)
+         const plan = startingEquipmentPlan(equipmentCatalog, getEquipmentContext(), inventory)
+         if (plan.missing.length) errors.equipment = `Complete as escolhas do equipamento inicial: ${plan.missing.join('; ')}.`
+         else if (!inventory.initialEquipmentConfirmed) errors.equipment = 'Confirme o equipamento inicial antes de continuar.'
+         else if (plan.grants.some(grant => inventory.applied[grant.key] !== equipmentGrantFingerprint(grant)) || Object.keys(inventory.applied).some(key => !plan.grants.some(grant => grant.key === key))) errors.equipment = 'Abra Equipamentos e aguarde a montagem do inventário antes de continuar.'
+       }
     }
     if (step === 5 && cantripCount > 0 && selectedCantrips.length !== cantripCount) {
       errors.cantrips = `Escolha ${cantripCount} truques para sua classe neste nível.`
@@ -2608,13 +2581,7 @@ function CharacterCreationWizardContent({
           })}
           {!showHigherClassLevels && character.level < 20 && <Button className="wizard__higher-levels-trigger" variant="secondary" type="button" onClick={() => setShowHigherClassLevels(true)}>Ver habilidades acima do nível {character.level}</Button>}
         </div>
-        <dialog
-          aria-labelledby="feat-drawer-title"
-          className="wizard__cantrip-drawer wizard__feat-drawer"
-          onCancel={(event) => { event.preventDefault(); setFeatPanelOpen(false) }}
-          onClick={(event) => { if (event.target === event.currentTarget) setFeatPanelOpen(false) }}
-          ref={featDialogRef}
-        >
+        <Modal open={featPanelOpen} title="Selecionar talento" theme={theme} variant="drawer" showHeader={false} onClose={() => setFeatPanelOpen(false)}>
           <div className="wizard__cantrip-drawer-content">
             <header>
               <div><h2 id="feat-drawer-title">Selecionar talento</h2><p>Nível {featPanelLevel} · Escolha um talento que atenda aos pré-requisitos.</p></div>
@@ -2641,7 +2608,7 @@ function CharacterCreationWizardContent({
               <Button disabled={!featDraft || Boolean(feats.find((item) => item.id === featDraft && getFeatPrerequisiteFailure(item, character.abilities, canCastFeats, featArmorProficiencies)))} onClick={confirmFeatSelection} type="button">Confirmar talento</Button>
             </footer>
           </div>
-        </dialog>
+        </Modal>
       </section>
     )
   }
@@ -3639,7 +3606,7 @@ function CharacterCreationWizardContent({
           : maxSpellLevel
         const panelOptions = selectionPanelLevel === 0
           ? availableCantrips
-          : Object.entries(leveledSpellsByClass[spellCatalogClass] ?? {})
+          : Object.entries(availableLeveledSpells)
             .filter(([level]) => Number(level) <= panelSpellLevelLimit)
             .flatMap(([, spells]) => spells)
         const availablePanelSpellLevels = [...new Set(panelOptions.map((name) => spellLevelByName[name]).filter((level) => level !== undefined))]
@@ -3789,13 +3756,7 @@ function CharacterCreationWizardContent({
                 </button>
               </>}
           </section>}
-          <dialog
-            aria-labelledby="cantrip-drawer-title"
-            className="wizard__cantrip-drawer"
-            onCancel={(event) => { event.preventDefault(); setCantripPanelOpen(false) }}
-            onClick={(event) => { if (event.target === event.currentTarget) setCantripPanelOpen(false) }}
-            ref={cantripDialogRef}
-          >
+          <Modal open={cantripPanelOpen} title="Selecionar magias" theme={theme} variant="drawer" showHeader={false} onClose={() => setCantripPanelOpen(false)}>
             <div className="wizard__cantrip-drawer-content">
               <header>
                 <div>
@@ -3841,7 +3802,7 @@ function CharacterCreationWizardContent({
                     ? selectedCantripSlots.some((spell, index) => index !== selectionPanelSlot && spell === name)
                     : hasLearnedSpellProgression && selectedKnownSpellSlots.some((spell, index) => index !== selectionPanelSlot && spell === name))
                   const spellLevel = selectionPanelLevel > 0
-                    ? Object.entries(leveledSpellsByClass[spellCatalogClass] ?? {}).find(([, spells]) => spells.includes(name))?.[0]
+                    ? Object.entries(availableLeveledSpells).find(([, spells]) => spells.includes(name))?.[0]
                     : undefined
                   const exceedsProgressionLimit = selectionPanelSlot !== null && spellLevel !== undefined && !canSelectSpellAtSlot(
                     selectedKnownSpellSlots.map((spell) => spellLevelByName[spell] ?? 0),
@@ -3874,7 +3835,7 @@ function CharacterCreationWizardContent({
                 <Button onClick={confirmSelection} type="button">Confirmar seleção</Button>
               </footer>
             </div>
-          </dialog>
+          </Modal>
         </>
       }
       case 6: {
@@ -3930,7 +3891,7 @@ function CharacterCreationWizardContent({
           ...clericKnowledgeLanguages,
         ]
         const reviewSkills = [...new Set([...(background?.skills ?? []), ...raceSkills, ...character.skillProficiencies, ...bardAdditionalSkills, ...clericKnowledgeSkills, ...clericNatureSkills])]
-        const reviewInventory = readInventory(character.equipment)
+        const reviewInventory = readInventory(character.equipment, equipmentCatalog ?? undefined)
         const reviewTools = [
           ...(background?.tools ?? []),
           ...(classProficiencies[normalizeTerm(selectedName(classes, character.characterClassId))]?.tools ?? []),
@@ -4215,9 +4176,7 @@ function CharacterCreationWizardContent({
           })}
           {!showHigherClassLevels && character.level < 20 && <Button className="wizard__higher-levels-trigger" variant="secondary" type="button" onClick={() => setShowHigherClassLevels(true)}>Ver habilidades acima do nível {character.level}</Button>}
         </div>
-        <dialog aria-labelledby="feat-drawer-title" className="wizard__cantrip-drawer wizard__feat-drawer"
-          onCancel={(event) => { event.preventDefault(); setFeatPanelOpen(false) }}
-          onClick={(event) => { if (event.target === event.currentTarget) setFeatPanelOpen(false) }} ref={featDialogRef}>
+        <Modal open={featPanelOpen} title="Selecionar talento" theme={theme} variant="drawer" showHeader={false} onClose={() => setFeatPanelOpen(false)}>
           <div className="wizard__cantrip-drawer-content">
             <header><div><h2 id="feat-drawer-title">Selecionar talento</h2><p>Nível {featPanelLevel} · Escolha um talento que atenda aos pré-requisitos.</p></div>
               <button aria-label="Fechar painel" className="wizard__cantrip-drawer-close" onClick={() => setFeatPanelOpen(false)} type="button"><span aria-hidden="true" className="material-symbols-rounded">close</span></button></header>
@@ -4239,7 +4198,7 @@ function CharacterCreationWizardContent({
             <footer><Button onClick={() => setFeatPanelOpen(false)} type="button" variant="secondary">Cancelar</Button>
               <Button disabled={!featDraft || Boolean(feats.find((item) => item.id === featDraft && getFeatPrerequisiteFailure(item, character.abilities, canCastFeats, featArmorProficiencies)))} onClick={confirmFeatSelection} type="button">Confirmar talento</Button></footer>
           </div>
-        </dialog>
+        </Modal>
       </section>
     )
   }
@@ -4268,9 +4227,9 @@ function CharacterCreationWizardContent({
     const context = getEquipmentContext()
     return (
       <EquipmentEditor value={character.equipment} onChange={value => updateCharacter('equipment', value)} onRequestInitialEquipmentReset={(change) => {
-        if (readInventory(character.equipment).initialEquipmentConfirmed) setEquipmentResetAction(() => change)
+        if (readInventory(character.equipment, equipmentCatalog ?? undefined).initialEquipmentConfirmed) setEquipmentResetAction(() => change)
         else change()
-      }} context={context} heading={null}>
+      }} context={context} heading={null} catalog={equipmentCatalog} loading={equipmentLoading} error={equipmentError} onRetry={retryEquipmentCatalog} theme={theme}>
         {feedback('equipment')}
       </EquipmentEditor>
     )
@@ -4286,7 +4245,7 @@ function CharacterCreationWizardContent({
   return (
     <main className="creation-page">
       <img aria-hidden="true" className="creation-mascot" src="/images/creation-mascot.png" alt="" />
-      <AppSidebar onSelect={(section) => {
+      <AppSidebar theme={theme} onToggleTheme={onToggleTheme} onSelect={(section) => {
         void persistDraftNow().then(() => callbacks.current.onSidebarSelect(section)).catch(() => undefined)
       }} />
 
@@ -4433,16 +4392,8 @@ function CharacterCreationWizardContent({
           </footer>
         </div>
       </div>
-      <dialog
-        aria-describedby="portrait-crop-description"
-        aria-labelledby="portrait-crop-title"
-        className="wizard__portrait-dialog"
-        onCancel={closePortraitCropper}
-        onClick={(event) => {
-          if (event.target === event.currentTarget) closePortraitCropper()
-        }}
-        ref={portraitCropDialogRef}
-      >
+      <Modal open={Boolean(portraitCropSource)} title="Ajustar foto de perfil" theme={theme} variant="crop" showHeader={false} onClose={closePortraitCropper}>
+        <div className="wizard__portrait-dialog">
         <h2 id="portrait-crop-title">Ajustar foto de perfil</h2>
         <p id="portrait-crop-description">Arraste a imagem para posicioná-la e use o controle de zoom para ajustar o recorte quadrado.</p>
         {portraitCropSource && <Cropper
@@ -4473,64 +4424,48 @@ function CharacterCreationWizardContent({
             <Button disabled={!portraitCropReady || portraitUploading} onClick={() => void confirmPortraitCrop()}>Usar recorte</Button>
           </div>
         </div>
-      </dialog>
-      {racialConfirmation && (
-        <div
-          className="wizard__racial-confirmation-backdrop"
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') setRacialConfirmation(null)
-          }}
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) setRacialConfirmation(null)
-          }}
-        >
-          <section
-            aria-labelledby="racial-confirmation-title"
-            aria-modal="true"
-            className="wizard__racial-confirmation"
-            role="dialog"
-          >
-            <h2 id="racial-confirmation-title">
-              {racialConfirmation === 'continue' ? 'Aplicar bônus raciais e continuar?' : 'Confirmar bônus raciais'}
-            </h2>
-            <p>
-              {racialConfirmation === 'continue'
-                ? 'Para avançar, estes aumentos raciais serão aplicados aos valores de habilidade:'
-                : 'Os aumentos raciais serão somados aos valores atuais.'}
-            </p>
-            <ul>
-              {racialBonusPreview.map(({ label, before, after, bonus }) => (
-                <li key={label}>
-                  <strong>{label}</strong>
-                  <span>{before} → {after} (+{bonus})</span>
-                </li>
-              ))}
-            </ul>
-            <div className="wizard__racial-confirmation-actions">
-              <Button autoFocus onClick={() => setRacialConfirmation(null)} variant="secondary">Cancelar</Button>
-              <Button onClick={() => void confirmRacialBonuses()}>
-                {racialConfirmation === 'continue' ? 'Aplicar aumento e continuar' : 'Confirmar aumento racial'}
-              </Button>
-            </div>
-          </section>
         </div>
-      )}
-      {equipmentResetAction && (
-        <dialog
-          aria-labelledby="equipment-reset-title"
-          className="wizard__equipment-reset-dialog"
-          onCancel={(event) => { event.preventDefault(); setEquipmentResetAction(null) }}
-          onClick={(event) => { if (event.target === event.currentTarget) setEquipmentResetAction(null) }}
-          ref={equipmentResetDialogRef}
-        >
-          <h2 id="equipment-reset-title">Reconfigurar equipamento inicial?</h2>
-          <p>Essa alteração afeta o equipamento inicial. Você precisará configurá-lo novamente antes de continuar. Os itens adicionados manualmente ao inventário serão mantidos.</p>
-          <div className="wizard__racial-confirmation-actions">
-            <Button autoFocus onClick={() => setEquipmentResetAction(null)} variant="secondary">Cancelar</Button>
-            <Button onClick={confirmStartingEquipmentReset}>Alterar e reconfigurar</Button>
-          </div>
-        </dialog>
-      )}
+      </Modal>
+      {racialConfirmation && <Modal
+        footer={<>
+          <Button autoFocus onClick={() => setRacialConfirmation(null)} variant="secondary">Cancelar</Button>
+          <Button onClick={() => void confirmRacialBonuses()}>
+            {racialConfirmation === 'continue' ? 'Aplicar aumento e continuar' : 'Confirmar aumento racial'}
+          </Button>
+        </>}
+        onClose={() => setRacialConfirmation(null)}
+        open={racialConfirmation !== null}
+        theme={theme}
+        title={racialConfirmation === 'continue' ? 'Aplicar bônus raciais e continuar?' : 'Confirmar bônus raciais'}
+      >
+        <div className="wizard__racial-confirmation">
+          <p>
+            {racialConfirmation === 'continue'
+              ? 'Para avançar, estes aumentos raciais serão aplicados aos valores de habilidade:'
+              : 'Os aumentos raciais serão somados aos valores atuais.'}
+          </p>
+          <ul>
+            {racialBonusPreview.map(({ label, before, after, bonus }) => (
+              <li key={label}>
+                <strong>{label}</strong>
+                <span>{before} → {after} (+{bonus})</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </Modal>}
+      {equipmentResetAction && <Modal
+        footer={<>
+          <Button autoFocus onClick={() => setEquipmentResetAction(null)} variant="secondary">Cancelar</Button>
+          <Button onClick={confirmStartingEquipmentReset}>Alterar e reconfigurar</Button>
+        </>}
+        onClose={() => setEquipmentResetAction(null)}
+        open={equipmentResetAction !== null}
+        theme={theme}
+        title="Reconfigurar equipamento inicial?"
+      >
+        <p>Essa alteração afeta o equipamento inicial. Você precisará configurá-lo novamente antes de continuar. Os itens adicionados manualmente ao inventário serão mantidos.</p>
+      </Modal>}
     </main>
   )
 }

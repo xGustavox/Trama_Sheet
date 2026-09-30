@@ -1,0 +1,81 @@
+BEGIN;
+
+ALTER TABLE public.equipment_items
+  DROP CONSTRAINT equipment_items_category_check,
+  ADD CONSTRAINT equipment_items_category_check
+    CHECK (category IN ('armor', 'weapons', 'tools', 'instruments', 'gear', 'magic'));
+
+INSERT INTO public.equipment_items (id, name, category, subcategory, data)
+SELECT id, name, 'magic', subcategory,
+  jsonb_build_object(
+    'id', id,
+    'name', name,
+    'category', 'magic',
+    'subcategory', subcategory,
+    'rarity', rarity,
+    'attunement', attunement,
+    'priceCp', price_cp,
+    'weightKg', NULL,
+    'unit', 'unidade',
+    'description', description,
+    'properties', ARRAY[]::text[],
+    'sourcePage', NULL,
+    'aliases', ARRAY[]::text[]
+  )
+FROM (VALUES
+  ('adaga-de-envenenamento', 'Adaga de Envenenamento', 'Adagas', 'rara', NULL, 800000, 'Concede +1 nas jogadas de ataque e dano. Como ação, cobre a lâmina com veneno por 1 minuto ou até acertar; o alvo faz Constituição CD 15 ou sofre 2d10 de dano de veneno e fica envenenado por 1 minuto. Recarrega ao amanhecer.'),
+  ('algemas-dimensionais', 'Algemas Dimensionais', 'Algemas', 'rara', NULL, 2000000, 'Prendem uma criatura incapacitada Pequena a Grande e impedem movimento extradimensional, teletransporte e viagem planar, mas não a passagem por portais. O usuário ou criatura designada pode removê-las; a cada 30 dias, o prisioneiro pode tentar Atletismo CD 30 para escapar, destruindo-as.'),
+  ('aljava-de-ehlonna', 'Aljava de Ehlonna', 'Aljavas', 'incomum', NULL, 200000, 'Tem três compartimentos extradimensionais e pesa no máximo 1 kg: o menor comporta 60 flechas, virotes ou similares; o médio, 18 azagaias ou similares; o maior, 6 objetos longos. Itens são sacados como de uma aljava ou bainha comum.'),
+  ('amuleto-protecao-deteccao-localizacao', 'Amuleto de Proteção contra Detecção e Localização', 'Amuletos', 'incomum', 'sim', 500000, 'Enquanto usado, oculta o portador de magias de adivinhação: ele não pode ser alvo delas nem percebido por sensores mágicos.'),
+  ('amuleto-de-saude', 'Amuleto de Saúde', 'Amuletos', 'rara', 'sim', 600000, 'Define Constituição como 19 enquanto usado; não tem efeito se o valor já for 19 ou maior.'),
+  ('amuleto-dos-planos', 'Amuleto dos Planos', 'Amuletos', 'muito raro', 'sim', 5000000, 'Como ação, permite tentar viagem planar para um local conhecido: Inteligência CD 15. Na falha, o usuário e criaturas e objetos próximos vão a um destino aleatório.'),
+  ('anel-de-acao-livre', 'Anel de Ação Livre', 'Anéis', 'rara', 'sim', 750000, 'Terreno difícil não custa deslocamento adicional; magias não reduzem o deslocamento nem deixam o usuário paralisado ou impedido.'),
+  ('anel-de-andar-na-agua', 'Anel de Andar na Água', 'Anéis', 'incomum', NULL, 500000, 'Permite ficar parado ou mover-se sobre líquidos como se fossem solo firme.'),
+  ('anel-de-armazenar-magia', 'Anel de Armazenar Magia', 'Anéis', 'rara', 'sim', 2000000, 'Armazena até 5 níveis de magia. Criaturas podem armazenar nele magias de 1º a 5º nível; o usuário sintonizado pode conjurá-las usando os parâmetros do conjurador original.'),
+  ('anel-de-calor', 'Anel de Calor', 'Anéis', 'incomum', 'sim', 150000, 'Concede resistência a frio e protege usuário, roupas e objetos carregados de temperaturas abaixo de −46 °C.'),
+  ('anel-de-cativar-animais', 'Anel de Cativar Animais', 'Anéis', 'rara', NULL, 1100000, 'Tem 3 cargas e recupera 1d3 ao amanhecer; uma carga conjura amizade animal, medo (apenas contra certas bestas) ou falar com animais.'),
+  ('anel-de-comandar-elementais', 'Anel de Comandar Elementais', 'Anéis', 'lendário', 'sim', 30000000, 'Ligado a um Plano Elemental, concede vantagens contra elementais daquele plano; tem 5 cargas e recupera 1d4 + 1 ao amanhecer. Ar: conjura dominar monstro contra elemental do ar; permite queda lenta e falar Auran; após ajudar a matar um elemental do ar, concede resistência elétrica, voo e magias de ar. Terra: conjura dominar monstro contra elemental da terra; ignora certos terrenos difíceis e permite falar Terran; após ajudar a matar um elemental da terra, concede resistência a ácido, passagem por terra e rocha e magias de terra. Fogo: conjura dominar monstro contra elemental do fogo; concede resistência a fogo e falar Ignan; após ajudar a matar um elemental do fogo, concede imunidade a fogo e magias de fogo. Água: conjura dominar monstro contra elemental da água; permite andar sobre líquidos e falar Aquan; após ajudar a matar um elemental da água, concede respiração aquática, natação e magias de água e gelo.'),
+  ('anel-de-escudo-mental', 'Anel de Escudo Mental', 'Anéis', 'incomum', 'sim', 500000, 'Impede leitura de pensamentos, detecção de mentiras, determinação de tendência ou revelação do tipo de criatura; comunicação telepática só ocorre com permissão. Pode ficar invisível. Se o usuário morrer, sua alma pode entrar no anel e comunicar-se telepaticamente com quem o usar.'),
+  ('anel-de-estrelas-cadentes', 'Anel de Estrelas Cadentes', 'Anéis', 'muito raro', 'ao ar livre durante a noite', 4000000, 'Sob penumbra ou escuridão, conjura globos de luz ou luz à vontade; tem 6 cargas e recupera 1d6 ao amanhecer. Fogo das Fadas: gasta 1 carga para conjurar fogo das fadas. Bola de Eletricidade: gasta 2 cargas para criar esferas elétricas móveis que causam dano quando uma criatura se aproxima. Estrelas Cadentes: gasta de 1 a 3 cargas para lançar fagulhas que causam dano de fogo em uma área.'),
+  ('anel-de-evasao', 'Anel de Evasão', 'Anéis', 'rara', 'sim', 1800000, 'Tem 3 cargas e recupera 1d3 ao amanhecer. Ao falhar em um teste de Destreza, pode gastar uma reação e uma carga para obter sucesso.'),
+  ('anel-de-invisibilidade', 'Anel de Invisibilidade', 'Anéis', 'lendário', 'sim', 10000000, 'Torna o usuário e seus pertences invisíveis até atacar, conjurar magia, remover o anel ou escolher ficar visível.'),
+  ('anel-de-invocacao-de-djinni', 'Anel de Invocação de Djinni', 'Anéis', 'lendário', 'sim', 35000000, 'Invoca um djinni específico, amigável e obediente, por até 1 hora com concentração. Após partir, só pode ser invocado novamente depois de 24 horas; se morrer, o anel perde a magia.'),
+  ('anel-de-natacao', 'Anel de Natação', 'Anéis', 'incomum', NULL, 250000, 'Concede deslocamento de natação de 12 m.'),
+  ('anel-de-protecao', 'Anel de Proteção', 'Anéis', 'rara', 'sim', 750000, 'Concede +1 na CA e nos testes de resistência.'),
+  ('anel-de-queda-suave', 'Anel de Queda Suave', 'Anéis', 'rara', 'sim', 600000, 'Durante uma queda, o usuário desce 18 m por rodada e não sofre dano de queda.'),
+  ('anel-de-visao-de-raio-x', 'Anel de Visão de Raio-X', 'Anéis', 'rara', 'sim', 2000000, 'Permite enxergar através de matéria sólida por 1 minuto, em um raio de 9 m, com limites conforme o material. Usos repetidos antes de descanso longo podem causar exaustão.'),
+  ('anel-de-refletir-magias', 'Anel de Refletir Magias', 'Anéis', 'lendário', 'sim', 10000000, 'Concede vantagem contra magias que tenham apenas o usuário como alvo; com resultado 20 contra magia de até 7º nível, pode refletir a magia ao conjurador.'),
+  ('anel-de-regeneracao', 'Anel de Regeneração', 'Anéis', 'muito raro', 'sim', 5000000, 'Recupera 1d6 PV a cada 10 minutos se o usuário tiver ao menos 1 PV; partes perdidas do corpo crescem novamente após 1d6 + 1 dias.'),
+  ('anel-de-resistencia', 'Anel de Resistência', 'Anéis', 'rara', 'sim', 1500000, 'Concede resistência ao tipo de dano indicado pela gema: ácido, frio, fogo, energia, elétrico, necrótico, veneno, psíquico, radiante ou trovejante.'),
+  ('anel-de-saltar', 'Anel de Saltar', 'Anéis', 'incomum', 'sim', 250000, 'Como ação bônus, conjura salto à vontade, apenas no próprio usuário.'),
+  ('anel-de-telecinesia', 'Anel de Telecinésia', 'Anéis', 'muito raro', 'sim', 5000000, 'Conjura telecinésia à vontade, mas só afeta objetos que não estejam sendo vestidos ou carregados.'),
+  ('anel-do-ariete', 'Anel do Aríete', 'Anéis', 'rara', 'sim', 900000, 'Tem 3 cargas; pode atacar à distância com uma cabeça de carneiro espectral, causando dano de energia e empurrando o alvo. Também pode tentar quebrar objetos.'),
+  ('anel-dos-tres-desejos', 'Anel dos Três Desejos', 'Anéis', 'lendário', NULL, 15000000, 'Tem 3 cargas; cada uma conjura desejo. Após a última, torna-se não mágico.'),
+  ('arco-do-juramento', 'Arco do Juramento', 'Arcos', 'muito raro', 'sim', 3500000, 'Designa um inimigo jurado. Contra ele, ataques à distância têm vantagem, ignoram coberturas inferiores à total e causam 3d6 de dano perfurante extra; enquanto ele viver, o usuário tem desvantagem com outras armas.'),
+  ('arma-mais-1', 'Arma +1', 'Armas mágicas', 'incomum', NULL, 500000, 'Concede +1 nas jogadas de ataque e dano.'),
+  ('arma-mais-2', 'Arma +2', 'Armas mágicas', 'rara', NULL, 2000000, 'Concede +2 nas jogadas de ataque e dano.'),
+  ('arma-mais-3', 'Arma +3', 'Armas mágicas', 'muito raro', NULL, 5000000, 'Concede +3 nas jogadas de ataque e dano.'),
+  ('arma-de-alerta', 'Arma de Alerta', 'Armas mágicas', 'incomum', 'sim', NULL, 'Concede vantagem na iniciativa e impede que o usuário e aliados próximos sejam surpreendidos; também desperta magicamente quem estiver dormindo quando começa um combate.'),
+  ('arma-viciosa', 'Arma Viciosa', 'Armas mágicas', 'rara', NULL, 1200000, 'Um resultado 20 no ataque causa 7 de dano adicional do tipo da arma.'),
+  ('armadura-mais-1', 'Armadura +1', 'Armaduras mágicas', 'rara', NULL, 1000000, 'Concede +1 na CA e reduz em 1 o dano não mágico de concussão, cortante e perfurante.'),
+  ('armadura-mais-2', 'Armadura +2', 'Armaduras mágicas', 'muito raro', NULL, 4000000, 'Concede +2 na CA e reduz em 2 o dano não mágico de concussão, cortante e perfurante.'),
+  ('armadura-mais-3', 'Armadura +3', 'Armaduras mágicas', 'lendário', NULL, 10000000, 'Concede +3 na CA e reduz em 3 o dano não mágico de concussão, cortante e perfurante.'),
+  ('armadura-ana', 'Armadura Anã', 'Armaduras mágicas', 'muito raro', NULL, 2200000, 'Concede +2 na CA; pode reduzir em 3 m um deslocamento forçado pelo solo, usando uma reação.'),
+  ('armadura-de-adamante', 'Armadura de Adamante', 'Armaduras mágicas', 'incomum', NULL, 400000, 'Transforma acertos críticos contra o usuário em ataques normais.'),
+  ('armadura-de-invulnerabilidade', 'Armadura de Invulnerabilidade', 'Armaduras mágicas', 'rara', 'sim', 12000000, 'Concede resistência a dano não mágico e pode conceder imunidade por 10 minutos; a propriedade especial recarrega ao amanhecer.'),
+  ('armadura-de-mitral', 'Armadura de Mitral', 'Armaduras mágicas', 'incomum', NULL, 200000, 'A versão de mitral remove desvantagem em Furtividade e requisitos de Força que a armadura normalmente teria.'),
+  ('armadura-de-placas-da-forma-eterea', 'Armadura de Placas da Forma Etérea', 'Armaduras mágicas', 'lendário', 'sim', 18000000, 'Conjura forma etérea por 10 minutos; recarrega ao amanhecer.'),
+  ('armadura-de-resistencia', 'Armadura de Resistência', 'Armaduras mágicas', 'rara', 'sim', 1500000, 'Concede resistência a um tipo de dano determinado pelo Mestre ou aleatoriamente.'),
+  ('armadura-de-vulnerabilidade', 'Armadura de Vulnerabilidade', 'Armaduras mágicas', 'rara', 'sim', 600000, 'Concede resistência a concussão, perfurante ou cortante. Maldição: o usuário fica vulnerável aos outros dois tipos; remover a armadura não encerra a maldição.'),
+  ('armadura-demoniaca', 'Armadura Demoníaca', 'Armaduras mágicas', 'muito raro', 'sim', 4500000, 'Concede +1 na CA, permite falar Abissal e transforma as manoplas em armas mágicas cortantes +1. Maldição: só pode ser removida por remover maldição ou magia similar; impõe desvantagem contra demônios e suas habilidades.'),
+  ('armadura-do-marinheiro', 'Armadura do Marinheiro', 'Armaduras mágicas', 'incomum', NULL, 300000, 'Concede natação igual ao deslocamento de caminhada e, submerso com 0 PV, leva o usuário 9 m em direção à superfície.'),
+  ('arremessador-anao', 'Arremessador Anão', 'Armas mágicas', 'muito raro', 'sim', 5000000, 'Martelo de guerra +3, arremessável; causa dano adicional, especialmente contra gigantes, e retorna à mão após o ataque.'),
+  ('asas-voadoras', 'Asas Voadoras', 'Itens maravilhosos', 'rara', 'sim', 2000000, 'Uma capa transforma-se em asas por até 1 hora, concedendo voo de 18 m; só pode ser usada novamente após 1d12 horas.'),
+  ('azagaia-de-relampago', 'Azagaia de Relâmpago', 'Armas mágicas', 'incomum', NULL, 200000, 'Ao ser arremessada com palavra de comando, vira uma linha de relâmpago que causa dano elétrico; a propriedade recarrega ao amanhecer.'),
+  ('bacia-de-comandar-elementais-da-agua', 'Bacia de Comandar Elementais da Água', 'Itens maravilhosos', 'rara', NULL, 2000000, 'Cheia de água, permite invocar um elemental da água; recarrega ao amanhecer.'),
+  ('baralho-das-ilusoes', 'Baralho das Ilusões', 'Itens maravilhosos', 'incomum', NULL, 400000, 'Puxar e lançar uma carta cria a ilusão da criatura correspondente. Interação física ou Investigação CD 15 revela a ilusão; depois de movida ou dissipada, a carta perde a magia.'),
+  ('baralho-das-surpresas', 'Baralho das Surpresas', 'Itens maravilhosos', 'lendário', NULL, 50000000, 'Cada carta puxada produz um efeito extraordinário, benéfico ou prejudicial: pode conceder riquezas, experiência ou desejos, alterar atributos, criar inimigos ou aprisionar corpo ou alma.'),
+  ('barco-dobravel', 'Barco Dobrável', 'Itens maravilhosos', 'rara', NULL, 800000, 'Uma caixa transforma-se em bote para quatro criaturas ou barco para quinze; objetos que estavam dentro permanecem na embarcação. A terceira palavra de comando dobra o barco novamente em caixa, desde que não haja criaturas a bordo. Objetos que não caibam ficam fora; os que couberem permanecem dentro.')
+) AS items(id, name, subcategory, rarity, attunement, price_cp, description);
+
+COMMIT;

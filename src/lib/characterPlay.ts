@@ -1,11 +1,47 @@
 import type { CharacterDetails, CharacterPlayState } from './characterData'
 
 export function getInitialCharacterPlayState(character: CharacterDetails): CharacterPlayState {
-  return character.playState ?? {
+  const state = character.playState ?? {
     currentHp: Number(character.maxHp) || 0,
     temporaryHp: 0,
     spentSpellSlots: [],
   }
+  const maxHp = Math.max(0, Number(character.maxHp) || 0)
+  return {
+    ...state,
+    currentHp: Math.max(0, Math.min(maxHp, Number(state.currentHp) || 0)),
+    temporaryHp: Math.max(0, Number(state.temporaryHp) || 0),
+  }
+}
+
+export function adjustHitPoints(state: CharacterPlayState, currentHpChange: number, temporaryHpChange: number, maxHp: number): CharacterPlayState {
+  return {
+    ...state,
+    currentHp: Math.max(0, Math.min(Math.max(0, maxHp), state.currentHp + Math.trunc(currentHpChange))),
+    temporaryHp: Math.max(0, state.temporaryHp + Math.trunc(temporaryHpChange)),
+  }
+}
+
+export function applyHitPointDamage(state: CharacterPlayState, amount: number): CharacterPlayState {
+  let remainingDamage = Math.max(0, Math.trunc(amount))
+  const temporaryDamage = Math.min(state.temporaryHp, remainingDamage)
+  remainingDamage -= temporaryDamage
+  return {
+    ...state,
+    temporaryHp: state.temporaryHp - temporaryDamage,
+    currentHp: Math.max(0, state.currentHp - remainingDamage),
+  }
+}
+
+export function healHitPoints(state: CharacterPlayState, amount: number, maxHp: number): CharacterPlayState {
+  return {
+    ...state,
+    currentHp: Math.min(Math.max(0, maxHp), state.currentHp + Math.max(0, Math.trunc(amount))),
+  }
+}
+
+export function setTemporaryHitPoints(state: CharacterPlayState, amount: number): CharacterPlayState {
+  return { ...state, temporaryHp: Math.max(0, Math.trunc(amount)) }
 }
 
 export function recoverFromShortRest(state: CharacterPlayState, characterClassId: string): CharacterPlayState {

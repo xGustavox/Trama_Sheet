@@ -3,6 +3,7 @@ import type { Session } from '@supabase/supabase-js'
 import { AppSidebar, type SidebarSection } from './components/AppSidebar'
 import { AuthScreen } from './components/AuthScreen'
 import { Button } from './components/Button'
+import { Modal } from './components/Modal'
 import { CharacterCreationWizard } from './components/CharacterCreationWizard'
 import { CharacterPlaySheet } from './components/CharacterPlaySheet'
 import type { CharacterDetails, CharacterDraft, CharacterRecord } from './lib/characterData'
@@ -172,6 +173,9 @@ function CharacterCard({
 }
 
 function App() {
+  const [theme, setTheme] = useState<'light' | 'dark'>(() =>
+    window.localStorage.getItem('trama-theme') === 'dark' ? 'dark' : 'light',
+  )
   const [session, setSession] = useState<Session | null>(null)
   const [authReady, setAuthReady] = useState(!supabase)
   const [authError, setAuthError] = useState('')
@@ -180,18 +184,26 @@ function App() {
   const [accountDataReady, setAccountDataReady] = useState(false)
   const [accountDataError, setAccountDataError] = useState('')
   const [feedback, setFeedback] = useState('')
+  const [characterPendingDeletion, setCharacterPendingDeletion] = useState<Character | null>(null)
   const [accountDialogOpen, setAccountDialogOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
   const [signOutError, setSignOutError] = useState('')
   const [draftPromptOpen, setDraftPromptOpen] = useState(false)
   const [draftResetError, setDraftResetError] = useState('')
-  const draftDialogRef = useRef<HTMLDialogElement>(null)
-  const accountDialogRef = useRef<HTMLDialogElement>(null)
   const authenticatedUserId = useRef<string | null>(null)
   const [characterCreationStep, setCharacterCreationStep] = useState(() => characterCreationRouteFromHash()?.step ?? null)
   const [editingCharacterId, setEditingCharacterId] = useState(() => characterCreationRouteFromHash()?.characterId ?? null)
   const [furthestCharacterCreationStep, setFurthestCharacterCreationStep] = useState(() => characterCreationRouteFromHash()?.step ?? 0)
   const [playingCharacterId, setPlayingCharacterId] = useState(() => characterPlayRouteFromHash())
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    window.localStorage.setItem('trama-theme', theme)
+  }, [theme])
+
+  function toggleTheme() {
+    setTheme((current) => current === 'dark' ? 'light' : 'dark')
+  }
 
   useEffect(() => {
     if (!supabase) return
@@ -267,24 +279,6 @@ function App() {
     window.addEventListener('hashchange', syncRoute)
     return () => window.removeEventListener('hashchange', syncRoute)
   }, [])
-
-  useEffect(() => {
-    if (!draftPromptOpen) return
-    const dialog = draftDialogRef.current
-    dialog?.showModal()
-    dialog?.querySelector<HTMLButtonElement>('.button--primary')?.focus()
-    return () => dialog?.close()
-  }, [draftPromptOpen])
-
-  useEffect(() => {
-    const dialog = accountDialogRef.current
-    if (accountDialogOpen) {
-      dialog?.showModal()
-      dialog?.querySelector<HTMLButtonElement>('.account-dialog__close')?.focus()
-    } else {
-      dialog?.close()
-    }
-  }, [accountDialogOpen])
 
   function notify(message: string) {
     setFeedback(message)
@@ -374,10 +368,10 @@ function App() {
 
   async function removeCharacter(character: Character) {
     if (!session?.user.id) return
-    if (!window.confirm(`Excluir ${character.name}? Esta ação não pode ser desfeita.`)) return
     try {
       await deleteOwnedCharacter(session.user.id, character.id)
       setCharacters((current) => current.filter(({ id }) => id !== character.id))
+      setCharacterPendingDeletion(null)
       notify(`${character.name} foi excluído da sua conta.`)
     } catch {
       notify('Não foi possível excluir o personagem. Tente novamente.')
@@ -462,30 +456,22 @@ function App() {
   }
 
   function renderAccountDialog() {
+    if (!accountDialogOpen) return null
     return (
-      <dialog
-        aria-labelledby="account-dialog-title"
-        className="draft-dialog account-dialog"
-        onCancel={() => setAccountDialogOpen(false)}
-        ref={accountDialogRef}
-      >
-        <button
-          aria-label="Fechar perfil"
-          className="account-dialog__close"
-          onClick={() => setAccountDialogOpen(false)}
-          type="button"
-        >
-          <Icon name="close" />
-        </button>
-        <h2 id="account-dialog-title">Sua conta</h2>
-        <p>{session?.user.email}</p>
-        {signOutError && <p className="account-dialog__error" role="alert">{signOutError}</p>}
-        <div className="draft-dialog__actions">
+      <Modal
+        footer={(
           <Button disabled={signingOut} onClick={signOut} variant="secondary">
             {signingOut ? 'Saindo…' : 'Sair da conta'}
           </Button>
-        </div>
-      </dialog>
+        )}
+        onClose={() => setAccountDialogOpen(false)}
+        open={accountDialogOpen}
+        theme={theme}
+        title="Sua conta"
+      >
+        <p>{session?.user.email}</p>
+        {signOutError && <p className="account-dialog__error" role="alert">{signOutError}</p>}
+      </Modal>
     )
   }
 
@@ -525,6 +511,10 @@ function App() {
       background={playingCharacter.record.background?.name ?? 'Antecedente não definido'}
       portrait={playingCharacter.portrait}
       landscape={playingCharacter.landscape}
+      onBack={() => {
+        setPlayingCharacterId(null)
+        navigateToHash('')
+      }}
       onSave={(details) => savePlayedCharacter(playingCharacter.id, details)}
     />
   }
@@ -561,6 +551,8 @@ function App() {
           onDeletePortrait={deletePortrait}
           onPersistDraft={persistCharacterDraft}
           onSidebarSelect={selectSidebarSection}
+          theme={theme}
+          onToggleTheme={toggleTheme}
           onStepChange={(step) => {
             setFurthestCharacterCreationStep((current) => Math.max(current, step))
             const editQuery = editingCharacterId ? `&character=${encodeURIComponent(editingCharacterId)}` : ''
@@ -574,20 +566,34 @@ function App() {
 
   return (
     <main className="home-page">
+      {characterPendingDeletion && <Modal
+        open={characterPendingDeletion !== null}
+        title="Excluir personagem?"
+        theme={theme}
+        onClose={() => setCharacterPendingDeletion(null)}
+        footer={<>
+          <Button onClick={() => setCharacterPendingDeletion(null)} variant="secondary">Cancelar</Button>
+          <Button onClick={() => characterPendingDeletion && void removeCharacter(characterPendingDeletion)} variant="danger">Excluir personagem</Button>
+        </>}
+      >
+        <p>Excluir {characterPendingDeletion?.name}? Esta ação não pode ser desfeita.</p>
+      </Modal>}
       {renderAccountDialog()}
-      {draftPromptOpen && (
-        <dialog ref={draftDialogRef} className="draft-dialog" aria-labelledby="draft-dialog-title" aria-describedby="draft-dialog-description" onCancel={() => setDraftPromptOpen(false)}>
-          <h2 id="draft-dialog-title">Retomar criação?</h2>
-          <p id="draft-dialog-description">Você já tem um personagem em criação. Deseja retomar de onde parou ou começar do zero?</p>
-          <p className="draft-dialog__warning">Começar do zero descarta o rascunho atual.</p>
-          {draftResetError && <p role="alert">{draftResetError}</p>}
-          <div className="draft-dialog__actions">
-            <Button variant="ghost" onClick={() => setDraftPromptOpen(false)}>Cancelar</Button>
-            <Button variant="secondary" onClick={restartCharacterCreation}>Começar do zero</Button>
-            <Button autoFocus onClick={resumeCharacterCreation}>Retomar criação</Button>
-          </div>
-        </dialog>
-      )}
+      {draftPromptOpen && <Modal
+        footer={<>
+          <Button variant="ghost" onClick={() => setDraftPromptOpen(false)}>Cancelar</Button>
+          <Button variant="secondary" onClick={restartCharacterCreation}>Começar do zero</Button>
+          <Button autoFocus onClick={resumeCharacterCreation}>Retomar criação</Button>
+        </>}
+        onClose={() => setDraftPromptOpen(false)}
+        open={draftPromptOpen}
+        theme={theme}
+        title="Retomar criação?"
+      >
+        <p>Você já tem um personagem em criação. Deseja retomar de onde parou ou começar do zero?</p>
+        <p className="draft-dialog__warning">Começar do zero descarta o rascunho atual.</p>
+        {draftResetError && <p role="alert">{draftResetError}</p>}
+      </Modal>}
       <img
         alt=""
         aria-hidden="true"
@@ -600,7 +606,7 @@ function App() {
         className="home-page__art home-page__art--right"
         src="/images/character-list-art-right.png"
       />
-      <AppSidebar onSelect={selectSidebarSection} />
+      <AppSidebar onSelect={selectSidebarSection} theme={theme} onToggleTheme={toggleTheme} />
       <div className="home-shell">
         <section aria-labelledby="welcome-title" className="welcome-row">
           <h1 id="welcome-title">Bem-vindo de volta, <em>{session.user.user_metadata.full_name || session.user.email?.split('@')[0] || 'aventureiro'}</em></h1>
@@ -619,7 +625,7 @@ function App() {
               key={character.id}
               onContinue={() => openCharacterPlay(character)}
               onEdit={() => openCharacterEditor(character)}
-              onDelete={() => void removeCharacter(character)}
+              onDelete={() => setCharacterPendingDeletion(character)}
             />
           ))}
         </section>}

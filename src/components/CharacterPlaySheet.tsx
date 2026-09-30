@@ -1,10 +1,14 @@
 import { useEffect, useMemo, useRef, useState, type TouchEvent } from 'react'
 import { classFeatures, getSpellSlotsAtClassLevel } from '../lib/classFeatures'
 import type { CharacterDetails, CharacterPlayState } from '../lib/characterData'
-import { addInventoryItem, calculateArmorClass, equipmentCatalog, equipOneInventoryUnit, getWeaponAttackModifier, isEquippable, readInventory, type EquipmentItem, type InventoryEntry } from '../lib/equipment'
-import { availableSpellSlotLevels, availableSpellSlots, getInitialCharacterPlayState, recoverFromLongRest, recoverFromShortRest, toggleSpellSlot } from '../lib/characterPlay'
+import { addInventoryItem, calculateArmorClass, equipOneInventoryUnit, getWeaponAttackModifier, isEquippable, readInventory, type EquipmentItem, type InventoryEntry } from '../lib/equipment'
+import { useEquipmentCatalog } from '../lib/useEquipmentCatalog'
+import { applyHitPointDamage, availableSpellSlotLevels, availableSpellSlots, getInitialCharacterPlayState, healHitPoints, recoverFromLongRest, recoverFromShortRest, setTemporaryHitPoints, toggleSpellSlot } from '../lib/characterPlay'
+import { levelForExperience } from '../lib/experience'
 import { getSpellDetails } from '../lib/spellDetails'
 import { tintSvgDataUri } from '../lib/tintSvg'
+import { ExperienceBar, ExperienceDialog, LevelUpDrawer } from './CharacterExperience'
+import { Modal } from './Modal'
 import { leveledSpellsByClass } from '../lib/spellCatalog'
 import { FramedGlassPanel } from './FramedGlassPanel'
 import './CharacterPlaySheet.css'
@@ -12,6 +16,7 @@ import './CharacterPlaySheet.css'
 type SheetTab = 'Habilidades' | 'Características' | 'Inventário' | 'Magias' | 'Sobre'
 type Skill = { name: string; ability: string }
 type SpellToCast = { name: string; level: number }
+type QuantityDialogState = { entryId: string; name: string; quantity: number }
 
 const tabs: SheetTab[] = ['Habilidades', 'Características', 'Inventário', 'Magias', 'Sobre']
 const inventoryCategories: { id: EquipmentItem['category']; label: string }[] = [
@@ -20,11 +25,13 @@ const inventoryCategories: { id: EquipmentItem['category']; label: string }[] = 
   { id: 'tools', label: 'Ferramentas' },
   { id: 'instruments', label: 'Instrumentos' },
   { id: 'gear', label: 'Gerais' },
+  { id: 'magic', label: 'Itens mágicos' },
 ]
 const frameSvgPaths = {
   ability: '/images/character-sheet/SVG/habilidades.svg',
   defaultStat: '/images/character-sheet/SVG/retangulo.svg',
   armorClass: '/images/character-sheet/SVG/escudo.svg',
+  savingThrow: '/images/character-sheet/SVG/borda_sem_ponta.svg',
   corner: '/images/character-sheet/SVG/cantov2.svg',
 } as const
 type FrameSvg = keyof typeof frameSvgPaths
@@ -78,6 +85,7 @@ function equipmentCategoryIcon(item: EquipmentItem | undefined, category = item?
   if (category === 'weapons' || item?.weapon) return 'swords'
   if (category === 'tools') return 'construction'
   if (category === 'instruments') return 'music_note'
+  if (category === 'magic') return 'auto_awesome'
   return 'inventory_2'
 }
 
@@ -113,6 +121,7 @@ export function CharacterPlaySheet({
   background,
   portrait,
   landscape,
+  onBack,
   onSave,
 }: {
   character: CharacterDetails
@@ -121,10 +130,20 @@ export function CharacterPlaySheet({
   background: string
   portrait: string
   landscape: string
+  onBack: () => void
   onSave: (character: CharacterDetails) => Promise<void>
 }) {
+  const { catalog, loading: equipmentLoading, error: equipmentError, retry: retryEquipment } = useEquipmentCatalog(false)
   const [activeTab, setActiveTab] = useState<SheetTab>('Habilidades')
   const [saveError, setSaveError] = useState('')
+  const [experienceDialogOpen, setExperienceDialogOpen] = useState(false)
+  const [levelUpTarget, setLevelUpTarget] = useState<{ experience: number; level: number } | null>(null)
+  const [hpDialogOpen, setHpDialogOpen] = useState(false)
+  const [hpAmount, setHpAmount] = useState('1')
+  const [selectedInventoryEntry, setSelectedInventoryEntry] = useState<InventoryEntry | null>(null)
+  const [quantityDialog, setQuantityDialog] = useState<QuantityDialogState | null>(null)
+  const [inventoryEntryToDelete, setInventoryEntryToDelete] = useState<InventoryEntry | null>(null)
+  const [quantityDraft, setQuantityDraft] = useState(1)
   const [spellToCast, setSpellToCast] = useState<SpellToCast | null>(null)
   const [selectedSpellSlotLevel, setSelectedSpellSlotLevel] = useState<number | null>(null)
   const [pendingSpellSlots, setPendingSpellSlots] = useState<string[]>([])
@@ -132,7 +151,7 @@ export function CharacterPlaySheet({
   const [storedSearch, setStoredSearch] = useState('')
   const [equipmentDrawerOpen, setEquipmentDrawerOpen] = useState(false)
   const [equipmentSearch, setEquipmentSearch] = useState('')
-  const [equipmentFilter, setEquipmentFilter] = useState<'all' | 'weapons' | 'armor' | 'general'>('all')
+  const [equipmentFilter, setEquipmentFilter] = useState<'all' | 'weapons' | 'armor' | 'magic' | 'general'>('all')
   const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([])
   const [optimisticEquipment, setOptimisticEquipment] = useState<{ base: string; value: string } | null>(null)
   const [frameColor, setFrameColor] = useState(() => {
@@ -164,9 +183,9 @@ export function CharacterPlaySheet({
   const strengthModifier = modifier(character.abilities.strength)
   const dexterityModifier = modifier(character.abilities.dexterity)
   const equipmentValue = optimisticEquipment?.base === character.equipment ? optimisticEquipment.value : character.equipment
-  const inventory = useMemo(() => readInventory(equipmentValue), [equipmentValue])
+  const inventory = useMemo(() => readInventory(equipmentValue, catalog ?? undefined), [equipmentValue, catalog])
   const equippedItems = inventory.entries.filter((entry) => entry.equipped)
-  const equippedGear = equippedItems.map((entry) => ({ entry, item: entry.itemId ? equipmentCatalog.items.find((item) => item.id === entry.itemId) : undefined }))
+  const equippedGear = equippedItems.map((entry) => ({ entry, item: entry.itemId ? catalog?.items.find((item) => item.id === entry.itemId) : undefined }))
   const equippedArmor = equippedGear.find(({ item }) => item?.armor && !item.armor.shield)?.item
   const equippedShield = equippedGear.find(({ item }) => item?.armor?.shield)?.item
   const classId = normalize(characterClass).replaceAll(' ', '-')
@@ -258,6 +277,18 @@ export function CharacterPlaySheet({
     }
   }
 
+  async function saveExperience(experience: number) {
+    const targetLevel = levelForExperience(experience)
+    const saved = await save({ ...character, experiencePoints: String(experience) })
+    if (saved && targetLevel > character.level) setLevelUpTarget({ experience, level: targetLevel })
+    return saved
+  }
+
+  function applyHpChange(change: (current: CharacterPlayState) => CharacterPlayState) {
+    const nextState = change(playState)
+    void save(character, nextState)
+  }
+
   function updatePlayState(update: (current: CharacterPlayState) => CharacterPlayState) {
     const nextState = update(playState)
     void save(character, nextState)
@@ -275,10 +306,10 @@ export function CharacterPlaySheet({
   function toggleEquipped(entryId: string) {
     const target = inventory.entries.find((entry) => entry.id === entryId)
     if (!target?.itemId) return
-    const item = equipmentCatalog.items.find((candidate) => candidate.id === target.itemId)
-    if (!target.equipped && !isEquippable(item)) return
+    const item = catalog?.items.find((candidate) => candidate.id === target.itemId)
+    if (!target.equipped && (!catalog || !isEquippable(item))) return
     const nextInventory = !target.equipped
-      ? equipOneInventoryUnit(inventory, entryId)
+      ? equipOneInventoryUnit(inventory, entryId, catalog!)
       : {
       ...inventory,
       entries: inventory.entries.map((entry) => ({ ...entry, equipped: entry.id === entryId ? !entry.equipped : entry.equipped })),
@@ -302,9 +333,10 @@ export function CharacterPlaySheet({
   }
 
   function confirmAddEquipment() {
+    if (!catalog) return
     let nextInventory = inventory
     for (const itemId of [...selectedEquipmentIds].reverse()) {
-      const item = equipmentCatalog.items.find((candidate) => candidate.id === itemId)
+      const item = catalog.items.find((candidate) => candidate.id === itemId)
       if (!item) continue
       nextInventory = addInventoryItem(nextInventory, item)
       const addedEntry = nextInventory.entries.find((entry) => entry.itemId === item.id && entry.source === 'manual' && !entry.equipped)
@@ -319,6 +351,27 @@ export function CharacterPlaySheet({
   function deleteStoredEquipment(entryId: string) {
     const nextInventory = { ...inventory, entries: inventory.entries.filter((entry) => entry.id !== entryId) }
     persistInventory(nextInventory)
+  }
+
+  function openQuantityDialog(entry: InventoryEntry) {
+    setQuantityDraft(entry.quantity)
+    setQuantityDialog({ entryId: entry.id, name: entry.name, quantity: entry.quantity })
+  }
+
+  function confirmInventoryQuantity() {
+    if (!quantityDialog) return
+    if (quantityDraft === 0) {
+      setInventoryEntryToDelete(inventory.entries.find((entry) => entry.id === quantityDialog.entryId) ?? null)
+    } else {
+      updateInventoryEntry(quantityDialog.entryId, { quantity: quantityDraft })
+    }
+    setQuantityDialog(null)
+  }
+
+  function confirmDeleteInventoryEntry() {
+    if (!inventoryEntryToDelete) return
+    deleteStoredEquipment(inventoryEntryToDelete.id)
+    setInventoryEntryToDelete(null)
   }
 
   function handleTabSwipeEnd(event: TouchEvent<HTMLDivElement>) {
@@ -392,7 +445,18 @@ export function CharacterPlaySheet({
       <section className="play-sheet__panel play-sheet__checks">
         <FramedGlassPanel className="play-sheet__saving-throws" contentClassName="play-sheet__saving-throws-content" cornerSvg={frameSvgs.corner ?? ''} frameColor={frameColor}>
           <h2>Salvaguardas</h2>
-            {abilities.map(([key, label]) => <div className="play-sheet__check" key={key}><span className={proficientSaves.includes(key) ? 'play-sheet__proficient' : ''} />{label}<b>{signed(modifier(character.abilities[key]) + (proficientSaves.includes(key) ? proficiencyBonus : 0))}</b></div>)}
+            {abilities.map(([key, label]) => {
+              const proficient = proficientSaves.includes(key)
+              const saveModifier = modifier(character.abilities[key]) + (proficient ? proficiencyBonus : 0)
+              return <div className="play-sheet__check" key={key} style={{ borderColor: frameColor }}>
+                <div aria-hidden="true" className="play-sheet__check-frame">
+                  <span className="play-sheet__check-frame-layer" style={frameStyle('savingThrow', frameSvgPaths.savingThrow)} />
+                </div>
+                <span className={`play-sheet__proficiency-indicator${proficient ? ' play-sheet__proficient' : ''}`} />
+                <span className="play-sheet__check-label">{label}</span>
+                <b>{signed(saveModifier)}</b>
+              </div>
+            })}
         </FramedGlassPanel>
         <FramedGlassPanel className="play-sheet__passive-frame" contentClassName="play-sheet__subpanel" cornerSvg={frameSvgs.corner ?? ''} frameColor={frameColor}><h2>Sentidos passivos</h2>
           {passiveSkills.map((name) => {
@@ -453,23 +517,20 @@ export function CharacterPlaySheet({
   function renderInventory() {
     const storedItems = inventory.entries.filter((entry) => !entry.equipped && normalize(entry.name).includes(normalize(storedSearch.trim())))
     const renderInventoryRow = (entry: InventoryEntry, equipped: boolean) => {
-      const item = entry.itemId ? equipmentCatalog.items.find((candidate) => candidate.id === entry.itemId) : undefined
+      const item = entry.itemId ? catalog?.items.find((candidate) => candidate.id === entry.itemId) : undefined
       const category = entry.category ?? item?.category ?? 'gear'
       const categoryLabel = inventoryCategories.find(({ id }) => id === category)?.label ?? 'Gerais'
       const attack = getWeaponAttackModifier(item, classId, character.classSubclassId, character.level, strengthModifier, dexterityModifier, proficiencyBonus, Boolean(equippedArmor), Boolean(equippedShield))
       const weight = item?.weightKg ? `${item.weightKg * entry.quantity} kg` : '—'
       return <div className="play-sheet__inventory-row" key={entry.id}>
-        <span className="play-sheet__inventory-item">
+        <button aria-label={`Ver detalhes de ${entry.name}`} className="play-sheet__inventory-item" onClick={() => setSelectedInventoryEntry(entry)} type="button">
           <span aria-label={categoryLabel} className="play-sheet__category-icon" title={categoryLabel}><span aria-hidden="true" className="material-symbols-rounded">{equipmentCategoryIcon(item, category)}</span></span>
-          <input aria-label="Nome do equipamento" defaultValue={entry.name} onBlur={(event) => updateInventoryEntry(entry.id, { name: event.target.value })} />
+          <strong>{entry.name}</strong>
           {item && <small>{item.weapon ? `${item.weapon.damage} ${item.weapon.damageType} · ${item.properties.join(', ')}` : item.armor ? `CA ${item.armor.ac}` : item.description || entry.notes}</small>}
-        </span>
-        <select aria-label="Categoria do equipamento" onChange={(event) => updateInventoryEntry(entry.id, { category: event.target.value as EquipmentItem['category'] })} value={category}>
-          {inventoryCategories.map(({ id, label }) => <option key={id} value={id}>{label}</option>)}
-        </select>
-        <input aria-label="Quantidade" defaultValue={entry.quantity} disabled={equipped} min={1} onBlur={(event) => updateInventoryEntry(entry.id, { quantity: Math.max(1, Number(event.target.value) || 1) })} type="number" />
+        </button>
+        {attack ? <span className="play-sheet__inventory-attack">{entry.attackBonus === undefined ? signed(attack.modifier) : signed(entry.attackBonus)}</span> : <span className="play-sheet__inventory-attack">—</span>}
+        <button aria-label={`Alterar quantidade de ${entry.name}: ${entry.quantity}`} className="play-sheet__inventory-quantity" onClick={() => openQuantityDialog(entry)} type="button">{entry.quantity}</button>
         <span>{weight}</span>
-        {attack ? <input aria-label="Bônus de ataque" defaultValue={entry.attackBonus ?? attack.modifier} onBlur={(event) => updateInventoryEntry(entry.id, { attackBonus: Number(event.target.value) || 0 })} type="number" /> : <span>—</span>}
         <span className="play-sheet__inventory-actions">
           {equipped
             ? <button onClick={() => toggleEquipped(entry.id)} type="button">Guardar</button>
@@ -480,14 +541,14 @@ export function CharacterPlaySheet({
         </span>
       </div>
     }
-    const filteredEquipment = equipmentCatalog.items.filter((item) => {
-      const matchesCategory = equipmentFilter === 'all' || item.category === equipmentFilter || (equipmentFilter === 'general' && item.category !== 'weapons' && item.category !== 'armor')
+    const filteredEquipment = (catalog?.items ?? []).filter((item) => {
+      const matchesCategory = equipmentFilter === 'all' || item.category === equipmentFilter || (equipmentFilter === 'general' && item.category !== 'weapons' && item.category !== 'armor' && item.category !== 'magic')
       return matchesCategory && normalize([item.name, item.subcategory, item.description, ...item.aliases, ...item.properties].join(' ')).includes(normalize(equipmentSearch.trim()))
     })
     return <div className="play-sheet__inventory">
       <FramedGlassPanel className="play-sheet__inventory-frame" contentClassName="play-sheet__inventory-section" cornerSvg={frameSvgs.corner ?? ''} frameColor={frameColor}>
         <h2>Em uso</h2>
-        <div className="play-sheet__inventory-table"><div className="play-sheet__inventory-row play-sheet__inventory-row--heading"><span>Item</span><span>Categoria</span><span>Quant.</span><span>Peso</span><span>Ataque</span><span>Ações</span></div>
+        <div className="play-sheet__inventory-table"><div className="play-sheet__inventory-row play-sheet__inventory-row--heading"><span>Item</span><span>Ataque</span><span>Quant.</span><span>Peso</span><span>Ações</span></div>
           {equippedGear.map(({ entry }) => renderInventoryRow(entry, true))}
           {equippedGear.length === 0 && <p>Nenhum item equipado.</p>}
         </div>
@@ -499,7 +560,7 @@ export function CharacterPlaySheet({
         <button aria-label="Adicionar equipamento" onClick={() => { setStoredSearch(''); setEquipmentSearch(''); setEquipmentFilter('all'); setSelectedEquipmentIds([]); setEquipmentDrawerOpen(true) }} type="button"><span aria-hidden="true" className="material-symbols-rounded">add</span></button>
         <span>{(inventory.currencyCp / 100).toFixed(0)} po</span>
       </div></header>
-        <div className="play-sheet__inventory-table"><div className="play-sheet__inventory-row play-sheet__inventory-row--heading"><span>Item</span><span>Categoria</span><span>Quant.</span><span>Peso</span><span>Ataque</span><span>Ações</span></div>
+        <div className="play-sheet__inventory-table"><div className="play-sheet__inventory-row play-sheet__inventory-row--heading"><span>Item</span><span>Ataque</span><span>Quant.</span><span>Peso</span><span>Ações</span></div>
           {storedItems.map((entry) => renderInventoryRow(entry, false))}
           {storedItems.length === 0 && <p>{storedSearch ? 'Nenhum equipamento encontrado.' : inventory.entries.some((entry) => !entry.equipped) ? 'Nenhum equipamento guardado.' : 'Seu inventário está vazio.'}</p>}
         </div>
@@ -509,11 +570,13 @@ export function CharacterPlaySheet({
           <header><div><h2>Adicionar equipamento</h2><p>Selecione um ou mais itens para adicionar ao inventário.</p></div><button aria-label="Fechar painel" onClick={() => { equipmentDrawerRef.current?.close(); setEquipmentDrawerOpen(false); setSelectedEquipmentIds([]) }} type="button"><span aria-hidden="true" className="material-symbols-rounded">close</span></button></header>
           <label className="play-sheet__equipment-search"><span className="material-symbols-rounded" aria-hidden="true">search</span><input aria-label="Pesquisar no catálogo de equipamentos" onChange={(event) => setEquipmentSearch(event.target.value)} placeholder="Pesquisar equipamento" type="search" value={equipmentSearch} /></label>
           <div aria-label="Filtrar equipamentos" className="play-sheet__equipment-filters">
-            {([['all', 'Todos'], ['weapons', 'Armas'], ['armor', 'Armaduras'], ['general', 'Gerais']] as const).map(([filter, label]) => <button aria-pressed={equipmentFilter === filter} key={filter} onClick={() => setEquipmentFilter(filter)} type="button">{label}</button>)}
+            {([['all', 'Todos'], ['weapons', 'Armas'], ['armor', 'Armaduras'], ['magic', 'Itens mágicos'], ['general', 'Gerais']] as const).map(([filter, label]) => <button aria-pressed={equipmentFilter === filter} key={filter} onClick={() => setEquipmentFilter(filter)} type="button">{label}</button>)}
           </div>
           <div className="play-sheet__equipment-items">
             {filteredEquipment.map((item) => <article className={selectedEquipmentIds.includes(item.id) ? 'play-sheet__equipment-option play-sheet__equipment-option--selected' : 'play-sheet__equipment-option'} key={item.id}><label><input aria-label={`Selecionar ${item.name}`} checked={selectedEquipmentIds.includes(item.id)} onChange={() => setSelectedEquipmentIds((current) => current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id])} type="checkbox" /><span><strong>{item.name}</strong><span>{item.weapon ? `${item.weapon.damage} ${item.weapon.damageType}${item.properties.length ? ` · ${item.properties.join(', ')}` : ''}` : item.armor ? `CA ${item.armor.ac}${item.armor.shield ? '' : item.armor.dexterity === 'none' ? '' : ' + Destreza'}` : item.subcategory}</span><small>{item.weightKg ? `${item.weightKg} kg` : 'Peso variável'} · {item.priceCp === null ? 'Preço variável' : `${(item.priceCp / 100).toFixed(item.priceCp % 100 ? 2 : 0)} po`}</small></span></label></article>)}
-            {!filteredEquipment.length && <p>Nenhum item encontrado.</p>}
+            {equipmentLoading && <p role="status">Carregando equipamentos…</p>}
+            {equipmentError && <p role="alert">Não foi possível carregar o catálogo de equipamentos. <button onClick={retryEquipment} type="button">Tentar novamente</button></p>}
+            {catalog && !filteredEquipment.length && <p>Nenhum item encontrado.</p>}
           </div>
           <footer className="play-sheet__equipment-drawer-actions"><button className="play-sheet__equipment-cancel" onClick={() => { equipmentDrawerRef.current?.close(); setEquipmentDrawerOpen(false); setSelectedEquipmentIds([]) }} type="button">Cancelar</button><button disabled={selectedEquipmentIds.length === 0} onClick={confirmAddEquipment} type="button">Adicionar{selectedEquipmentIds.length ? ` (${selectedEquipmentIds.length})` : ''}</button></footer>
         </div>
@@ -571,9 +634,16 @@ export function CharacterPlaySheet({
     <header className="play-sheet__character-bar">
       <div className="play-sheet__character-bar-inner">
         <div className="play-sheet__identity">
+          <button aria-label="Voltar à lista de personagens" className="play-sheet__back" onClick={onBack} type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M19 12H5m7 7-7-7 7-7" /></svg></button>
           <span className="play-sheet__portrait">{portrait ? <img alt={`Retrato de ${character.name}`} src={portrait} /> : <span aria-hidden="true" className="play-sheet__portrait-placeholder">✦</span>}</span>
-          <div><h1>{character.name}</h1><p>{race} · {background} · {characterClass} NV {character.level}</p></div>
+          <div><h1>{character.name}</h1><p>{race} · {background} · {characterClass}</p></div>
         </div>
+        <ExperienceBar experiencePoints={Number(character.experiencePoints) || 0} level={character.level} onClick={() => setExperienceDialogOpen(true)} />
+        <button aria-label={`Pontos de vida: ${playState.currentHp} de ${maxHp}${playState.temporaryHp ? `, ${playState.temporaryHp} temporários` : ''}. Abrir controles de PV`} className="play-sheet__hp-card" onClick={() => setHpDialogOpen(true)} type="button">
+          <span className="play-sheet__hp-card-title">Pontos de vida</span>
+          <span className="play-sheet__hp-card-values"><strong>{playState.currentHp}</strong> / {maxHp}{playState.temporaryHp > 0 && <> <strong>+{playState.temporaryHp}</strong></>}</span>
+          <span aria-hidden="true" className="play-sheet__hp-meter"><span className="play-sheet__hp-meter-current" style={{ width: `${maxHp > 0 ? Math.min(100, playState.currentHp / maxHp * 100) : 0}%` }} /><span className="play-sheet__hp-meter-temporary" style={{ width: `${maxHp > 0 ? Math.min(100 - (playState.currentHp / maxHp * 100), playState.temporaryHp / maxHp * 100) : 0}%` }} /></span>
+        </button>
       </div>
     </header>
     <div aria-hidden="true" className="play-sheet__hero">
@@ -599,6 +669,45 @@ export function CharacterPlaySheet({
       </div>
     </div>
     {saveError && <p className="play-sheet__error" role="alert">{saveError}</p>}
+    {experienceDialogOpen && <ExperienceDialog experiencePoints={Number(character.experiencePoints) || 0} theme={darkMode ? 'dark' : 'light'} onCancel={() => setExperienceDialogOpen(false)} onConfirm={saveExperience} />}
+    {levelUpTarget && <LevelUpDrawer character={character} classData={classData} classId={classId} race={race} targetExperience={levelUpTarget.experience} targetLevel={levelUpTarget.level} theme={darkMode ? 'dark' : 'light'} onCancel={() => setLevelUpTarget(null)} onComplete={() => setLevelUpTarget(null)} onConfirm={save} />}
+    {selectedInventoryEntry && <Modal open title={selectedInventoryEntry.name} theme={darkMode ? 'dark' : 'light'} onClose={() => setSelectedInventoryEntry(null)} footer={<button onClick={() => setSelectedInventoryEntry(null)} type="button">Fechar</button>}>
+      <div className="play-sheet__inventory-details">
+        <dl>
+          <div><dt>Categoria</dt><dd>{inventoryCategories.find(({ id }) => id === selectedInventoryEntry.category)?.label ?? 'Gerais'}</dd></div>
+          <div><dt>Quantidade</dt><dd>{selectedInventoryEntry.quantity}</dd></div>
+          <div><dt>Peso</dt><dd>{catalog?.items.find((item) => item.id === selectedInventoryEntry.itemId)?.weightKg ? `${(catalog.items.find((item) => item.id === selectedInventoryEntry.itemId)!.weightKg! * selectedInventoryEntry.quantity)} kg` : 'Variável'}</dd></div>
+          {selectedInventoryEntry.notes && <div><dt>Observações</dt><dd>{selectedInventoryEntry.notes}</dd></div>}
+          {catalog?.items.find((item) => item.id === selectedInventoryEntry.itemId)?.description && <div><dt>Descrição</dt><dd>{catalog.items.find((item) => item.id === selectedInventoryEntry.itemId)?.description}</dd></div>}
+        </dl>
+      </div>
+    </Modal>}
+    {quantityDialog && <Modal open title={`Quantidade de ${quantityDialog.name}`} theme={darkMode ? 'dark' : 'light'} onClose={() => setQuantityDialog(null)} footer={<><button className={quantityDraft === 0 ? 'play-sheet__quantity-confirm--delete' : undefined} onClick={confirmInventoryQuantity} type="button">{quantityDraft === 0 ? 'Excluir item' : 'Concluir'}</button><button onClick={() => setQuantityDialog(null)} type="button">Cancelar</button></>}>
+      <div className="play-sheet__quantity-adjuster">
+        <button aria-label="Diminuir quantidade" onClick={() => setQuantityDraft((current) => Math.max(0, current - 1))} type="button">−</button>
+        <strong aria-live="polite" className="play-sheet__quantity-value">{quantityDraft}</strong>
+        <button aria-label="Aumentar quantidade" onClick={() => setQuantityDraft((current) => current + 1)} type="button">+</button>
+      </div>
+    </Modal>}
+    {inventoryEntryToDelete && <Modal open title="Excluir item?" theme={darkMode ? 'dark' : 'light'} onClose={() => setInventoryEntryToDelete(null)} footer={<><button className="play-sheet__quantity-confirm--delete" onClick={confirmDeleteInventoryEntry} type="button">Excluir</button><button onClick={() => setInventoryEntryToDelete(null)} type="button">Cancelar</button></>}>
+      <p>O item “{inventoryEntryToDelete.name}” será removido do inventário.</p>
+    </Modal>}
+    {hpDialogOpen && <Modal open title="Pontos de vida" theme={darkMode ? 'dark' : 'light'} onClose={() => setHpDialogOpen(false)} footer={<button onClick={() => setHpDialogOpen(false)} type="button">Concluir</button>}>
+      <div className="play-sheet__hp-dialog">
+        <div className="play-sheet__hp-adjuster">
+          <button aria-label="Diminuir quantidade" onClick={() => setHpAmount((value) => String(Math.max(1, (Number(value) || 1) - 1)))} type="button">−</button>
+          <div className="play-sheet__hp-current-value"><span className="play-sheet__hp-current-total"><strong>{playState.currentHp}</strong><span> / {maxHp}</span>{playState.temporaryHp > 0 && <span className="play-sheet__hp-temporary-value">+{playState.temporaryHp}</span>}</span></div>
+          <button aria-label="Aumentar quantidade" onClick={() => setHpAmount((value) => String((Number(value) || 0) + 1))} type="button">+</button>
+        </div>
+        <div className="play-sheet__hp-actions">
+          <button className="play-sheet__hp-damage" onClick={() => applyHpChange((current) => applyHitPointDamage(current, Number(hpAmount) || 0))} type="button">Dano</button>
+          <input aria-label="Quantidade de pontos de vida" min="1" onChange={(event) => setHpAmount(event.target.value)} type="number" value={hpAmount} />
+          <button className="play-sheet__hp-heal" onClick={() => applyHpChange((current) => healHitPoints(current, Number(hpAmount) || 0, maxHp))} type="button">Curar</button>
+          <button className="play-sheet__hp-temporary" onClick={() => applyHpChange((current) => setTemporaryHitPoints(current, Number(hpAmount) || 0))} type="button">Definir PV temporários</button>
+          <p className="play-sheet__hp-rule">O dano reduz primeiro os PV temporários. A cura não ultrapassa o máximo de PV.</p>
+        </div>
+      </div>
+    </Modal>}
     {spellToCast && <div className="play-sheet__cast-backdrop" onClick={() => setSpellToCast(null)} role="presentation">
       <section aria-labelledby="cast-spell-title" aria-modal="true" className="play-sheet__cast-dialog" onClick={(event) => event.stopPropagation()} ref={castDialogRef} role="dialog" tabIndex={-1}>
         <h2 id="cast-spell-title">Conjurar {spellToCast.name}</h2>

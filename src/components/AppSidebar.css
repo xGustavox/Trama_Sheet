@@ -195,3 +195,32 @@
     transition-duration: 0.01ms;
   }
 }
+
+:root[data-theme='dark'] .sidebar {
+  border-color: var(--line);
+  background: #202329;
+  box-shadow: 0 10px 30px rgb(0 0 0 / 32%);
+}
+
+:root[data-theme='dark'] .sidebar button {
+  color: var(--ink-muted);
+}
+
+:root[data-theme='dark'] .sidebar__logo,
+:root[data-theme='dark'] .sidebar .sidebar__profile {
+  border-color: var(--line) !important;
+  background: #2a2d34;
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] .sidebar__divider {
+  background: var(--line);
+}
+
+:root[data-theme='dark'] .sidebar .sidebar__item--active,
+:root[data-theme='dark'] .sidebar button:hover,
+:root[data-theme='dark'] .sidebar button:focus-visible {
+  border-color: #a17d69;
+  background: #392e32;
+  color: #f1d9ca;
+}

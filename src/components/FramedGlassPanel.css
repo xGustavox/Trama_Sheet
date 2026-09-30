@@ -1,5 +1,5 @@
 .framed-glass-panel { position: relative; isolation: isolate; min-width: 0; }
-.framed-glass-panel__glass { position: absolute; z-index: 0; inset: var(--framed-glass-inset-y, 10px) var(--framed-glass-inset-x, 13px); border: 2px solid; border-radius: 15px; background: rgb(255 255 255 / 32%); backdrop-filter: blur(8px) saturate(120%); }
+.framed-glass-panel__glass { position: absolute; z-index: 0; inset: var(--framed-glass-inset-y, 10px) var(--framed-glass-inset-x, 13px); border: 2px solid; border-radius: 15px; background: rgb(255 255 255 / 65%); backdrop-filter: blur(8px) saturate(120%); }
 .framed-glass-panel__content { position: relative; z-index: 2; min-width: 0; }
 .framed-glass-panel__corner { position: absolute; z-index: 1; top: 0; left: 3px; width: var(--framed-glass-corner-size, 72px); aspect-ratio: 1; background-position: center; background-repeat: no-repeat; background-size: 100% 100%; pointer-events: none; }
 .framed-glass-panel__corner--top-right { right: 3px; left: auto; transform: scaleX(-1); }

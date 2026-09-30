@@ -100,3 +100,93 @@ export const leveledSpellsByClass: Record<string, Record<number, string[]>> = Ob
     return [Number(level), spellNames.split(';')]
   }))]),
 )
+
+// Subclass spells that extend the class spell list for character creation.
+// Oath/domain and patron spells are included at their normal spell levels.
+export const subclassSpellsById: Record<string, Record<number, string[]>> = {
+  'arquifada': {
+    1: ['Fogo das Fadas', 'Sono'], 2: ['Acalmar Emoções', 'Força Fantasmagórica'],
+    3: ['Piscar', 'Ampliar Plantas'], 4: ['Dominar Besta', 'Invisibilidade Maior'], 5: ['Dominar Pessoa', 'Similaridade'],
+  },
+  'o-corruptor': {
+    1: ['Mãos Flamejantes', 'Comando'], 2: ['Cegueira/Surdez', 'Raio Ardente'],
+    3: ['Bola de Fogo', 'Névoa Fétida'], 4: ['Escudo de Fogo', 'Muralha de Fogo'], 5: ['Coluna de Chamas', 'Consagrar'],
+  },
+  'o-grande-antigo': {
+    1: ['Sussurros Dissonantes', 'Riso Histérico de Tasha'], 2: ['Detectar Pensamentos', 'Força Fantasmagórica'],
+    3: ['Clarividência', 'Enviar Mensagem'], 4: ['Dominar Besta', 'Tentáculos Negros de Evard'], 5: ['Dominar Pessoa', 'Telecinésia'],
+  },
+  'dominio-do-conhecimento': {
+    1: ['Comando', 'Identificação'], 2: ['Augúrio', 'Sugestão'], 3: ['Dificultar Detecção', 'Falar com os Mortos'],
+    4: ['Olho Arcano', 'Confusão'], 5: ['Conhecimento Lendário', 'Vidência'],
+  },
+  'dominio-da-enganacao': {
+    1: ['Enfeitiçar Pessoa', 'Disfarçar-se'], 2: ['Reflexos', 'Passos sem Pegadas'], 3: ['Piscar', 'Dissipar Magia'],
+    4: ['Porta Dimensional', 'Metamorfose'], 5: ['Dominar Pessoa', 'Modificar Memória'],
+  },
+  'dominio-da-guerra': {
+    1: ['Auxílio Divino', 'Escudo da Fé'], 2: ['Arma Mágica', 'Arma Espiritual'], 3: ['Manto do Cruzado', 'Guardiões Espirituais'],
+    4: ['Movimentação Livre', 'Pele de Pedra'], 5: ['Coluna de Chamas', 'Imobilizar Monstro'],
+  },
+  'dominio-da-luz': {
+    1: ['Mãos Flamejantes', 'Fogo das Fadas'], 2: ['Esfera Flamejante', 'Raio Ardente'], 3: ['Luz do Dia', 'Bola de Fogo'],
+    4: ['Guardião da Fé', 'Muralha de Fogo'], 5: ['Coluna de Chamas', 'Vidência'],
+  },
+  'dominio-da-natureza': {
+    1: ['Amizade Animal', 'Falar com Animais'], 2: ['Pele de Árvore', 'Crescer Espinhos'], 3: ['Ampliar Plantas', 'Muralha de Vento'],
+    4: ['Dominar Besta', 'Vinha Esmagadora'], 5: ['Praga de Insetos', 'Caminhar em Árvores'],
+  },
+  'dominio-da-tempestade': {
+    1: ['Névoa Obscurecente', 'Onda Trovejante'], 2: ['Lufada de Vento', 'Despedaçar'], 3: ['Convocar Relâmpagos', 'Nevasca'],
+    4: ['Controlar a Água', 'Tempestade de Gelo'], 5: ['Onda Destrutiva', 'Praga de Insetos'],
+  },
+  'dominio-da-vida': {
+    1: ['Bênção', 'Curar Ferimentos'], 2: ['Restauração Menor', 'Arma Espiritual'], 3: ['Sinal de Esperança', 'Revivificar'],
+    4: ['Proteção contra a Morte', 'Guardião da Fé'], 5: ['Curar Ferimentos em Massa', 'Reviver os Mortos'],
+  },
+  'juramento-de-devocao': {
+    1: ['Proteção contra o Bem e Mal', 'Santuário'],
+    2: ['Restauração Menor', 'Zona da Verdade'],
+    3: ['Sinal de Esperança', 'Dissipar Magia'],
+    4: ['Movimentação Livre', 'Guardião da Fé'],
+    5: ['Comunhão', 'Coluna de Chamas'],
+  },
+  'juramento-dos-ancioes': {
+    1: ['Golpe Constritor', 'Falar com Animais'],
+    2: ['Raio Lunar', 'Passo Nebuloso'],
+    3: ['Ampliar Plantas', 'Proteção contra Energia'],
+    4: ['Tempestade de Gelo', 'Pele de Pedra'],
+    5: ['Comunhão com a Natureza', 'Caminhar em Árvores'],
+  },
+  'juramento-de-vinganca': {
+    1: ['Perdição', 'Marca do Caçador'],
+    2: ['Imobilizar Pessoa', 'Passo Nebuloso'],
+    3: ['Velocidade', 'Proteção contra Energia'],
+    4: ['Banimento', 'Porta Dimensional'],
+    5: ['Imobilizar Monstro', 'Vidência'],
+  },
+}
+
+const circleOfLandSpells: Record<string, Record<number, string[]>> = {
+  artico: { 2: ['Imobilizar Pessoa', 'Crescer Espinhos'], 3: ['Nevasca', 'Lentidão'], 4: ['Movimentação Livre', 'Tempestade de Gelo'], 5: ['Comunhão com a Natureza', 'Cone de Frio'] },
+  costa: { 2: ['Passo Nebuloso', 'Reflexos'], 3: ['Andar na Água', 'Respirar na Água'], 4: ['Movimentação Livre', 'Controlar a Água'], 5: ['Vidência', 'Conjurar Elemental'] },
+  deserto: { 2: ['Nublar', 'Silêncio'], 3: ['Criar Alimentos', 'Proteção contra Energia'], 4: ['Praga', 'Terreno Alucinógeno'], 5: ['Muralha de Pedra', 'Praga de Insetos'] },
+  floresta: { 2: ['Patas de Aranha', 'Pele de Árvore'], 3: ['Convocar Relâmpagos', 'Ampliar Plantas'], 4: ['Adivinhação', 'Movimentação Livre'], 5: ['Comunhão com a Natureza', 'Caminhar em Árvores'] },
+  montanha: { 2: ['Crescer Espinhos', 'Patas de Aranha'], 3: ['Mesclar-se às Rochas', 'Relâmpago'], 4: ['Moldar Rochas', 'Pele de Pedra'], 5: ['Criar Passagem', 'Muralha de Pedra'] },
+  pantano: { 2: ['Escuridão', 'Flecha Ácida de Melf'], 3: ['Andar na Água', 'Névoa Fétida'], 4: ['Localizar Criatura', 'Movimentação Livre'], 5: ['Vidência', 'Praga de Insetos'] },
+  planicie: { 2: ['Invisibilidade', 'Passos sem Pegadas'], 3: ['Luz do Dia', 'Velocidade'], 4: ['Adivinhação', 'Movimentação Livre'], 5: ['Praga de Insetos', 'Sonho'] },
+  subterraneo: { 2: ['Patas de Aranha', 'Teia'], 3: ['Forma Gasosa', 'Névoa Fétida'], 4: ['Invisibilidade Maior', 'Moldar Rochas'], 5: ['Praga de Insetos', 'Névoa Mortal'] },
+}
+
+export function getSpellListForSelection(classId: string, subclassId: string, circleTerrain?: string): Record<number, string[]> {
+  const spells = Object.fromEntries(Object.entries(leveledSpellsByClass[classId] ?? {}).map(([level, names]) => [Number(level), [...names]]))
+  for (const [level, names] of Object.entries(subclassSpellsById[subclassId] ?? {})) {
+    const spellLevel = Number(level)
+    spells[spellLevel] = [...new Set([...(spells[spellLevel] ?? []), ...names])]
+  }
+  for (const [level, names] of Object.entries(subclassId === 'circulo-da-terra' ? circleOfLandSpells[circleTerrain ?? ''] ?? {} : {})) {
+    const spellLevel = Number(level)
+    spells[spellLevel] = [...new Set([...(spells[spellLevel] ?? []), ...names])]
+  }
+  return spells
+}

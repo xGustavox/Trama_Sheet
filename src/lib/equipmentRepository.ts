@@ -1,23 +1,77 @@
-import { equipmentCatalog, type EquipmentCatalog, type EquipmentItem } from './equipment'
+import type { EquipmentCatalog, EquipmentItem } from './equipment'
 import { supabase } from './supabase'
 
-export async function loadEquipmentCatalog(): Promise<EquipmentCatalog> {
-  if (!supabase) return equipmentCatalog
-  const [items, packs, contents, components] = await Promise.all([
-    supabase.from('equipment_items').select('data').order('name'),
-    supabase.from('equipment_packs').select('id, name, price_cp, source_page').order('name'),
-    supabase.from('equipment_pack_items').select('pack_id, item_id, quantity').order('item_id'),
-    supabase.from('equipment_item_components').select('kit_item_id, item_id, quantity').order('item_id'),
-  ])
-  const error = items.error ?? packs.error ?? contents.error ?? components.error
-  if (error) throw error
-  if (!items.data?.length || !packs.data?.length) throw new Error('Catálogo de equipamentos vazio.')
-  return {
-    items: items.data.map(row => {
+let itemsRequest: Promise<EquipmentItem[]> | null = null
+let packsRequest: Promise<EquipmentCatalog['packs']> | null = null
+
+function requireSupabase() {
+  if (!supabase) throw new Error('O serviço de dados do equipamento não está configurado.')
+  return supabase
+}
+
+export async function loadEquipmentItems(): Promise<EquipmentItem[]> {
+  if (itemsRequest) return itemsRequest
+  const client = requireSupabase()
+  itemsRequest = Promise.all([
+    client.from('equipment_items').select('data').order('name'),
+    client.from('equipment_item_components').select('kit_item_id, item_id, quantity').order('item_id'),
+  ]).then(([items, components]) => {
+    if (items.error) throw items.error
+    if (components.error) throw components.error
+    if (!items.data?.length) throw new Error('O catálogo de equipamentos está vazio.')
+    const componentsByKit = new Map<string, NonNullable<EquipmentItem['components']>>()
+    for (const component of components.data ?? []) {
+      const kitComponents = componentsByKit.get(component.kit_item_id) ?? []
+      kitComponents.push({ itemId: component.item_id, quantity: component.quantity })
+      componentsByKit.set(component.kit_item_id, kitComponents)
+    }
+    return items.data.map(row => {
       const item = row.data as EquipmentItem
-      return { ...item, components: (components.data ?? []).filter(line => line.kit_item_id === item.id).map(line => ({ itemId: line.item_id, quantity: line.quantity })) }
-    }),
-    packs: packs.data.map(pack => ({ id: pack.id, name: pack.name, priceCp: pack.price_cp, sourcePage: pack.source_page,
-      items: (contents.data ?? []).filter(line => line.pack_id === pack.id).map(line => ({ itemId: line.item_id, quantity: line.quantity })) })),
-  }
+      return { ...item, components: componentsByKit.get(item.id) ?? [] }
+    })
+  }).catch(error => {
+    itemsRequest = null
+    throw error
+  })
+  return itemsRequest
+}
+
+function loadEquipmentPacks(): Promise<EquipmentCatalog['packs']> {
+  if (packsRequest) return packsRequest
+  const client = requireSupabase()
+  packsRequest = Promise.all([
+    client.from('equipment_packs').select('id, name, price_cp, source_page').order('name'),
+    client.from('equipment_pack_items').select('pack_id, item_id, quantity').order('item_id'),
+  ]).then(([packs, contents]) => {
+    if (packs.error) throw packs.error
+    if (contents.error) throw contents.error
+    if (!packs.data?.length) throw new Error('O catálogo de pacotes de equipamento está vazio.')
+    const contentsByPack = new Map<string, EquipmentCatalog['packs'][number]['items']>()
+    for (const content of contents.data ?? []) {
+      const packItems = contentsByPack.get(content.pack_id) ?? []
+      packItems.push({ itemId: content.item_id, quantity: content.quantity })
+      contentsByPack.set(content.pack_id, packItems)
+    }
+    return packs.data.map(pack => ({
+      id: pack.id,
+      name: pack.name,
+      priceCp: pack.price_cp,
+      sourcePage: pack.source_page,
+      items: contentsByPack.get(pack.id) ?? [],
+    }))
+  }).catch(error => {
+    packsRequest = null
+    throw error
+  })
+  return packsRequest
+}
+
+export async function loadEquipmentCatalog(): Promise<EquipmentCatalog> {
+  const [items, packs] = await Promise.all([loadEquipmentItems(), loadEquipmentPacks()])
+  return { items, packs }
+}
+
+export function clearEquipmentCatalogCache() {
+  itemsRequest = null
+  packsRequest = null
 }

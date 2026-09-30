@@ -369,6 +369,29 @@
   cursor: pointer;
 }
 
+:root[data-theme='dark'] .character-card {
+  background-color: #25282f;
+  box-shadow: 0 8px 22px rgb(0 0 0 / 35%);
+}
+
+:root[data-theme='dark'] .character-card__glass,
+:root[data-theme='dark'] .empty-state,
+:root[data-theme='dark'] .draft-dialog,
+:root[data-theme='dark'] .feedback {
+  border-color: var(--line);
+  background-color: rgb(31 34 40 / 90%);
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] .draft-dialog,
+:root[data-theme='dark'] .feedback {
+  box-shadow: 0 24px 64px rgb(0 0 0 / 48%);
+}
+
+:root[data-theme='dark'] .account-dialog__error {
+  color: #ffaaa4 !important;
+}
+
 @media (max-width: 1120px) {
   .home-shell {
     padding-right: 32px;

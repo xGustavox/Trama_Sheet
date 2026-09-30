@@ -3213,3 +3213,77 @@
     height: 32px;
   }
 }
+
+:root[data-theme='dark'] .creation-page {
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] .creation-page .wizard,
+:root[data-theme='dark'] .creation-page .wizard__section-card,
+:root[data-theme='dark'] .creation-page .wizard__character-summary,
+:root[data-theme='dark'] .creation-page .wizard__mobile-step-list,
+:root[data-theme='dark'] .creation-page .wizard__ability-popover,
+:root[data-theme='dark'] .creation-page .wizard__cantrip-drawer[open],
+:root[data-theme='dark'] .creation-page .wizard__portrait-dialog,
+:root[data-theme='dark'] .creation-page .wizard__equipment-reset-dialog,
+:root[data-theme='dark'] .creation-page .wizard__racial-confirmation {
+  border-color: var(--line);
+  background-color: #22252c;
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] .creation-page .wizard__cantrip-drawer-option,
+:root[data-theme='dark'] .creation-page .wizard__cantrip-drawer-option:nth-child(odd),
+:root[data-theme='dark'] .creation-page .wizard__method-option,
+:root[data-theme='dark'] .creation-page .wizard__class-path-option,
+:root[data-theme='dark'] .creation-page .wizard__score-option,
+:root[data-theme='dark'] .creation-page .wizard__choice,
+:root[data-theme='dark'] .creation-page .wizard__racial-chip,
+:root[data-theme='dark'] .creation-page .wizard__skill-option,
+:root[data-theme='dark'] .creation-page .wizard__proficiency-chip,
+:root[data-theme='dark'] .creation-page .wizard__equipment-item,
+:root[data-theme='dark'] .creation-page .wizard__cantrip-open,
+:root[data-theme='dark'] .creation-page .wizard__spell-level-chip,
+:root[data-theme='dark'] .creation-page .wizard__cantrip-drawer-close,
+:root[data-theme='dark'] .creation-page .wizard__mobile-navigation,
+:root[data-theme='dark'] .creation-page .wizard__racial-confirmation li {
+  border-color: var(--line);
+  background-color: #2a2d34;
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] .creation-page .wizard__cantrip-drawer-option:hover:not(:has(input:disabled)),
+:root[data-theme='dark'] .creation-page .wizard__cantrip-drawer-option:has(input:checked),
+:root[data-theme='dark'] .creation-page .wizard__class-path-option[aria-pressed='true'],
+:root[data-theme='dark'] .creation-page .wizard__method-option[aria-pressed='true'],
+:root[data-theme='dark'] .creation-page .wizard__choice[aria-pressed='true'],
+:root[data-theme='dark'] .creation-page .wizard__mobile-step--active {
+  background-color: #392e32;
+}
+
+:root[data-theme='dark'] .creation-page .wizard input:not([type='checkbox']):not([type='radio']):not([type='file']),
+:root[data-theme='dark'] .creation-page .wizard select,
+:root[data-theme='dark'] .creation-page .wizard textarea {
+  border-color: var(--line-strong);
+  background-color: #191b20;
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] .creation-page .wizard__spell-stat strong,
+:root[data-theme='dark'] .creation-page .wizard__equipment-pack,
+:root[data-theme='dark'] .creation-page .wizard__equipment-pack[open],
+:root[data-theme='dark'] .creation-page .wizard__equipment-card > textarea,
+:root[data-theme='dark'] .creation-page .wizard__equipment-item:hover,
+:root[data-theme='dark'] .creation-page .wizard__racial-allocation > button[aria-pressed='true'] {
+  border-color: var(--line-strong);
+  background-color: #2a2d34;
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] .creation-page .wizard__racial-confirmation-backdrop {
+  background: rgb(0 0 0 / 68%);
+}
+
+:root[data-theme='dark'] .creation-page .wizard__mobile-navigation {
+  background-color: rgb(31 34 40 / 96%);
+}

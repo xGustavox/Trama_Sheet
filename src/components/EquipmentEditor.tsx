@@ -1,9 +1,9 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { addInventoryItem, addPack, equipmentDetails, formatPrice, normalizeEquipment, readInventory, reconcileEquipment, type EquipmentCatalog, type EquipmentItem, type Inventory, type InventoryEntry } from '../lib/equipment'
-import { loadEquipmentCatalog } from '../lib/equipmentRepository'
 import { startingEquipmentPlan, type EquipmentContext } from '../lib/startingEquipment'
 import { Button } from './Button'
+import { Modal } from './Modal'
 import './EquipmentEditor.css'
 
 const categories: { id: EquipmentItem['category']; name: string; icon: string }[] = [
@@ -12,6 +12,7 @@ const categories: { id: EquipmentItem['category']; name: string; icon: string }[
   { id: 'tools', name: 'Ferramentas e kits', icon: 'handyman' },
   { id: 'instruments', name: 'Instrumentos', icon: 'music_note' },
   { id: 'gear', name: 'Equipamento de aventura e itens pessoais', icon: 'inventory_2' },
+  { id: 'magic', name: 'Itens mágicos', icon: 'auto_awesome' },
 ]
 
 function ExpandableSearch({ label, value, onChange, open, onOpenChange }: {
@@ -97,22 +98,25 @@ function sortInventoryEntries(entries: InventoryEntry[], catalog: EquipmentCatal
     if (category === 'weapons') return 0
     if (category === 'armor') return 1
     if (category === 'instruments') return 2
-    return 3
+    if (category === 'magic') return 3
+    return 4
   }
   return [...entries].sort((first, second) => rank(first) - rank(second))
 }
 
-export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentReset, context, heading, children }: {
+export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentReset, context, heading, children, catalog, loading, error, onRetry, theme }: {
   value: string
   onChange: (value: string) => void
   onRequestInitialEquipmentReset?: (change: () => void) => void
   context: EquipmentContext
   heading: ReactNode
   children: ReactNode
+  catalog: EquipmentCatalog | null
+  loading: boolean
+  error: boolean
+  onRetry: () => void
+  theme: 'light' | 'dark'
 }) {
-  const [catalog, setCatalog] = useState<EquipmentCatalog | null>(null)
-  const [error, setError] = useState('')
-  const [attempt, setAttempt] = useState(0)
   const [catalogSearch, setCatalogSearch] = useState<Record<string, string>>({})
   const [filters, setFilters] = useState<Record<string, string[]>>({})
   const [inventorySearchOpen, setInventorySearchOpen] = useState(false)
@@ -132,7 +136,6 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
   const quantityHoldTimeout = useRef<ReturnType<typeof window.setTimeout> | null>(null)
   const quantityHoldInterval = useRef<ReturnType<typeof window.setInterval> | null>(null)
   const quantityHoldTriggered = useRef(false)
-  const modalRef = useRef<HTMLDialogElement>(null)
   const inventory = useMemo(() => readInventory(value, catalog ?? undefined), [value, catalog])
   const plan = catalog ? startingEquipmentPlan(catalog, context, inventory) : null
   const ready = Boolean(context.className && context.backgroundName)
@@ -145,22 +148,8 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
   }, [inventory])
 
   useEffect(() => {
-    let active = true
-    loadEquipmentCatalog().then(data => { if (active) { setCatalog(data); setError('') } }).catch(() => {
-      if (active) setError('Não foi possível carregar o catálogo. Confira a conexão e se a migração de equipamentos foi aplicada ao banco.')
-    })
-    return () => { active = false }
-  }, [attempt])
-
-  useEffect(() => {
     if (nextValue !== value) onChange(nextValue)
   }, [nextValue, value, onChange])
-
-  useEffect(() => {
-    const dialog = modalRef.current
-    if ((addingItem || drawerPick || editingNotesId) && dialog && !dialog.open) dialog.showModal()
-    else if (!addingItem && !drawerPick && !editingNotesId && dialog?.open) dialog.close()
-  }, [addingItem, drawerPick, editingNotesId])
 
   useEffect(() => () => {
     if (quantityHoldTimeout.current !== null) window.clearTimeout(quantityHoldTimeout.current)
@@ -230,7 +219,7 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
   const hasUnknownWeight = inventory.entries.some(entry => catalog?.items.find(item => item.id === entry.itemId)?.weightKg == null)
   const inventoryFilters = [
     { id: 'all', label: 'Todos' }, { id: 'weapons', label: 'Armas' }, { id: 'tools', label: 'Ferramentas' },
-    { id: 'armor', label: 'Armaduras' }, { id: 'packs', label: 'Pacotes' }, { id: 'kits', label: 'Kits' },
+    { id: 'armor', label: 'Armaduras' }, { id: 'magic', label: 'Itens mágicos' }, { id: 'packs', label: 'Pacotes' }, { id: 'kits', label: 'Kits' },
   ]
   const filteredInventory = useMemo(() => {
     const search = normalizeEquipment(inventorySearch)
@@ -243,6 +232,7 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
         || inventoryFilter.includes('kits') && isKit
         || inventoryFilter.includes('weapons') && item?.category === 'weapons'
         || inventoryFilter.includes('armor') && item?.category === 'armor'
+        || inventoryFilter.includes('magic') && item?.category === 'magic'
         || inventoryFilter.includes('tools') && (item?.category === 'tools' || item?.category === 'instruments') && !isKit
       const matchesSearch = normalizeEquipment([entry.name, entry.notes, item?.subcategory ?? '', ...(item?.properties ?? [])].join(' ')).includes(search)
       return matchesFilter && matchesSearch
@@ -260,8 +250,8 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
   const startingEquipmentSection = <section className="wizard__equipment-card" aria-labelledby="starting-equipment-title">
     <h2 id="starting-equipment-title">Defina seu equipamento inicial</h2>
     <p>Escolha uma alternativa em cada linha para montar seu inventário inicial.</p>
-    {error && <p role="alert">{error} <Button variant="secondary" size="small" type="button" onClick={() => setAttempt(attempt + 1)}>Tentar novamente</Button></p>}
-    {!catalog && !error && <p role="status">Carregando catálogo…</p>}
+    {error && <p role="alert">Não foi possível carregar os equipamentos do Supabase. Verifique a conexão e se as migrações foram aplicadas. <Button variant="secondary" size="small" type="button" onClick={onRetry}>Tentar novamente</Button></p>}
+    {!catalog && loading && <p role="status">Carregando catálogo de equipamentos…</p>}
     {catalog && !ready && <p>Selecione classe e antecedente para definir o equipamento inicial.</p>}
     {ready && plan && <>
       <div className="equipment__choices">{plan.choices.map(group => <fieldset className="equipment__choice-group" key={group.key}>
@@ -398,7 +388,7 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
         const items = categoryItems.filter(item => (!selectedFilters.length || selectedFilters.includes(item.subcategory)) && normalizeEquipment([item.name, ...item.aliases, item.subcategory, ...item.properties].join(' ')).includes(normalizeEquipment(catalogSearch[category.id] ?? '')))
         return <section className="wizard__equipment-card" key={category.id} aria-labelledby={`equipment-${category.id}-title`}>
           <div className="wizard__equipment-title"><span aria-hidden="true" className="material-symbols-rounded">{category.icon}</span><h2 id={`equipment-${category.id}-title`}>{category.name}</h2></div>
-          {['weapons', 'tools', 'gear'].includes(category.id) && <div className="equipment__catalog-controls">
+          {['weapons', 'tools', 'gear', 'magic'].includes(category.id) && <div className="equipment__catalog-controls">
             {subcategories.length > 1 && <EquipmentFilters
               label={category.name}
               options={[{ id: 'all', label: 'Todos' }, ...subcategories.map(name => ({ id: name, label: name }))]}
@@ -419,9 +409,9 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
         </section>
       })}
     </>}
-    <dialog ref={modalRef} className={drawerPick ? 'equipment__drawer' : editingNotesId ? 'equipment__notes-dialog' : 'equipment__add-dialog'} aria-labelledby={drawerPick ? 'equipment-drawer-title' : editingNotesId ? 'equipment-notes-title' : 'equipment-add-title'} onClick={event => { if (event.target === event.currentTarget) { setAddingItem(null); setDrawerPick(null); setEditingNotesId(null) } }} onCancel={event => { event.preventDefault(); setAddingItem(null); setDrawerPick(null); setEditingNotesId(null) }}>
+    <Modal open={Boolean(addingItem || drawerPick || editingNotesId)} title={drawerPick && drawerSelection ? `Escolher ${drawerSelection.label}` : editingNotesId ? 'Editar anotações' : addingItem ? `Adicionar ${addingItem.name}` : 'Equipamento'} theme={theme} onClose={() => { setAddingItem(null); setDrawerPick(null); setEditingNotesId(null) }}>
+      <div className={drawerPick ? 'equipment__drawer' : editingNotesId ? 'equipment__notes-dialog' : 'equipment__add-dialog'}>
       {drawerPick && drawerSelection && catalog && <div className="equipment__drawer-content">
-        <header><div><h2 id="equipment-drawer-title">Escolher {drawerSelection.label}</h2></div><Button variant="ghost" size="icon" type="button" aria-label="Fechar painel" onClick={() => setDrawerPick(null)}><span aria-hidden="true" className="material-symbols-rounded">close</span></Button></header>
         <div className="equipment__drawer-items">{drawerSelection.itemIds.map(itemId => {
           const item = catalog.items.find(candidate => candidate.id === itemId)
           if (!item) return null
@@ -451,7 +441,6 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
         updateEntry(editingNotesEntry.id, { notes: editingNotesDraft })
         setEditingNotesId(null)
       }}>
-        <h2 id="equipment-notes-title">Editar anotações</h2>
         <p>{editingNotesEntry.name}</p>
         <label className="wizard__field"><span>Anotações</span><textarea autoFocus aria-label={`Anotações de ${editingNotesEntry.name}`} value={editingNotesDraft} onChange={event => setEditingNotesDraft(event.target.value)} /></label>
         <div className="equipment__dialog-actions"><Button variant="secondary" type="button" onClick={() => setEditingNotesId(null)}>Cancelar</Button><Button type="submit">Salvar</Button></div>
@@ -466,12 +455,12 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
         showToast(`${quantity} × ${addingItem.name} adicionado ao inventário.`)
         setAddingItem(null)
       }}>
-        <h2 id="equipment-add-title">Adicionar {addingItem.name}</h2>
         <label className="wizard__field"><span>Quantidade</span><input autoFocus aria-label="Quantidade a adicionar" type="number" min="1" step="1" value={addQuantity} onChange={event => setAddQuantity(event.target.value)} /></label>
         <label className="wizard__field"><span>Anotações</span><textarea aria-label="Anotações do item" value={itemNotes} onChange={event => setItemNotes(event.target.value)} /></label>
         <div className="equipment__dialog-actions"><Button variant="secondary" type="button" onClick={() => setAddingItem(null)}>Cancelar</Button><Button type="submit" disabled={!Number.isSafeInteger(Number(addQuantity)) || Number(addQuantity) < 1}>Adicionar ao inventário</Button></div>
       </form>}
-    </dialog>
+      </div>
+    </Modal>
     {createPortal(<div className={`equipment__toast${toast ? ' equipment__toast--visible' : ''}`} role="status" aria-live="polite">{toast?.message}</div>, document.body)}
   </div>
 }

@@ -75,7 +75,7 @@ export function startingEquipmentPlan(catalog: EquipmentCatalog, context: Equipm
       classFixed([item('adaga', 2), ...(klass === 'bruxo' ? [item('couro')] : [])])
       choice('weapon', 'Arma principal', [crossbow(), flexible('simple', 'Arma simples', simple)])
       arcane()
-      packs(...(klass === 'bruxo' ? ['scholar', 'dungeoneer'] : ['dungeoneer', 'explorer']))
+      packs(...(klass === 'bruxo' ? ['scholar', 'explorer'] : ['dungeoneer', 'explorer']))
       if (klass === 'bruxo') choice('additional', 'Arma simples adicional', [flexible('simple', 'Arma simples', simple)])
       break
     case 'guerreiro':

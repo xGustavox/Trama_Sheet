@@ -1,10 +1,10 @@
-import data from './equipment-catalog.json'
-
 export type EquipmentItem = {
   id: string
   name: string
-  category: 'armor' | 'weapons' | 'tools' | 'instruments' | 'gear'
+  category: 'armor' | 'weapons' | 'tools' | 'instruments' | 'gear' | 'magic'
   subcategory: string
+  rarity?: string
+  attunement?: string | null
   priceCp: number | null
   weightKg: number | null
   unit: string
@@ -20,7 +20,6 @@ export type EquipmentItem = {
 export type ItemQuantity = { itemId: string; quantity: number }
 export type EquipmentPack = { id: string; name: string; priceCp: number; sourcePage: number; items: ItemQuantity[] }
 export type EquipmentCatalog = { items: EquipmentItem[]; packs: EquipmentPack[] }
-export const equipmentCatalog = data as EquipmentCatalog
 export const normalizeEquipment = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 export const findEquipment = (catalog: EquipmentCatalog, name: string) => catalog.items.find(item =>
   [item.id, item.name, ...item.aliases].some(alias => normalizeEquipment(alias) === normalizeEquipment(name)))
@@ -80,11 +79,7 @@ export function getWeaponAttackModifier(
     && !wearingShield
     && (isSimple && subcategory.includes('corpo a corpo') || name === 'espada curta')
     && !properties.some((property) => property.includes('pesada') || property.includes('duas maos'))
-  const ability = subcategory.includes('a distancia')
-    ? 'dexterity'
-    : properties.includes('acuidade') || isMonkWeapon
-      ? (dexterityModifier > strengthModifier ? 'dexterity' : 'strength')
-      : 'strength'
+  const ability = subcategory.includes('a distancia') ? 'dexterity' : 'strength'
   const abilityModifier = ability === 'dexterity' ? dexterityModifier : strengthModifier
   const proficient = hasSimpleProficiency || hasMartialProficiency || hasSubclassMartialProficiency || hasNamedProficiency || isMonkWeapon
 
@@ -114,16 +109,16 @@ export type Inventory = {
   legacyNotes: string
 }
 
-export function equipOneInventoryUnit(inventory: Inventory, entryId: string): Inventory {
+export function equipOneInventoryUnit(inventory: Inventory, entryId: string, catalog: EquipmentCatalog): Inventory {
   const requested = inventory.entries.find(entry => entry.id === entryId && !entry.equipped)
   if (!requested) return inventory
-  const requestedItem = requested.itemId ? equipmentCatalog.items.find(item => item.id === requested.itemId) : findEquipment(equipmentCatalog, requested.name)
+  const requestedItem = requested.itemId ? catalog.items.find(item => item.id === requested.itemId) : findEquipment(catalog, requested.name)
   const replacesArmorSlot = requestedItem?.armor ? requestedItem.armor.shield : null
   const availableInventory = replacesArmorSlot === null ? inventory : {
     ...inventory,
     entries: inventory.entries.map(entry => {
       if (entry.id === entryId || !entry.equipped) return entry
-      const item = entry.itemId ? equipmentCatalog.items.find(candidate => candidate.id === entry.itemId) : findEquipment(equipmentCatalog, entry.name)
+      const item = entry.itemId ? catalog.items.find(candidate => candidate.id === entry.itemId) : findEquipment(catalog, entry.name)
       return item?.armor && item.armor.shield === replacesArmorSlot ? { ...entry, equipped: false } : entry
     }),
   }
@@ -220,7 +215,7 @@ export function reconcileEquipment(inventory: Inventory, grants: EquipmentGrant[
   return next
 }
 
-export function readInventory(value: string, catalog = equipmentCatalog): Inventory {
+export function readInventory(value: string, catalog?: EquipmentCatalog): Inventory {
   let parsed: unknown
   try { parsed = JSON.parse(value) } catch { /* Legacy free text is preserved below. */ }
   if (isRecord(parsed) && parsed.version === 2 && Array.isArray(parsed.entries)) {
@@ -260,6 +255,7 @@ export function readInventory(value: string, catalog = equipmentCatalog): Invent
   }
   let inventory = emptyInventory()
   if (parsed && typeof parsed === 'object' && 'packs' in parsed && Array.isArray(parsed.packs)) {
+    if (!catalog) return { ...inventory, legacyNotes: value }
     for (const category of ['armor', 'weapons', 'tools', 'instruments', 'miscellaneous']) {
       const text = (parsed as Record<string, unknown>)[category]
       if (typeof text !== 'string') continue
@@ -281,11 +277,25 @@ export function formatPrice(cp: number | null) {
   return `${cp} pc`
 }
 
+export function getCurrencyDisplay(currencyCp: number) {
+  const denominations = [
+    { code: 'pp', value: 1000, name: 'platina' },
+    { code: 'gp', value: 100, name: 'ouro' },
+    { code: 'ep', value: 50, name: 'electro' },
+    { code: 'sp', value: 10, name: 'prata' },
+    { code: 'cp', value: 1, name: 'cobre' },
+  ] as const
+  const denomination = (currencyCp > 0 && denominations.find(({ value }) => currencyCp % value === 0))
+    || denominations.find(({ code }) => code === 'gp')!
+  return { amount: currencyCp / denomination.value, code: denomination.code, name: denomination.name }
+}
+
 export function equipmentDetails(item: EquipmentItem) {
   if (item.armor) {
     const armor = item.armor
     return `CA ${armor.shield ? '+' : ''}${armor.ac}${armor.dexterity === 'full' ? ' + Des' : armor.dexterity === 'max2' ? ' + Des (máx. 2)' : ''}${armor.strength ? ` · For ${armor.strength}` : ''}${armor.stealthDisadvantage ? ' · Desvantagem em Furtividade' : ''}`
   }
   if (item.weapon) return `${item.weapon.damage} ${item.weapon.damageType} · ${item.properties.join(', ')}`
+  if (item.category === 'magic') return [item.rarity, item.attunement ? `Requer sintonização${item.attunement === 'sim' ? '' : ` (${item.attunement})`}` : 'Sem sintonização', ...item.properties].filter(Boolean).join(' · ')
   return item.properties.join(', ') || item.unit
 }

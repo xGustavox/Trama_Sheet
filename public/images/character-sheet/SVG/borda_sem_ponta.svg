@@ -1,51 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg id="Camada_2" data-name="Camada 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 169.16 50.37">
+<svg id="Camada_2" data-name="Camada 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 103.66 49.88">
   <defs>
     <style>
-      .cls-1, .cls-2, .cls-3 {
+      .cls-1, .cls-2 {
         fill: none;
       }
 
-      .cls-4 {
+      .cls-3 {
         clip-path: url(#clippath-1);
       }
 
       .cls-2 {
+        stroke: #000;
+        stroke-miterlimit: 10;
         stroke-width: 2px;
       }
 
-      .cls-2, .cls-3 {
-        stroke: #000;
-        stroke-miterlimit: 10;
-      }
-
-      .cls-3 {
-        stroke-width: 4px;
-      }
-
-      .cls-5 {
+      .cls-4 {
         clip-path: url(#clippath);
       }
     </style>
     <clipPath id="clippath">
-      <rect class="cls-1" width="169.16" height="25.19"/>
+      <rect class="cls-1" width="103.66" height="24.94"/>
     </clipPath>
     <clipPath id="clippath-1">
-      <rect class="cls-1" y="25.19" width="169.16" height="25.19"/>
+      <rect class="cls-1" y="24.94" width="103.66" height="24.94"/>
     </clipPath>
   </defs>
   <g id="Camada_1-2" data-name="Camada 1">
     <g>
       <g id="_Repetição_do_espelho_" data-name="&amp;lt;Repetição do espelho&amp;gt;">
-        <g class="cls-5">
-          <path class="cls-3" d="M2,30.24l.38-19.63s9.95.92,12.22-8.61h154.55"/>
-          <path class="cls-2" d="M2,20.92c11.78-4.14,14.72-8.27,17.22-13.77,11.89,0,23.77.45,35.66.26s22.58-1.11,33.22-5.39"/>
+        <g class="cls-4">
+          <path d="M0,29.97c.05-7.12.14-14.25.24-21.36,6.52.69,11.34-1.82,12.48-8.6,29.96.08,61.1-.35,90.93,1.75-29.35,2.07-60.07,1.68-89.55,1.76,0,0,1.71-1.35,1.71-1.35-1.31,6.5-7.68,10.39-14.08,9.86,0,0,1.82-1.62,1.82-1.62-.16,6.54-.33,13.09-.54,19.63,0,0-3-.06-3-.06h0Z"/>
+          <path class="cls-2" d="M1.5,20.68c11.78-4.14,14.72-8.27,17.22-13.77,11.89,0,8.77.45,20.66.26s22.58-1.11,33.22-5.39"/>
         </g>
       </g>
       <g id="_Repetição_do_espelho_-2" data-name="&amp;lt;Repetição do espelho&amp;gt;">
-        <g class="cls-4">
-          <path class="cls-3" d="M2,20.13l.38,19.63s9.95-.92,12.22,8.61h154.55"/>
-          <path class="cls-2" d="M2,29.45c11.78,4.14,14.72,8.27,17.22,13.77,11.89,0,23.77-.45,35.66-.26s22.58,1.11,33.22,5.39"/>
+        <g class="cls-3">
+          <path d="M0,19.91c.05,7.12.14,14.25.24,21.36,6.52-.69,11.34,1.82,12.48,8.6,29.96-.08,61.1.35,90.93-1.75-29.35-2.07-60.07-1.68-89.55-1.76,0,0,1.71,1.35,1.71,1.35-1.31-6.5-7.68-10.39-14.08-9.86,0,0,1.82,1.62,1.82,1.62-.16-6.54-.33-13.09-.54-19.63,0,0-3,.06-3,.06h0Z"/>
+          <path class="cls-2" d="M1.5,29.2c11.78,4.14,14.72,8.27,17.22,13.77,11.89,0,8.77-.45,20.66-.26s22.58,1.11,33.22,5.39"/>
         </g>
       </g>
     </g>

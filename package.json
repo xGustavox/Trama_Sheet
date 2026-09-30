@@ -8,14 +8,14 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "tsx --test tests/*.test.ts",
-    "equipment:seed": "node scripts/generate-equipment-migration.mjs",
     "preview": "vite preview"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.1",
     "react": "^19.2.8",
     "react-cropper": "^2.3.3",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "swiper": "^14.3.0"
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",

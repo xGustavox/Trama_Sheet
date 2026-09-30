@@ -3,6 +3,7 @@
   --primary-hover: #5B2D17;
   --primary-surface: #F4ECE7;
   --canvas: #f9f9f9;
+  --surface: #ffffff;
   --paper-50: #ffffff;
   --ink: #171a20;
   --ink-muted: #747b87;
@@ -21,6 +22,7 @@
   --success: #3E5641;
   --warning: #D17A22;
   --paper-texture: url('/images/papiru.jpg');
+  color-scheme: light;
   --font-display: 'PT Serif', Georgia, 'Times New Roman', serif;
   --font-ui: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
     'Segoe UI', sans-serif;
@@ -38,6 +40,46 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --canvas: #17191e;
+  --surface: #22252c;
+  --paper-50: #22252c;
+  --ink: #f1f2f4;
+  --ink-muted: #b0b6c0;
+  --line: #3c414b;
+  --line-strong: #555c68;
+  --primary-surface: #392e32;
+  --accent: #d9b7a4;
+  background-color: var(--canvas);
+  background-image: linear-gradient(rgb(19 21 25 / 93%), rgb(19 21 25 / 93%)), url('/images/app-background-texture.png');
+}
+
+dialog {
+  box-sizing: border-box;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 24px 64px rgb(0 0 0 / 24%);
+}
+
+dialog::backdrop {
+  background: rgb(12 14 18 / 62%);
+  backdrop-filter: blur(2px);
+}
+
+:root dialog:not([class*='play-sheet__']):not(.wizard__cantrip-drawer) {
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 24px 64px rgb(0 0 0 / 24%);
+}
+
+:root dialog:not([class*='play-sheet__']):not(.wizard__cantrip-drawer)::backdrop {
+  background: rgb(12 14 18 / 62%);
+  backdrop-filter: blur(2px);
 }
 
 * {

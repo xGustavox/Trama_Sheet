@@ -13,7 +13,11 @@ function SidebarIcon({ name }: { name: string }) {
   return <span aria-hidden="true" className="sidebar__icon material-symbols-rounded">{name}</span>
 }
 
-export function AppSidebar({ onSelect }: { onSelect: (section: SidebarSection) => void }) {
+export function AppSidebar({ onSelect, theme, onToggleTheme }: {
+  onSelect: (section: SidebarSection) => void
+  theme: 'light' | 'dark'
+  onToggleTheme: () => void
+}) {
   return (
     <aside aria-label="Navegação principal" className="sidebar">
       <button
@@ -82,6 +86,16 @@ export function AppSidebar({ onSelect }: { onSelect: (section: SidebarSection) =
 
       <div className="sidebar__spacer" />
 
+      <button
+        aria-label={`Ativar modo ${theme === 'dark' ? 'claro' : 'escuro'}`}
+        aria-pressed={theme === 'dark'}
+        className="sidebar__theme-toggle"
+        data-tooltip={`Modo ${theme === 'dark' ? 'escuro' : 'claro'}`}
+        onClick={onToggleTheme}
+        type="button"
+      >
+        <SidebarIcon name={theme === 'dark' ? 'light_mode' : 'dark_mode'} />
+      </button>
       <button
         aria-label="Configurações"
         className="sidebar__item"
