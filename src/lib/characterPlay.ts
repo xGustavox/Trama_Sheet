@@ -22,6 +22,25 @@ export function adjustHitPoints(state: CharacterPlayState, currentHpChange: numb
   }
 }
 
+export function applyHitPointAdjustment(startingState: CharacterPlayState, adjustment: number, maxHp: number): CharacterPlayState {
+  const netAdjustment = Math.trunc(adjustment)
+  if (netAdjustment >= 0) {
+    return {
+      ...startingState,
+      currentHp: Math.min(Math.max(0, maxHp), startingState.currentHp + netAdjustment),
+    }
+  }
+
+  const damage = -netAdjustment
+  const temporaryDamage = Math.min(startingState.temporaryHp, damage)
+  const currentDamage = Math.min(startingState.currentHp, Math.max(0, damage - startingState.temporaryHp))
+  return {
+    ...startingState,
+    currentHp: startingState.currentHp - currentDamage,
+    temporaryHp: startingState.temporaryHp - temporaryDamage,
+  }
+}
+
 export function applyHitPointDamage(state: CharacterPlayState, amount: number): CharacterPlayState {
   let remainingDamage = Math.max(0, Math.trunc(amount))
   const temporaryDamage = Math.min(state.temporaryHp, remainingDamage)

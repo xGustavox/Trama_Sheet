@@ -21,6 +21,10 @@
 .play-sheet__experience-labels { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 8px; font-size: 11px; line-height: 1; }
 .play-sheet__experience-labels > :last-child { text-align: right; }
 .play-sheet__experience-labels strong { font-size: 12px; font-weight: 600; white-space: nowrap; }
+.play-sheet__experience-current-level { font-weight: 700; white-space: nowrap; }
+.play-sheet__experience-current-level strong { font-weight: 700; }
+.play-sheet__experience-values { white-space: nowrap; }
+.play-sheet__experience-values strong { font-weight: 700; }
 .play-sheet__experience-prefix-mobile, .play-sheet__experience-total-mobile { display: none; }
 .play-sheet__experience-meter { display: block; height: 3px; overflow: hidden; border-radius: 999px; background: rgb(80 80 80 / 24%); }
 .play-sheet__experience-meter > span { display: block; height: 100%; border-radius: inherit; background: var(--primary); transition: width 180ms ease; }
@@ -85,7 +89,7 @@
   .play-sheet__experience-labels strong { font-size: 11px; }
   .play-sheet__experience-prefix-full, .play-sheet__experience-total-full { display: none; }
   .play-sheet__experience-prefix-mobile, .play-sheet__experience-total-mobile { display: inline; }
-  .play-sheet__experience-labels strong { justify-self: end; }
+  .play-sheet__experience-values { justify-self: end; }
   .play-sheet__experience-dialog { padding: 20px 16px; }
   .play-sheet__experience-controls { grid-template-columns: minmax(0, 1fr) minmax(72px, .8fr) minmax(0, 1fr); gap: 7px; }
   .play-sheet__experience-controls button { padding-inline: 6px; font-size: 13px; }

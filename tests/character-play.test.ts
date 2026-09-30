@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import type { CharacterDetails, CharacterPlayState } from '../src/lib/characterData'
-import { adjustHitPoints, applyHitPointDamage, availableSpellSlotLevels, availableSpellSlots, getInitialCharacterPlayState, healHitPoints, recoverFromLongRest, recoverFromShortRest, setTemporaryHitPoints, toggleSpellSlot } from '../src/lib/characterPlay'
+import { adjustHitPoints, applyHitPointAdjustment, applyHitPointDamage, availableSpellSlotLevels, availableSpellSlots, getInitialCharacterPlayState, healHitPoints, recoverFromLongRest, recoverFromShortRest, setTemporaryHitPoints, toggleSpellSlot } from '../src/lib/characterPlay'
 
 const spentState: CharacterPlayState = {
   currentHp: 3,
@@ -39,6 +39,29 @@ test('damage consumes temporary hit points first and carries excess damage into 
   })
   assert.deepEqual(applyHitPointDamage({ ...spentState, currentHp: 2, temporaryHp: 0 }, 5), {
     ...spentState,
+    currentHp: 0,
+    temporaryHp: 0,
+  })
+})
+
+test('button adjustments consume temporary hit points first and reverse within the adjustment window', () => {
+  const startingState = { ...spentState, currentHp: 20, temporaryHp: 10 }
+  assert.deepEqual(applyHitPointAdjustment(startingState, -3, 30), {
+    ...startingState,
+    temporaryHp: 7,
+  })
+  assert.deepEqual(applyHitPointAdjustment(startingState, -13, 30), {
+    ...startingState,
+    currentHp: 17,
+    temporaryHp: 0,
+  })
+  assert.deepEqual(applyHitPointAdjustment(startingState, 0, 30), startingState)
+  assert.deepEqual(applyHitPointAdjustment({ ...startingState, currentHp: 30 }, 2, 30), {
+    ...startingState,
+    currentHp: 30,
+  })
+  assert.deepEqual(applyHitPointAdjustment({ ...startingState, currentHp: 3 }, -20, 30), {
+    ...startingState,
     currentHp: 0,
     temporaryHp: 0,
   })

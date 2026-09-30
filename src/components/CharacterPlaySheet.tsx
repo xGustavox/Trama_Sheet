@@ -1,16 +1,21 @@
-import { useEffect, useMemo, useRef, useState, type TouchEvent } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { Swiper as SwiperInstance } from 'swiper/types'
+import { Swiper, SwiperSlide } from 'swiper/react'
+import 'swiper/css'
 import { classFeatures, getSpellSlotsAtClassLevel } from '../lib/classFeatures'
 import type { CharacterDetails, CharacterPlayState } from '../lib/characterData'
 import { addInventoryItem, calculateArmorClass, equipOneInventoryUnit, formatPrice, getCurrencyDisplay, getWeaponAttackModifier, isEquippable, readInventory, type EquipmentItem, type InventoryEntry } from '../lib/equipment'
 import { useEquipmentCatalog } from '../lib/useEquipmentCatalog'
-import { applyHitPointDamage, availableSpellSlotLevels, availableSpellSlots, getInitialCharacterPlayState, healHitPoints, recoverFromLongRest, recoverFromShortRest, setTemporaryHitPoints, toggleSpellSlot } from '../lib/characterPlay'
+import { applyHitPointAdjustment, applyHitPointDamage, availableSpellSlotLevels, availableSpellSlots, getInitialCharacterPlayState, healHitPoints, recoverFromLongRest, recoverFromShortRest, setTemporaryHitPoints, toggleSpellSlot } from '../lib/characterPlay'
 import { levelForExperience } from '../lib/experience'
 import { getSpellDetails } from '../lib/spellDetails'
+import { groupSpellChoicesByLevel } from '../lib/spellSelection'
+import { getSpellPreparationLimit } from '../lib/spellPreparation'
 import { tintSvgDataUri } from '../lib/tintSvg'
 import { ExperienceBar, ExperienceDialog, LevelUpDrawer } from './CharacterExperience'
 import { Button } from './Button'
 import { Modal } from './Modal'
-import { leveledSpellsByClass, spellcastingAbilityByClass } from '../lib/spellCatalog'
+import { getSpellListForSelection, leveledSpellsByClass, spellcastingAbilityByClass } from '../lib/spellCatalog'
 import { FramedGlassPanel } from './FramedGlassPanel'
 import './CharacterPlaySheet.css'
 
@@ -98,6 +103,43 @@ function normalize(value: string) {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 }
 
+function FrameColorDialog({ frameColor, frameSvg, landscape, theme, onCancel, onConfirm }: {
+  frameColor: string
+  frameSvg: string | undefined
+  landscape: string
+  theme: 'light' | 'dark'
+  onCancel: () => void
+  onConfirm: (color: string) => void
+}) {
+  const [draft, setDraft] = useState(frameColor)
+  const previewFrameStyle = useMemo(() => ({
+    backgroundImage: `url("${frameSvg ? tintSvgDataUri(frameSvg, draft) : frameSvgPaths.ability}")`,
+  }), [draft, frameSvg])
+
+  return <Modal open title="Cor das molduras" theme={theme} onClose={onCancel} footer={<><Button onClick={onCancel} variant="secondary">Cancelar</Button><Button onClick={() => onConfirm(draft)}>Concluir</Button></>}>
+    <div className="play-sheet__frame-color-modal">
+      <p>Escolha uma cor e veja como ela fica sobre a imagem de fundo da ficha. A alteração será aplicada à ficha somente depois de concluir.</p>
+      <div aria-label="Prévia da moldura sobre a imagem de fundo" className="play-sheet__frame-color-preview" style={{ backgroundImage: `url("${landscape}")` }}>
+        <div className="play-sheet__frame-color-preview-card">
+          <span className="play-sheet__frame-color-preview-glass" />
+          <span className="play-sheet__frame-color-preview-label">FORÇA</span>
+          <strong>+3</strong>
+          <small>DESTREZA +1</small>
+          <span aria-hidden="true" className="play-sheet__frame-color-preview-frame" style={previewFrameStyle} />
+        </div>
+      </div>
+      <div className="play-sheet__frame-color-picker">
+        <label htmlFor="sheet-frame-color">Cor da moldura</label>
+        <div>
+          <input aria-label="Cor da moldura na prévia" id="sheet-frame-color" onChange={(event) => setDraft(event.target.value)} type="color" value={draft} />
+          <output htmlFor="sheet-frame-color">{draft.toUpperCase()}</output>
+          <Button onClick={() => setDraft(defaultFrameColor)} variant="secondary">Restaurar padrão</Button>
+        </div>
+      </div>
+    </div>
+  </Modal>
+}
+
 function equipmentCategoryIcon(item: EquipmentItem | undefined, category = item?.category) {
   if (category === 'armor' || item?.armor) return 'shield'
   if (category === 'weapons' || item?.weapon) return 'swords'
@@ -156,13 +198,22 @@ export function CharacterPlaySheet({
   const [saveError, setSaveError] = useState('')
   const [experienceDialogOpen, setExperienceDialogOpen] = useState(false)
   const [restDialogOpen, setRestDialogOpen] = useState(false)
+  const [spellPreparationPromptOpen, setSpellPreparationPromptOpen] = useState(false)
+  const [spellPreparationDrawerOpen, setSpellPreparationDrawerOpen] = useState(false)
+  const [spellPreparationDraft, setSpellPreparationDraft] = useState<string[]>([])
+  const [spellPreparationLevelFilter, setSpellPreparationLevelFilter] = useState<number | null>(null)
+  const [spellPreparationSaving, setSpellPreparationSaving] = useState(false)
   const [conditionsDialogOpen, setConditionsDialogOpen] = useState(false)
   const [activeConditionNames, setActiveConditionNames] = useState<string[]>(() => character.activeConditions ?? [])
+  const [conditionDraftNames, setConditionDraftNames] = useState<string[]>(() => character.activeConditions ?? [])
   const [conditionIconIndex, setConditionIconIndex] = useState(0)
   const [conditionSavePending, setConditionSavePending] = useState(false)
   const [levelUpTarget, setLevelUpTarget] = useState<{ experience: number; level: number } | null>(null)
   const [hpDialogOpen, setHpDialogOpen] = useState(false)
-  const [hpAmount, setHpAmount] = useState('1')
+  const [hpAmount, setHpAmount] = useState('')
+  const [hpDraft, setHpDraft] = useState<CharacterPlayState>(() => getInitialCharacterPlayState(character))
+  const [hpAdjustment, setHpAdjustment] = useState(0)
+  const [hpAdjustmentVisible, setHpAdjustmentVisible] = useState(false)
   const [selectedInventoryEntry, setSelectedInventoryEntry] = useState<InventoryEntry | null>(null)
   const [quantityDialog, setQuantityDialog] = useState<QuantityDialogState | null>(null)
   const [inventoryEntryToDelete, setInventoryEntryToDelete] = useState<InventoryEntry | null>(null)
@@ -188,6 +239,7 @@ export function CharacterPlaySheet({
       return defaultFrameColor
     }
   })
+  const [frameColorDialogOpen, setFrameColorDialogOpen] = useState(false)
   const [darkMode, setDarkMode] = useState(() => {
     try {
       return window.localStorage.getItem(darkModeStorageKey) === 'true'
@@ -197,15 +249,22 @@ export function CharacterPlaySheet({
   })
   const [frameSvgs, setFrameSvgs] = useState<Partial<Record<FrameSvg, string>>>({})
   const castDialogRef = useRef<HTMLElement>(null)
+  const sheetSwiperRef = useRef<SwiperInstance | null>(null)
   const equipmentDrawerRef = useRef<HTMLDialogElement>(null)
   const equipmentDrawerCloseTimer = useRef<number | null>(null)
   const storedSearchRef = useRef<HTMLInputElement>(null)
-  const tabSwipeStartRef = useRef<{ x: number; y: number } | null>(null)
+  const hpAdjustmentTimeoutRef = useRef<number | null>(null)
+  const hpHoldTimeoutRef = useRef<number | null>(null)
+  const hpHoldIntervalRef = useRef<number | null>(null)
+  const hpHoldTriggeredRef = useRef(false)
   const maxHp = Number(character.maxHp) || 0
   const [playState, setPlayState] = useState(() => {
     const state = getInitialCharacterPlayState(character)
     return { ...state, currentHp: Math.max(0, Math.min(maxHp, state.currentHp)) }
   })
+  const hpStartingStateRef = useRef<CharacterPlayState>(playState)
+  const hpDraftRef = useRef<CharacterPlayState>(playState)
+  const hpAdjustmentRef = useRef(0)
   const currentConditionIcon = activeConditionNames.length
     ? conditions.find(([name]) => name === activeConditionNames[conditionIconIndex % activeConditionNames.length])?.[1] ?? 'sick'
     : 'sick'
@@ -228,6 +287,15 @@ export function CharacterPlaySheet({
     .flatMap(([, choices]) => choices)
   const expertiseNames = expertiseIds.flatMap((id) => featureChoices.flatMap((choice) => choice.options).filter((option) => option.id === id).map((option) => option.name))
   const spellSlots = getSpellSlotsAtClassLevel(classId, character.classSubclassId, character.level)
+  const spellPreparationLimit = getSpellPreparationLimit(classId, character.level, modifier(character.abilities.wisdom), modifier(character.abilities.charisma))
+  const canPrepareSpells = spellPreparationLimit !== null && spellSlots.some((count) => count > 0)
+  const circleTerrain = character.classFeatureChoices[
+    `${character.characterClassId}:circulo-da-terra:2:Terreno do Círculo:terra`
+  ]?.[0]
+  const spellPreparationOptionsByLevel = getSpellListForSelection(classId, character.classSubclassId, circleTerrain)
+  const spellPreparationOptions = Object.entries(spellPreparationOptionsByLevel)
+    .filter(([level]) => Number(level) <= spellSlots.length)
+    .flatMap(([level, names]) => names.map((name) => ({ name, level: Number(level) })))
   const spellcastingAbilityName = classId === 'guerreiro' && character.classSubclassId === 'cavaleiro-arcano'
     || classId === 'ladino' && character.classSubclassId === 'trapaceiro-arcano'
     ? 'Inteligência'
@@ -238,6 +306,7 @@ export function CharacterPlaySheet({
   const spellAttackBonus = spellcastingModifier === null ? '—' : signed(proficiencyBonus + spellcastingModifier)
   const spentSpellSlotsForCasting = [...playState.spentSpellSlots, ...pendingSpellSlots]
   const knownSpells = selectedSpells(character.spells, classId)
+  const preparedSpellNames = Object.values(knownSpells.levels).flat()
   const initiative = dexterityModifier
   const baseSpeed = /anao|halfling|gnomo/.test(normalize(race)) ? 7.5 : 9
   const unarmoredMovement = !equippedArmor && !equippedShield
@@ -271,6 +340,10 @@ export function CharacterPlaySheet({
   function frameStyle(frame: FrameSvg, fallbackPath: string) {
     const svg = frameSvgs[frame]
     return { backgroundImage: `url("${svg ? tintSvgDataUri(svg, frameColor) : fallbackPath}")` }
+  }
+
+  function openFrameColorDialog() {
+    setFrameColorDialogOpen(true)
   }
 
   function updateFrameColor(color: string) {
@@ -349,9 +422,76 @@ export function CharacterPlaySheet({
     return saved
   }
 
-  function applyHpChange(change: (current: CharacterPlayState) => CharacterPlayState) {
-    const nextState = change(playState)
-    void save(character, nextState)
+  function openHpDialog() {
+    hpDraftRef.current = playState
+    hpStartingStateRef.current = playState
+    setHpDraft(playState)
+    hpAdjustmentRef.current = 0
+    setHpAdjustment(0)
+    setHpAdjustmentVisible(false)
+    setHpAmount('')
+    setHpDialogOpen(true)
+  }
+
+  function cancelHpDialog() {
+    if (hpAdjustmentTimeoutRef.current !== null) window.clearTimeout(hpAdjustmentTimeoutRef.current)
+    if (hpHoldTimeoutRef.current !== null) window.clearTimeout(hpHoldTimeoutRef.current)
+    if (hpHoldIntervalRef.current !== null) window.clearInterval(hpHoldIntervalRef.current)
+    setHpDialogOpen(false)
+    setHpAdjustmentVisible(false)
+  }
+
+  async function confirmHpDialog() {
+    if (await save(character, hpDraftRef.current)) setHpDialogOpen(false)
+  }
+
+  function changeHpByButtons(change: number) {
+    const nextAdjustment = hpAdjustmentRef.current + change
+    const startingState = hpStartingStateRef.current
+    const nextState = applyHitPointAdjustment(startingState, nextAdjustment, maxHp)
+
+    hpDraftRef.current = nextState
+    hpAdjustmentRef.current = nextAdjustment
+    setHpDraft(nextState)
+    setHpAdjustment(nextAdjustment)
+    setHpAdjustmentVisible(true)
+    if (hpAdjustmentTimeoutRef.current !== null) window.clearTimeout(hpAdjustmentTimeoutRef.current)
+    hpAdjustmentTimeoutRef.current = window.setTimeout(() => {
+      hpStartingStateRef.current = hpDraftRef.current
+      hpAdjustmentRef.current = 0
+      setHpAdjustment(0)
+      setHpAdjustmentVisible(false)
+    }, 3000)
+  }
+
+  function startHpButtonHold(change: number) {
+    hpHoldTriggeredRef.current = false
+    if (hpHoldTimeoutRef.current !== null) window.clearTimeout(hpHoldTimeoutRef.current)
+    if (hpHoldIntervalRef.current !== null) window.clearInterval(hpHoldIntervalRef.current)
+    hpHoldTimeoutRef.current = window.setTimeout(() => {
+      hpHoldTriggeredRef.current = true
+      changeHpByButtons(change * 5)
+      hpHoldIntervalRef.current = window.setInterval(() => changeHpByButtons(change * 5), 350)
+    }, 450)
+  }
+
+  function stopHpButtonHold() {
+    if (hpHoldTimeoutRef.current !== null) window.clearTimeout(hpHoldTimeoutRef.current)
+    if (hpHoldIntervalRef.current !== null) window.clearInterval(hpHoldIntervalRef.current)
+  }
+
+  function applyHpAmount(change: (current: CharacterPlayState, amount: number) => CharacterPlayState) {
+    const amount = Math.trunc(Number(hpAmount))
+    if (!Number.isFinite(amount) || amount <= 0) return
+    if (hpAdjustmentTimeoutRef.current !== null) window.clearTimeout(hpAdjustmentTimeoutRef.current)
+    hpStartingStateRef.current = hpDraftRef.current
+    hpAdjustmentRef.current = 0
+    setHpAdjustment(0)
+    setHpAdjustmentVisible(false)
+    const nextState = change(hpDraftRef.current, amount)
+    hpDraftRef.current = nextState
+    setHpDraft(nextState)
+    setHpAmount('')
   }
 
   function updatePlayState(update: (current: CharacterPlayState) => CharacterPlayState) {
@@ -451,38 +591,74 @@ export function CharacterPlaySheet({
     setInventoryEntryToDelete(null)
   }
 
-  function handleTabSwipeEnd(event: TouchEvent<HTMLDivElement>) {
-    const start = tabSwipeStartRef.current
-    tabSwipeStartRef.current = null
-    if (!start || (event.target as HTMLElement).closest('button, a, input, select, textarea, [role="dialog"], .play-sheet__inventory-table')) return
-    const touch = event.changedTouches[0]
-    const horizontalDistance = touch.clientX - start.x
-    const verticalDistance = touch.clientY - start.y
-    if (Math.abs(horizontalDistance) < 60 || Math.abs(horizontalDistance) <= Math.abs(verticalDistance)) return
-    const currentIndex = tabs.indexOf(activeTab)
-    const nextIndex = Math.max(0, Math.min(tabs.length - 1, currentIndex + (horizontalDistance < 0 ? 1 : -1)))
-    if (nextIndex !== currentIndex) setActiveTab(tabs[nextIndex])
-  }
-
-  function rest(long: boolean) {
+  async function rest(long: boolean) {
     const nextState = long
       ? recoverFromLongRest(maxHp)
       : recoverFromShortRest(playState, classId)
-    void save(character, nextState)
+    const saved = await save(character, nextState)
+    if (long && saved && canPrepareSpells) setSpellPreparationPromptOpen(true)
+  }
+
+  function openSpellPreparationDrawer() {
+    setSpellPreparationDraft(preparedSpellNames)
+    setSpellPreparationLevelFilter(null)
+    setSaveError('')
+    setSpellPreparationPromptOpen(false)
+    setSpellPreparationDrawerOpen(true)
+  }
+
+  function togglePreparedSpell(name: string) {
+    setSpellPreparationDraft((current) => current.includes(name)
+      ? current.filter((spell) => spell !== name)
+      : current.length < (spellPreparationLimit ?? 0) ? [...current, name] : current)
+  }
+
+  async function confirmSpellPreparation() {
+    if (spellPreparationSaving) return
+    const spellLevelByName = Object.fromEntries(spellPreparationOptions.map(({ name, level }) => [name, level]))
+    const spells = JSON.stringify({
+      cantrips: knownSpells.cantrips,
+      spells: groupSpellChoicesByLevel(spellPreparationDraft, spellLevelByName),
+    })
+    setSpellPreparationSaving(true)
+    try {
+      const saved = await save({ ...character, spells })
+      if (saved) setSpellPreparationDrawerOpen(false)
+    } finally {
+      setSpellPreparationSaving(false)
+    }
+  }
+
+  function openConditionsDialog() {
+    setConditionDraftNames(activeConditionNames)
+    setSaveError('')
+    setConditionsDialogOpen(true)
   }
 
   function toggleActiveCondition(name: string) {
     if (conditionSavePending) return
-    const nextConditions = activeConditionNames.includes(name)
-      ? activeConditionNames.filter((condition) => condition !== name)
-      : [...activeConditionNames, name]
-    setActiveConditionNames(nextConditions)
-    setConditionIconIndex(0)
+    setConditionDraftNames((current) => current.includes(name)
+      ? current.filter((condition) => condition !== name)
+      : [...current, name])
+  }
+
+  async function closeConditionsDialog() {
+    if (conditionSavePending) return
+    const conditionsChanged = conditionDraftNames.length !== activeConditionNames.length
+      || conditionDraftNames.some((name) => !activeConditionNames.includes(name))
+    if (!conditionsChanged) {
+      setConditionsDialogOpen(false)
+      return
+    }
+
     setConditionSavePending(true)
-    void save({ ...character, activeConditions: nextConditions }).then((saved) => {
-      if (!saved) setActiveConditionNames(character.activeConditions ?? [])
-      setConditionSavePending(false)
-    })
+    const saved = await save({ ...character, activeConditions: conditionDraftNames })
+    if (saved) {
+      setActiveConditionNames(conditionDraftNames)
+      setConditionIconIndex(0)
+      setConditionsDialogOpen(false)
+    }
+    setConditionSavePending(false)
   }
 
   function openCastDialog(name: string, level: number) {
@@ -767,10 +943,11 @@ export function CharacterPlaySheet({
       <FramedGlassPanel className="play-sheet__about-frame" contentClassName="play-sheet__about-content" cornerSvg={frameSvgs.corner ?? ''} frameColor={frameColor}>
       <section className="play-sheet__about-section play-sheet__frame-color"><h2>Personalização da ficha</h2>
         <label className="play-sheet__dark-mode"><input checked={darkMode} onChange={(event) => updateDarkMode(event.target.checked)} type="checkbox" />Modo escuro</label>
-        <label htmlFor="sheet-frame-color">Cor das molduras</label>
-        <div><input aria-label="Cor das molduras da ficha" id="sheet-frame-color" onChange={(event) => updateFrameColor(event.target.value)} type="color" value={frameColor} /><output htmlFor="sheet-frame-color">{frameColor.toUpperCase()}</output><button onClick={() => updateFrameColor(defaultFrameColor)} type="button">Restaurar padrão</button></div>
+        <div className="play-sheet__frame-color-trigger">
+          <span>Cor das molduras</span>
+          <Button aria-label={`Cor atual das molduras: ${frameColor}`} className="play-sheet__frame-color-open" onClick={openFrameColorDialog} variant="secondary"><span aria-hidden="true" className="play-sheet__frame-color-swatch" style={{ backgroundColor: frameColor }} />Alterar cor</Button>
+        </div>
       </section>
-      <section className="play-sheet__about-section"><h2>Descansos</h2><p>O descanso longo restaura PV e espaços de magia. O descanso curto recupera os espaços de pacto do Bruxo.</p><div className="play-sheet__rest-actions"><button onClick={() => rest(false)} type="button">Descanso curto</button><button onClick={() => rest(true)} type="button">Descanso longo</button></div></section>
       <section className="play-sheet__about-section play-sheet__about-facts"><h2>Sobre</h2>
         {[['Idade', character.age ? `${character.age} anos` : '—'], ['Altura', character.height || '—'], ['Peso', character.weight ? `${character.weight} kg` : '—'], ['Tendência', character.alignment || '—'], ['Antecedente', background]].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}
       </section>
@@ -789,14 +966,14 @@ export function CharacterPlaySheet({
         <ExperienceBar experiencePoints={Number(character.experiencePoints) || 0} level={character.level} onClick={() => setExperienceDialogOpen(true)} />
         <div className="play-sheet__hp-controls">
           <Button aria-label="Opções de descanso" className="play-sheet__rest-trigger play-sheet__nav-action" onClick={() => setRestDialogOpen(true)} size="icon" title="Descansar" variant="secondary"><span aria-hidden="true" className="material-symbols-rounded">hotel</span></Button>
-          <Button aria-label={activeConditionNames.length ? `${activeConditionNames.length} condições ativas` : 'Condições'} className={`play-sheet__conditions-trigger play-sheet__nav-action${activeConditionNames.length ? ' play-sheet__conditions-trigger--active' : ''}`} onClick={() => setConditionsDialogOpen(true)} size="icon" title={activeConditionNames.length ? `Condições: ${activeConditionNames.join(', ')}` : 'Condições'} variant="secondary">
+          <Button aria-label={activeConditionNames.length ? `Condições marcadas: ${activeConditionNames.join(', ')}` : 'Condições'} className={`play-sheet__conditions-trigger play-sheet__nav-action${activeConditionNames.length ? ' play-sheet__conditions-trigger--active' : ''}`} data-tooltip={activeConditionNames.length ? `Condições marcadas: ${activeConditionNames.join(', ')}` : undefined} disabled={conditionSavePending} onClick={openConditionsDialog} size="icon" variant="secondary">
             <span aria-hidden="true" className="material-symbols-rounded">{currentConditionIcon}</span>
             {activeConditionNames.length > 0 && <span aria-label={`${activeConditionNames.length} condições ativas`} className="play-sheet__condition-count">{activeConditionNames.length}</span>}
           </Button>
-          <button aria-label={`Pontos de vida: ${playState.currentHp} de ${maxHp}${playState.temporaryHp ? `, ${playState.temporaryHp} temporários` : ''}. Abrir controles de PV`} className="play-sheet__hp-card" onClick={() => setHpDialogOpen(true)} type="button">
-            <span className="play-sheet__hp-card-title">Pontos de vida</span>
-            <span className="play-sheet__hp-card-values"><strong>{playState.currentHp}</strong> / {maxHp}{playState.temporaryHp > 0 && <> <strong>+{playState.temporaryHp}</strong></>}</span>
-            <span aria-hidden="true" className="play-sheet__hp-meter"><span className="play-sheet__hp-meter-current" style={{ width: `${maxHp > 0 ? Math.min(100, playState.currentHp / maxHp * 100) : 0}%` }} /><span className="play-sheet__hp-meter-temporary" style={{ width: `${maxHp > 0 ? Math.min(100 - (playState.currentHp / maxHp * 100), playState.temporaryHp / maxHp * 100) : 0}%` }} /></span>
+          <button aria-label={`Pontos de vida: ${playState.currentHp}${playState.temporaryHp ? ` mais ${playState.temporaryHp} temporários` : ''} de ${maxHp}. Abrir controles de PV`} className="play-sheet__hp-card" onClick={openHpDialog} type="button">
+            <span className="play-sheet__hp-card-title">PONTOS DE VIDA</span>
+            <span className="play-sheet__hp-card-values"><strong>{playState.currentHp}</strong>{playState.temporaryHp > 0 && <> + <strong className="play-sheet__hp-temporary-value">{playState.temporaryHp}</strong></>} <span>/ {maxHp}</span></span>
+            <span aria-hidden="true" className="play-sheet__hp-meter"><span className="play-sheet__hp-meter-current" style={{ width: `${maxHp > 0 ? Math.min(playState.temporaryHp > 0 ? 78 : 100, playState.currentHp / maxHp * (playState.temporaryHp > 0 ? 78 : 100)) : 0}%` }} /><span className="play-sheet__hp-meter-temporary" style={{ width: `${playState.temporaryHp > 0 ? Math.max(16, Math.min(22, playState.temporaryHp / Math.max(1, maxHp) * 100)) : 0}%` }} /></span>
           </button>
         </div>
       </div>
@@ -806,38 +983,69 @@ export function CharacterPlaySheet({
     </div>
     <div className="play-sheet__paper">
       <nav aria-label="Seções da ficha" className="play-sheet__tabs" role="tablist">
-        {tabs.map((tab) => <button aria-selected={activeTab === tab} className={activeTab === tab ? 'play-sheet__tab play-sheet__tab--active' : 'play-sheet__tab'} key={tab} onClick={() => setActiveTab(tab)} role="tab" type="button"><span aria-hidden="true" className="material-symbols-rounded">{tabIcons[tab]}</span>{tab}</button>)}
+        {tabs.map((tab, index) => <button aria-selected={activeTab === tab} className={activeTab === tab ? 'play-sheet__tab play-sheet__tab--active' : 'play-sheet__tab'} key={tab} onClick={() => sheetSwiperRef.current?.slideTo(index)} role="tab" type="button"><span aria-hidden="true" className="material-symbols-rounded">{tabIcons[tab]}</span>{tab}</button>)}
       </nav>
-      <div className="play-sheet__content" key={activeTab} onTouchStart={(event) => {
-        if ((event.target as HTMLElement).closest('button, a, input, select, textarea, [role="dialog"], .play-sheet__inventory-table')) {
-          tabSwipeStartRef.current = null
-          return
-        }
-        const touch = event.touches[0]
-        tabSwipeStartRef.current = { x: touch.clientX, y: touch.clientY }
-      }} onTouchEnd={handleTabSwipeEnd}>
-        {activeTab === 'Habilidades' && renderAbilities()}
-        {activeTab === 'Características' && renderFeatures()}
-        {activeTab === 'Inventário' && renderInventory()}
-        {activeTab === 'Magias' && renderSpells()}
-        {activeTab === 'Sobre' && renderAbout()}
-      </div>
+      <Swiper
+        autoHeight
+        className="play-sheet__content"
+        initialSlide={tabs.indexOf(activeTab)}
+        noSwipingSelector="button, a, input, select, textarea, [role='dialog'], .play-sheet__inventory-table"
+        onSlideChange={(swiper) => setActiveTab(tabs[swiper.activeIndex])}
+        onSwiper={(swiper) => { sheetSwiperRef.current = swiper }}
+        speed={300}
+      >
+        <SwiperSlide><div className="play-sheet__tab-content">{renderAbilities()}</div></SwiperSlide>
+        <SwiperSlide><div className="play-sheet__tab-content">{renderFeatures()}</div></SwiperSlide>
+        <SwiperSlide><div className="play-sheet__tab-content">{renderInventory()}</div></SwiperSlide>
+        <SwiperSlide><div className="play-sheet__tab-content">{renderSpells()}</div></SwiperSlide>
+        <SwiperSlide><div className="play-sheet__tab-content">{renderAbout()}</div></SwiperSlide>
+      </Swiper>
     </div>
     {saveError && <p className="play-sheet__error" role="alert">{saveError}</p>}
     {experienceDialogOpen && <ExperienceDialog experiencePoints={Number(character.experiencePoints) || 0} theme={darkMode ? 'dark' : 'light'} onCancel={() => setExperienceDialogOpen(false)} onConfirm={saveExperience} />}
     {levelUpTarget && <LevelUpDrawer character={character} classData={classData} classId={classId} race={race} targetExperience={levelUpTarget.experience} targetLevel={levelUpTarget.level} theme={darkMode ? 'dark' : 'light'} onCancel={() => setLevelUpTarget(null)} onComplete={() => setLevelUpTarget(null)} onConfirm={save} />}
     {restDialogOpen && <Modal open title="Opções de descanso" theme={darkMode ? 'dark' : 'light'} onClose={() => setRestDialogOpen(false)}>
       <div className="play-sheet__rest-modal">
-        <button onClick={() => { setRestDialogOpen(false); rest(false) }} type="button"><h3>Descanso curto</h3><p>Uma pausa de pelo menos 1 hora. Bruxos recuperam seus espaços de magia de pacto; outros recursos dependem das características da classe.</p></button>
-        <button onClick={() => { setRestDialogOpen(false); rest(true) }} type="button"><h3>Descanso longo</h3><p>Uma pausa prolongada que restaura seus pontos de vida máximos, remove os pontos de vida temporários e recupera os espaços de magia gastos.</p></button>
+        <button onClick={() => { setRestDialogOpen(false); void rest(false) }} type="button"><h3>Realizar descanso Curto</h3><p>Uma pausa de pelo menos 1 hora. Bruxos recuperam seus espaços de magia de pacto; outros recursos dependem das características da classe.</p></button>
+        <button onClick={() => { setRestDialogOpen(false); void rest(true) }} type="button"><h3>Realizar descanso longo</h3><p>Uma pausa prolongada que restaura seus pontos de vida máximos, remove os pontos de vida temporários e recupera os espaços de magia gastos.</p></button>
       </div>
     </Modal>}
-    {conditionsDialogOpen && <Modal open title="Condições" theme={darkMode ? 'dark' : 'light'} onClose={() => setConditionsDialogOpen(false)} variant="wide" footer={<Button onClick={() => setConditionsDialogOpen(false)} variant="secondary">Fechar</Button>}>
-      <div className="play-sheet__conditions-list">{conditions.map(([name, icon, description]) => <label className="play-sheet__condition-option" key={name}>
-        <input aria-label={`Marcar condição ${name}`} checked={activeConditionNames.includes(name)} disabled={conditionSavePending} onChange={() => toggleActiveCondition(name)} type="checkbox" />
+    {spellPreparationPromptOpen && <Modal open title="Preparar magias" theme={darkMode ? 'dark' : 'light'} onClose={() => setSpellPreparationPromptOpen(false)} footer={<>
+      <Button onClick={() => setSpellPreparationPromptOpen(false)} variant="secondary">Manter magias</Button>
+      <Button onClick={openSpellPreparationDrawer}>Preparar novamente</Button>
+    </>}>
+      <p>Deseja escolher novamente as magias preparadas para este personagem?</p>
+    </Modal>}
+    {spellPreparationDrawerOpen && <Modal open title="Preparar magias" theme={darkMode ? 'dark' : 'light'} onClose={() => { if (!spellPreparationSaving) setSpellPreparationDrawerOpen(false) }} variant="drawer" showHeader={false}>
+      <div className="play-sheet__spell-preparation-drawer">
+        <header>
+          <div><h2>Preparar magias</h2><p>Escolha até {spellPreparationLimit ?? 0} magias. Selecionadas: {spellPreparationDraft.length}/{spellPreparationLimit ?? 0}.</p></div>
+          <button aria-label="Fechar painel de preparação" disabled={spellPreparationSaving} onClick={() => setSpellPreparationDrawerOpen(false)} type="button"><span aria-hidden="true" className="material-symbols-rounded">close</span></button>
+        </header>
+        <div aria-label="Filtrar magias por nível" className="play-sheet__spell-preparation-filters" role="group">
+          <button aria-pressed={spellPreparationLevelFilter === null} className={spellPreparationLevelFilter === null ? 'play-sheet__spell-preparation-filter play-sheet__spell-preparation-filter--active' : 'play-sheet__spell-preparation-filter'} onClick={() => setSpellPreparationLevelFilter(null)} type="button">Todos</button>
+          {spellSlots.map((count, index) => count > 0 && <button aria-pressed={spellPreparationLevelFilter === index + 1} className={spellPreparationLevelFilter === index + 1 ? 'play-sheet__spell-preparation-filter play-sheet__spell-preparation-filter--active' : 'play-sheet__spell-preparation-filter'} key={index} onClick={() => setSpellPreparationLevelFilter(index + 1)} type="button">{index + 1}º nível</button>)}
+        </div>
+        <div aria-label="Magias disponíveis" className="play-sheet__spell-preparation-options">
+          {spellPreparationOptions.filter(({ level }) => spellPreparationLevelFilter === null || level === spellPreparationLevelFilter).map(({ name, level }) => {
+            const details = getSpellDetails(name)
+            const checked = spellPreparationDraft.includes(name)
+            return <label className="play-sheet__spell-preparation-option" key={`${level}-${name}`}>
+              <input checked={checked} disabled={spellPreparationSaving || (!checked && spellPreparationDraft.length >= (spellPreparationLimit ?? 0))} onChange={() => togglePreparedSpell(name)} type="checkbox" />
+              <span><strong>{name} · {level}º nível</strong>{details && <><small>Conjuração: {details.castingTime} · Alcance: {details.range}</small><small>Componentes: {details.components} · Duração: {details.duration}</small></>}</span>
+            </label>
+          })}
+        </div>
+        {saveError && <p className="play-sheet__spell-preparation-error" role="alert">{saveError}</p>}
+        <footer><Button disabled={spellPreparationSaving} onClick={() => setSpellPreparationDrawerOpen(false)} variant="secondary">Cancelar</Button><Button disabled={!spellPreparationDraft.length || spellPreparationSaving} onClick={() => void confirmSpellPreparation()}>{spellPreparationSaving ? 'Salvando…' : 'Confirmar seleção'}</Button></footer>
+      </div>
+    </Modal>}
+    {conditionsDialogOpen && <Modal open title="Condições" theme={darkMode ? 'dark' : 'light'} onClose={closeConditionsDialog} variant="wide" footer={<Button disabled={conditionSavePending} onClick={closeConditionsDialog} variant="secondary">Concluir</Button>}>
+      <div aria-busy={conditionSavePending} className="play-sheet__conditions-list">{conditions.map(([name, icon, description]) => <label className="play-sheet__condition-option" key={name}>
+        <input aria-label={`Marcar condição ${name}`} checked={conditionDraftNames.includes(name)} disabled={conditionSavePending} onChange={() => toggleActiveCondition(name)} type="checkbox" />
         <span aria-hidden="true" className="material-symbols-rounded">{icon}</span>
         <span className="play-sheet__condition-option-text"><strong>{name}</strong><small>{description}</small></span>
-      </label>)}</div>
+      </label>)}{saveError && <p className="play-sheet__conditions-save-error" role="alert">{saveError}</p>}</div>
     </Modal>}
     {selectedInventoryEntry && <Modal open title={selectedInventoryEntry.name} theme={darkMode ? 'dark' : 'light'} onClose={() => setSelectedInventoryEntry(null)} footer={<Button onClick={() => setSelectedInventoryEntry(null)} variant="secondary">Fechar</Button>}>
       <div className="play-sheet__inventory-details">
@@ -865,22 +1073,23 @@ export function CharacterPlaySheet({
     {inventoryEntryToDelete && <Modal open title="Excluir item?" theme={darkMode ? 'dark' : 'light'} onClose={() => setInventoryEntryToDelete(null)} footer={<><Button onClick={confirmDeleteInventoryEntry} variant="danger">Excluir</Button><Button onClick={() => setInventoryEntryToDelete(null)} variant="secondary">Cancelar</Button></>}>
       <p>O item “{inventoryEntryToDelete.name}” será removido do inventário.</p>
     </Modal>}
-    {hpDialogOpen && <Modal open title="Pontos de vida" theme={darkMode ? 'dark' : 'light'} onClose={() => setHpDialogOpen(false)} footer={<Button onClick={() => setHpDialogOpen(false)}>Concluir</Button>}>
+    {hpDialogOpen && <Modal open title="Pontos de vida" theme={darkMode ? 'dark' : 'light'} onClose={cancelHpDialog} footer={<><Button className="play-sheet__hp-cancel" onClick={cancelHpDialog} variant="secondary">Cancelar</Button><Button onClick={() => void confirmHpDialog()}>Concluir</Button></>}>
       <div className="play-sheet__hp-dialog">
         <div className="play-sheet__hp-adjuster">
-          <button aria-label="Diminuir quantidade" onClick={() => setHpAmount((value) => String(Math.max(1, (Number(value) || 1) - 1)))} type="button">−</button>
-          <div className="play-sheet__hp-current-value"><span className="play-sheet__hp-current-total"><strong>{playState.currentHp}</strong><span> / {maxHp}</span>{playState.temporaryHp > 0 && <span className="play-sheet__hp-temporary-value">+{playState.temporaryHp}</span>}</span></div>
-          <button aria-label="Aumentar quantidade" onClick={() => setHpAmount((value) => String((Number(value) || 0) + 1))} type="button">+</button>
+          <button aria-label="Diminuir pontos de vida; segure para diminuir de cinco em cinco" onClick={() => { if (hpHoldTriggeredRef.current) { hpHoldTriggeredRef.current = false; return } changeHpByButtons(-1) }} onPointerCancel={stopHpButtonHold} onPointerDown={() => startHpButtonHold(-1)} onPointerLeave={stopHpButtonHold} onPointerUp={stopHpButtonHold} type="button">−</button>
+          <div aria-live="polite" className="play-sheet__hp-current-value">{hpAdjustmentVisible && hpAdjustment !== 0 && <small className={`play-sheet__hp-adjustment${hpAdjustment > 0 ? ' play-sheet__hp-adjustment--positive' : ' play-sheet__hp-adjustment--negative'}`}>{hpAdjustment > 0 ? '+' : ''}{hpAdjustment}</small>}<span className="play-sheet__hp-current-total"><strong>{hpDraft.currentHp}</strong>{hpDraft.temporaryHp > 0 && <span className="play-sheet__hp-temporary-value">+{hpDraft.temporaryHp}</span>}<span> / {maxHp}</span></span></div>
+          <button aria-label="Aumentar pontos de vida; segure para aumentar de cinco em cinco" onClick={() => { if (hpHoldTriggeredRef.current) { hpHoldTriggeredRef.current = false; return } changeHpByButtons(1) }} onPointerCancel={stopHpButtonHold} onPointerDown={() => startHpButtonHold(1)} onPointerLeave={stopHpButtonHold} onPointerUp={stopHpButtonHold} type="button">+</button>
         </div>
         <div className="play-sheet__hp-actions">
-          <button className="play-sheet__hp-damage" onClick={() => applyHpChange((current) => applyHitPointDamage(current, Number(hpAmount) || 0))} type="button">Dano</button>
+          <button className="play-sheet__hp-damage" disabled={!Number(hpAmount) || Number(hpAmount) <= 0} onClick={() => applyHpAmount(applyHitPointDamage)} type="button">Dano</button>
           <input aria-label="Quantidade de pontos de vida" min="1" onChange={(event) => setHpAmount(event.target.value)} type="number" value={hpAmount} />
-          <button className="play-sheet__hp-heal" onClick={() => applyHpChange((current) => healHitPoints(current, Number(hpAmount) || 0, maxHp))} type="button">Curar</button>
-          <button className="play-sheet__hp-temporary" onClick={() => applyHpChange((current) => setTemporaryHitPoints(current, Number(hpAmount) || 0))} type="button">Definir PV temporários</button>
+          <button className="play-sheet__hp-heal" disabled={!Number(hpAmount) || Number(hpAmount) <= 0} onClick={() => applyHpAmount((current, amount) => healHitPoints(current, amount, maxHp))} type="button">Curar</button>
+          <button className="play-sheet__hp-temporary" disabled={!Number(hpAmount) || Number(hpAmount) <= 0} onClick={() => applyHpAmount(setTemporaryHitPoints)} type="button">Definir PV temporários</button>
           <p className="play-sheet__hp-rule">O dano reduz primeiro os PV temporários. A cura não ultrapassa o máximo de PV.</p>
         </div>
       </div>
     </Modal>}
+    {frameColorDialogOpen && <FrameColorDialog frameColor={frameColor} frameSvg={frameSvgs.ability} landscape={landscape} theme={darkMode ? 'dark' : 'light'} onCancel={() => setFrameColorDialogOpen(false)} onConfirm={(color) => { updateFrameColor(color); setFrameColorDialogOpen(false) }} />}
     {spellToCast && <div className="play-sheet__cast-backdrop" onClick={() => setSpellToCast(null)} role="presentation">
       <section aria-labelledby="cast-spell-title" aria-modal="true" className="play-sheet__cast-dialog" onClick={(event) => event.stopPropagation()} ref={castDialogRef} role="dialog" tabIndex={-1}>
         <h2 id="cast-spell-title">Conjurar {spellToCast.name}</h2>

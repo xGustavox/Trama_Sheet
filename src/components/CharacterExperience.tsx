@@ -39,8 +39,8 @@ export function ExperienceBar({
 
   return <button aria-label={`Experiência: nível ${level}, ${formatExperience(experiencePoints)} de ${formatExperience(threshold)} XP. Abrir controles de experiência`} className="play-sheet__experience-bar" onClick={onClick} type="button">
     <span className="play-sheet__experience-labels">
-      <span><span className="play-sheet__experience-prefix-full">Level</span><span className="play-sheet__experience-prefix-mobile">Lv.</span> {level}</span>
-      <strong><span className="play-sheet__experience-total-full">{formatExperience(experiencePoints)} / {formatExperience(threshold)}</span><span className="play-sheet__experience-total-mobile">{formatExperience(experiencePoints)} XP</span></strong>
+      <span className="play-sheet__experience-current-level"><span className="play-sheet__experience-prefix-full">Level</span><span className="play-sheet__experience-prefix-mobile">Lv.</span> <strong>{level}</strong></span>
+      <span className="play-sheet__experience-values"><span className="play-sheet__experience-total-full"><strong>{formatExperience(experiencePoints)}</strong> / <span>{formatExperience(threshold)}</span></span><span className="play-sheet__experience-total-mobile"><strong>{formatExperience(experiencePoints)} XP</strong></span></span>
       <span className="play-sheet__experience-next-level">{level >= 20 ? 'Max Level' : `Level ${level + 1}`}</span>
     </span>
     <span aria-label={`${Math.round(progress)}% até o próximo nível`} aria-valuemax={threshold} aria-valuemin={0} aria-valuenow={Math.min(experiencePoints, threshold)} className="play-sheet__experience-meter" role="progressbar">

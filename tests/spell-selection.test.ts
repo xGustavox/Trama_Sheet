@@ -2,6 +2,21 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 import { getKnownSpellCountAtClassLevel, getMaximumSpellCountAtOrAboveLevel, getSpellLearningThreshold, getSpellSlotsAtClassLevel } from '../src/lib/classFeatures'
 import { canSelectSpellAtSlot, groupSpellChoicesByLevel } from '../src/lib/spellSelection'
+import { getSpellPreparationLimit } from '../src/lib/spellPreparation'
+
+test('prepared spell limits follow class ability modifiers and paladin half-level rounding', () => {
+  assert.equal(getSpellPreparationLimit('clerigo', 1, -2, 5), 1)
+  assert.equal(getSpellPreparationLimit('druida', 5, 3, -1), 8)
+  assert.equal(getSpellPreparationLimit('paladino', 5, -2, 2), 4)
+  assert.equal(getSpellPreparationLimit('paladino', 2, 0, -2), 1)
+})
+
+test('only prepared casters with a spellcasting level can prepare spells after a long rest', () => {
+  assert.equal(getSpellPreparationLimit('paladino', 1, 4, 4), null)
+  assert.equal(getSpellPreparationLimit('bardo', 5, 4, 4), null)
+  assert.equal(getSpellPreparationLimit('mago', 5, 4, 4), null)
+  assert.equal(getSpellPreparationLimit('clerigo', 21, 4, 4), null)
+})
 
 test('known-spell area capacity follows class-level progression, independently from spell slots', () => {
   assert.deepEqual([1, 2, 3].map((level) => getKnownSpellCountAtClassLevel('bardo', '', level)), [4, 5, 6])
