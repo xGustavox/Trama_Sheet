@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useRef, useState, type TouchEvent } from 'react'
 import { classFeatures, getSpellSlotsAtClassLevel } from '../lib/classFeatures'
 import type { CharacterDetails, CharacterPlayState } from '../lib/characterData'
-import { addInventoryItem, calculateArmorClass, equipOneInventoryUnit, getCurrencyDisplay, getWeaponAttackModifier, isEquippable, readInventory, type EquipmentItem, type InventoryEntry } from '../lib/equipment'
+import { addInventoryItem, calculateArmorClass, equipOneInventoryUnit, formatPrice, getCurrencyDisplay, getWeaponAttackModifier, isEquippable, readInventory, type EquipmentItem, type InventoryEntry } from '../lib/equipment'
 import { useEquipmentCatalog } from '../lib/useEquipmentCatalog'
 import { applyHitPointDamage, availableSpellSlotLevels, availableSpellSlots, getInitialCharacterPlayState, healHitPoints, recoverFromLongRest, recoverFromShortRest, setTemporaryHitPoints, toggleSpellSlot } from '../lib/characterPlay'
 import { levelForExperience } from '../lib/experience'
 import { getSpellDetails } from '../lib/spellDetails'
 import { tintSvgDataUri } from '../lib/tintSvg'
 import { ExperienceBar, ExperienceDialog, LevelUpDrawer } from './CharacterExperience'
+import { Button } from './Button'
 import { Modal } from './Modal'
-import { leveledSpellsByClass } from '../lib/spellCatalog'
+import { leveledSpellsByClass, spellcastingAbilityByClass } from '../lib/spellCatalog'
 import { FramedGlassPanel } from './FramedGlassPanel'
 import './CharacterPlaySheet.css'
 
@@ -19,6 +20,22 @@ type SpellToCast = { name: string; level: number }
 type QuantityDialogState = { entryId: string; name: string; quantity: number }
 
 const tabs: SheetTab[] = ['Habilidades', 'Características', 'Inventário', 'Magias', 'Sobre']
+const conditions = [
+  ['Cego', 'blind', 'Não pode ver e falha automaticamente em testes que dependam da visão. Seus ataques têm desvantagem, e ataques contra ele têm vantagem.'],
+  ['Enfeitiçado', 'mood_heart', 'Não pode atacar nem causar dano ao encantador. O encantador tem vantagem em testes sociais para interagir com a criatura.'],
+  ['Surdo', 'hearing_disabled', 'Não pode ouvir e falha automaticamente em testes que dependam da audição.'],
+  ['Amedrontado', 'sentiment_stressed', 'Tem desvantagem em testes e ataques enquanto a fonte do medo estiver visível e não pode se aproximar voluntariamente dela.'],
+  ['Agarrado', 'sports_kabaddi', 'Deslocamento se torna 0. A condição termina se quem o agarrou ficar incapacitado ou se um efeito afastar a criatura do alcance do agarrão.'],
+  ['Incapacitado', 'sentiment_frustrated', 'Não pode realizar ações nem reações.'],
+  ['Invisível', 'background_replace', 'Não pode ser visto sem magia ou sentido especial. Ataques da criatura têm vantagem; ataques contra ela têm desvantagem.'],
+  ['Paralisado', 'sentiment_neutral', 'Fica incapacitado e não pode se mover nem falar. Falha em testes de Força e Destreza; ataques contra ela têm vantagem, e acertos a até 1,5 m são críticos.'],
+  ['Petrificado', 'man_4', 'É transformado (com o equipamento) em uma substância inanimada. Fica incapacitado, não pode se mover ou falar e tem resistência a todo dano.'],
+  ['Envenenado', 'skull', 'Tem desvantagem em jogadas de ataque e testes de habilidade.'],
+  ['Caído', 'falling', 'Só pode se mover rastejando até se levantar (custa metade do deslocamento). Ataques corpo a corpo contra ela têm vantagem; ataques à distância têm desvantagem.'],
+  ['Contido', 'stress_management', 'Deslocamento se torna 0. Ataques contra ela têm vantagem, seus ataques têm desvantagem e ela tem desvantagem em testes de resistência de Destreza.'],
+  ['Atordoado', 'cognition', 'Fica incapacitado, mal consegue falar e não pode se mover. Falha em testes de Força e Destreza; ataques contra ela têm vantagem.'],
+  ['Inconsciente', 'sentiment_very_dissatisfied', 'Fica incapacitado, cai e larga o que estiver segurando. Falha em testes de Força e Destreza; ataques contra ela têm vantagem, e acertos a até 1,5 m são críticos.'],
+] as const
 const inventoryCategories: { id: EquipmentItem['category']; label: string }[] = [
   { id: 'weapons', label: 'Armas' },
   { id: 'armor', label: 'Armaduras' },
@@ -29,6 +46,7 @@ const inventoryCategories: { id: EquipmentItem['category']; label: string }[] = 
 ]
 const frameSvgPaths = {
   ability: '/images/character-sheet/SVG/habilidades.svg',
+  spellAbility: '/images/character-sheet/SVG/habilidades_magia.svg',
   defaultStat: '/images/character-sheet/SVG/retangulo.svg',
   armorClass: '/images/character-sheet/SVG/escudo.svg',
   savingThrow: '/images/character-sheet/SVG/borda_sem_ponta.svg',
@@ -137,6 +155,11 @@ export function CharacterPlaySheet({
   const [activeTab, setActiveTab] = useState<SheetTab>('Habilidades')
   const [saveError, setSaveError] = useState('')
   const [experienceDialogOpen, setExperienceDialogOpen] = useState(false)
+  const [restDialogOpen, setRestDialogOpen] = useState(false)
+  const [conditionsDialogOpen, setConditionsDialogOpen] = useState(false)
+  const [activeConditionNames, setActiveConditionNames] = useState<string[]>(() => character.activeConditions ?? [])
+  const [conditionIconIndex, setConditionIconIndex] = useState(0)
+  const [conditionSavePending, setConditionSavePending] = useState(false)
   const [levelUpTarget, setLevelUpTarget] = useState<{ experience: number; level: number } | null>(null)
   const [hpDialogOpen, setHpDialogOpen] = useState(false)
   const [hpAmount, setHpAmount] = useState('1')
@@ -152,7 +175,10 @@ export function CharacterPlaySheet({
   const [equipmentDrawerOpen, setEquipmentDrawerOpen] = useState(false)
   const [equipmentSearch, setEquipmentSearch] = useState('')
   const [equipmentFilter, setEquipmentFilter] = useState<'all' | 'weapons' | 'armor' | 'magic' | 'general'>('all')
-  const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([])
+  const [equipmentItemToAdd, setEquipmentItemToAdd] = useState<EquipmentItem | null>(null)
+  const [equipmentAddQuantity, setEquipmentAddQuantity] = useState('1')
+  const [equipmentAddNotes, setEquipmentAddNotes] = useState('')
+  const [equipmentDrawerClosing, setEquipmentDrawerClosing] = useState(false)
   const [optimisticEquipment, setOptimisticEquipment] = useState<{ base: string; value: string } | null>(null)
   const [frameColor, setFrameColor] = useState(() => {
     try {
@@ -172,6 +198,7 @@ export function CharacterPlaySheet({
   const [frameSvgs, setFrameSvgs] = useState<Partial<Record<FrameSvg, string>>>({})
   const castDialogRef = useRef<HTMLElement>(null)
   const equipmentDrawerRef = useRef<HTMLDialogElement>(null)
+  const equipmentDrawerCloseTimer = useRef<number | null>(null)
   const storedSearchRef = useRef<HTMLInputElement>(null)
   const tabSwipeStartRef = useRef<{ x: number; y: number } | null>(null)
   const maxHp = Number(character.maxHp) || 0
@@ -179,6 +206,9 @@ export function CharacterPlaySheet({
     const state = getInitialCharacterPlayState(character)
     return { ...state, currentHp: Math.max(0, Math.min(maxHp, state.currentHp)) }
   })
+  const currentConditionIcon = activeConditionNames.length
+    ? conditions.find(([name]) => name === activeConditionNames[conditionIconIndex % activeConditionNames.length])?.[1] ?? 'sick'
+    : 'sick'
   const proficiencyBonus = Math.floor((character.level - 1) / 4) + 2
   const strengthModifier = modifier(character.abilities.strength)
   const dexterityModifier = modifier(character.abilities.dexterity)
@@ -198,6 +228,14 @@ export function CharacterPlaySheet({
     .flatMap(([, choices]) => choices)
   const expertiseNames = expertiseIds.flatMap((id) => featureChoices.flatMap((choice) => choice.options).filter((option) => option.id === id).map((option) => option.name))
   const spellSlots = getSpellSlotsAtClassLevel(classId, character.classSubclassId, character.level)
+  const spellcastingAbilityName = classId === 'guerreiro' && character.classSubclassId === 'cavaleiro-arcano'
+    || classId === 'ladino' && character.classSubclassId === 'trapaceiro-arcano'
+    ? 'Inteligência'
+    : spellcastingAbilityByClass[classId]
+  const spellcastingAbility = abilities.find(([, name]) => name === spellcastingAbilityName)
+  const spellcastingModifier = spellcastingAbility ? modifier(character.abilities[spellcastingAbility[0]]) : null
+  const spellSaveDc = spellcastingModifier === null ? '—' : 8 + proficiencyBonus + spellcastingModifier
+  const spellAttackBonus = spellcastingModifier === null ? '—' : signed(proficiencyBonus + spellcastingModifier)
   const spentSpellSlotsForCasting = [...playState.spentSpellSlots, ...pendingSpellSlots]
   const knownSpells = selectedSpells(character.spells, classId)
   const initiative = dexterityModifier
@@ -209,6 +247,14 @@ export function CharacterPlaySheet({
   const walkingSpeed = baseSpeed + unarmoredMovement
   const unarmoredBonus = classId === 'barbaro' ? modifier(character.abilities.constitution) : classId === 'monge' && !equippedShield ? modifier(character.abilities.wisdom) : 0
   const armorClass = calculateArmorClass(equippedArmor, equippedShield, dexterityModifier, unarmoredBonus)
+
+  useEffect(() => {
+    if (activeConditionNames.length < 2) return
+    const interval = window.setInterval(() => {
+      setConditionIconIndex((current) => (current + 1) % activeConditionNames.length)
+    }, 30_000)
+    return () => window.clearInterval(interval)
+  }, [activeConditionNames])
 
   useEffect(() => {
     let active = true
@@ -259,8 +305,26 @@ export function CharacterPlaySheet({
     if (!equipmentDrawerOpen) return
     const drawer = equipmentDrawerRef.current
     if (!drawer) return
+    setEquipmentDrawerClosing(false)
+    if (equipmentDrawerCloseTimer.current !== null) window.clearTimeout(equipmentDrawerCloseTimer.current)
     if (!drawer.open) drawer.showModal()
   }, [equipmentDrawerOpen])
+
+  useEffect(() => {
+    if (!equipmentDrawerOpen) return
+    const bodyOverflow = document.body.style.overflow
+    const rootOverflow = document.documentElement.style.overflow
+    document.body.style.overflow = 'hidden'
+    document.documentElement.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = bodyOverflow
+      document.documentElement.style.overflow = rootOverflow
+    }
+  }, [equipmentDrawerOpen])
+
+  useEffect(() => () => {
+    if (equipmentDrawerCloseTimer.current !== null) window.clearTimeout(equipmentDrawerCloseTimer.current)
+  }, [])
 
   useEffect(() => {
     if (storedSearchOpen) storedSearchRef.current?.focus()
@@ -334,19 +398,31 @@ export function CharacterPlaySheet({
   }
 
   function confirmAddEquipment() {
-    if (!catalog) return
-    let nextInventory = inventory
-    for (const itemId of [...selectedEquipmentIds].reverse()) {
-      const item = catalog.items.find((candidate) => candidate.id === itemId)
-      if (!item) continue
-      nextInventory = addInventoryItem(nextInventory, item)
-      const addedEntry = nextInventory.entries.find((entry) => entry.itemId === item.id && entry.source === 'manual' && !entry.equipped)
-      if (addedEntry) nextInventory = { ...nextInventory, entries: [addedEntry, ...nextInventory.entries.filter((entry) => entry.id !== addedEntry.id)] }
-    }
-    if (selectedEquipmentIds.length) persistInventory(nextInventory)
-    equipmentDrawerRef.current?.close()
-    setEquipmentDrawerOpen(false)
-    setSelectedEquipmentIds([])
+    const quantity = Number(equipmentAddQuantity)
+    if (!equipmentItemToAdd || !Number.isSafeInteger(quantity) || quantity < 1) return
+    const nextInventory = addInventoryItem(inventory, equipmentItemToAdd, quantity)
+    const addedEntry = nextInventory.entries.find((entry) => entry.itemId === equipmentItemToAdd.id && entry.source === 'manual' && !entry.equipped)
+    if (!addedEntry) return
+    const entries = nextInventory.entries.map((entry) => entry.id === addedEntry.id ? { ...entry, notes: equipmentAddNotes } : entry)
+    persistInventory({
+      ...nextInventory,
+      entries: [entries.find((entry) => entry.id === addedEntry.id)!, ...entries.filter((entry) => entry.id !== addedEntry.id)],
+    })
+    setEquipmentItemToAdd(null)
+    setEquipmentAddQuantity('1')
+    setEquipmentAddNotes('')
+  }
+
+  function closeEquipmentDrawer() {
+    if (equipmentDrawerCloseTimer.current !== null) window.clearTimeout(equipmentDrawerCloseTimer.current)
+    setEquipmentDrawerClosing(true)
+    equipmentDrawerCloseTimer.current = window.setTimeout(() => {
+      if (equipmentDrawerRef.current?.open) equipmentDrawerRef.current.close()
+      else setEquipmentDrawerOpen(false)
+      setEquipmentDrawerClosing(false)
+      setEquipmentItemToAdd(null)
+      equipmentDrawerCloseTimer.current = null
+    }, 180)
   }
 
   function deleteStoredEquipment(entryId: string) {
@@ -393,6 +469,20 @@ export function CharacterPlaySheet({
       ? recoverFromLongRest(maxHp)
       : recoverFromShortRest(playState, classId)
     void save(character, nextState)
+  }
+
+  function toggleActiveCondition(name: string) {
+    if (conditionSavePending) return
+    const nextConditions = activeConditionNames.includes(name)
+      ? activeConditionNames.filter((condition) => condition !== name)
+      : [...activeConditionNames, name]
+    setActiveConditionNames(nextConditions)
+    setConditionIconIndex(0)
+    setConditionSavePending(true)
+    void save({ ...character, activeConditions: nextConditions }).then((saved) => {
+      if (!saved) setActiveConditionNames(character.activeConditions ?? [])
+      setConditionSavePending(false)
+    })
   }
 
   function openCastDialog(name: string, level: number) {
@@ -515,6 +605,38 @@ export function CharacterPlaySheet({
     </div>
   }
 
+  function renderEquipmentDetails(item: EquipmentItem) {
+    const categoryLabel = inventoryCategories.find(({ id }) => id === item.category)?.label ?? 'Gerais'
+    const components = item.components?.map(({ itemId, quantity }) => `${catalog?.items.find((candidate) => candidate.id === itemId)?.name ?? itemId}${quantity ? ` × ${quantity}` : ''}`).join(', ')
+    return <dl>
+      <div><dt>Categoria</dt><dd>{categoryLabel}</dd></div>
+      <div><dt>Subcategoria</dt><dd>{item.subcategory}</dd></div>
+      {item.rarity && <div><dt>Raridade</dt><dd>{item.rarity}</dd></div>}
+      {item.attunement && <div><dt>Sintonização</dt><dd>{item.attunement}</dd></div>}
+      <div><dt>Preço</dt><dd>{item.priceCp === null ? 'Variável' : formatPrice(item.priceCp)}</dd></div>
+      <div><dt>Peso</dt><dd>{item.weightKg === null ? 'Variável' : `${item.weightKg} kg`}</dd></div>
+      <div><dt>Unidade</dt><dd>{item.unit}</dd></div>
+      {item.weapon && <>
+        <div><dt>Dano</dt><dd>{item.weapon.damage} {item.weapon.damageType}</dd></div>
+        <div><dt>Alcance</dt><dd>{item.weapon.range ?? '—'}</dd></div>
+      </>}
+      {item.armor && <>
+        <div><dt>Classe de Armadura</dt><dd>{item.armor.ac}</dd></div>
+        <div><dt>Limite de Destreza</dt><dd>{item.armor.dexterity === 'full' ? 'Sem limite' : item.armor.dexterity === 'max2' ? '+2' : 'Sem Destreza'}</dd></div>
+        <div><dt>Força necessária</dt><dd>{item.armor.strength ?? 'Nenhuma'}</dd></div>
+        <div><dt>Desvantagem em Furtividade</dt><dd>{item.armor.stealthDisadvantage ? 'Sim' : 'Não'}</dd></div>
+        <div><dt>Escudo</dt><dd>{item.armor.shield ? 'Sim' : 'Não'}</dd></div>
+      </>}
+      {item.properties.length > 0 && <div><dt>Propriedades</dt><dd>{item.properties.join(', ')}</dd></div>}
+      {item.maxUses !== undefined && <div><dt>Usos máximos</dt><dd>{item.maxUses}</dd></div>}
+      {components && <div><dt>Componentes</dt><dd>{components}</dd></div>}
+      {item.aliases.length > 0 && <div><dt>Também conhecido como</dt><dd>{item.aliases.join(', ')}</dd></div>}
+      <div><dt>Descrição</dt><dd>{item.description || 'Sem descrição.'}</dd></div>
+      <div><dt>Página da fonte</dt><dd>{item.sourcePage ?? '—'}</dd></div>
+      <div><dt>ID do catálogo</dt><dd>{item.id}</dd></div>
+    </dl>
+  }
+
   function renderInventory() {
     const storedItems = inventory.entries.filter((entry) => !entry.equipped && normalize(entry.name).includes(normalize(storedSearch.trim())))
     const renderInventoryRow = (entry: InventoryEntry, equipped: boolean) => {
@@ -558,7 +680,7 @@ export function CharacterPlaySheet({
         <header className="play-sheet__inventory-heading"><h2>Guardado</h2><div className="play-sheet__inventory-tools">
         {storedSearchOpen && <input aria-label="Pesquisar equipamentos guardados" onChange={(event) => setStoredSearch(event.target.value)} placeholder="Pesquisar equipamento" ref={storedSearchRef} type="search" value={storedSearch} />}
         <button aria-label={storedSearchOpen ? 'Fechar pesquisa' : 'Pesquisar equipamentos guardados'} onClick={() => { if (storedSearchOpen) { setStoredSearch(''); setStoredSearchOpen(false) } else setStoredSearchOpen(true) }} type="button"><span aria-hidden="true" className="material-symbols-rounded">{storedSearchOpen ? 'close' : 'search'}</span></button>
-        <button aria-label="Adicionar equipamento" onClick={() => { setStoredSearch(''); setEquipmentSearch(''); setEquipmentFilter('all'); setSelectedEquipmentIds([]); setEquipmentDrawerOpen(true) }} type="button"><span aria-hidden="true" className="material-symbols-rounded">add</span></button>
+        <button aria-label="Adicionar equipamento" onClick={() => { setStoredSearch(''); setEquipmentSearch(''); setEquipmentFilter('all'); setEquipmentItemToAdd(null); setEquipmentDrawerOpen(true) }} type="button"><span aria-hidden="true" className="material-symbols-rounded">add</span></button>
         <span aria-label={`${currency.amount} moedas de ${currency.name}`} className="play-sheet__currency-balance" role="img"><img alt="" src={`/images/coins/${currency.code}.png`} />{currency.amount}</span>
       </div></header>
         <div className="play-sheet__inventory-table"><div className="play-sheet__inventory-row play-sheet__inventory-row--heading"><span>Item</span><span>Ataque</span><span>Quant.</span><span>Peso</span><span>Ações</span></div>
@@ -566,20 +688,28 @@ export function CharacterPlaySheet({
           {storedItems.length === 0 && <p>{storedSearch ? 'Nenhum equipamento encontrado.' : inventory.entries.some((entry) => !entry.equipped) ? 'Nenhum equipamento guardado.' : 'Seu inventário está vazio.'}</p>}
         </div>
       </FramedGlassPanel>
-      <dialog aria-label="Adicionar equipamento" className="play-sheet__equipment-drawer" onCancel={() => { setEquipmentDrawerOpen(false); setSelectedEquipmentIds([]) }} onClose={() => { setEquipmentDrawerOpen(false); setSelectedEquipmentIds([]) }} onClick={(event) => { if (event.target === event.currentTarget) { equipmentDrawerRef.current?.close(); setEquipmentDrawerOpen(false); setSelectedEquipmentIds([]) } }} ref={equipmentDrawerRef}>
+      <dialog aria-label="Adicionar equipamento" className={`play-sheet__equipment-drawer${equipmentDrawerClosing ? ' play-sheet__equipment-drawer--closing' : ''}`} onCancel={(event) => { event.preventDefault(); closeEquipmentDrawer() }} onClose={() => { setEquipmentDrawerOpen(false); setEquipmentDrawerClosing(false); setEquipmentItemToAdd(null) }} onClick={(event) => { if (event.target === event.currentTarget) closeEquipmentDrawer() }} ref={equipmentDrawerRef}>
         <div className="play-sheet__equipment-drawer-content">
-          <header><div><h2>Adicionar equipamento</h2><p>Selecione um ou mais itens para adicionar ao inventário.</p></div><button aria-label="Fechar painel" onClick={() => { equipmentDrawerRef.current?.close(); setEquipmentDrawerOpen(false); setSelectedEquipmentIds([]) }} type="button"><span aria-hidden="true" className="material-symbols-rounded">close</span></button></header>
-          <label className="play-sheet__equipment-search"><span className="material-symbols-rounded" aria-hidden="true">search</span><input aria-label="Pesquisar no catálogo de equipamentos" onChange={(event) => setEquipmentSearch(event.target.value)} placeholder="Pesquisar equipamento" type="search" value={equipmentSearch} /></label>
-          <div aria-label="Filtrar equipamentos" className="play-sheet__equipment-filters">
-            {([['all', 'Todos'], ['weapons', 'Armas'], ['armor', 'Armaduras'], ['magic', 'Itens mágicos'], ['general', 'Gerais']] as const).map(([filter, label]) => <button aria-pressed={equipmentFilter === filter} key={filter} onClick={() => setEquipmentFilter(filter)} type="button">{label}</button>)}
-          </div>
-          <div className="play-sheet__equipment-items">
-            {filteredEquipment.map((item) => <article className={selectedEquipmentIds.includes(item.id) ? 'play-sheet__equipment-option play-sheet__equipment-option--selected' : 'play-sheet__equipment-option'} key={item.id}><label><input aria-label={`Selecionar ${item.name}`} checked={selectedEquipmentIds.includes(item.id)} onChange={() => setSelectedEquipmentIds((current) => current.includes(item.id) ? current.filter((id) => id !== item.id) : [...current, item.id])} type="checkbox" /><span><strong>{item.name}</strong><span>{item.weapon ? `${item.weapon.damage} ${item.weapon.damageType}${item.properties.length ? ` · ${item.properties.join(', ')}` : ''}` : item.armor ? `CA ${item.armor.ac}${item.armor.shield ? '' : item.armor.dexterity === 'none' ? '' : ' + Destreza'}` : item.subcategory}</span><small>{item.weightKg ? `${item.weightKg} kg` : 'Peso variável'} · {item.priceCp === null ? 'Preço variável' : `${(item.priceCp / 100).toFixed(item.priceCp % 100 ? 2 : 0)} po`}</small></span></label></article>)}
-            {equipmentLoading && <p role="status">Carregando equipamentos…</p>}
-            {equipmentError && <p role="alert">Não foi possível carregar o catálogo de equipamentos. <button onClick={retryEquipment} type="button">Tentar novamente</button></p>}
-            {catalog && !filteredEquipment.length && <p>Nenhum item encontrado.</p>}
-          </div>
-          <footer className="play-sheet__equipment-drawer-actions"><button className="play-sheet__equipment-cancel" onClick={() => { equipmentDrawerRef.current?.close(); setEquipmentDrawerOpen(false); setSelectedEquipmentIds([]) }} type="button">Cancelar</button><button disabled={selectedEquipmentIds.length === 0} onClick={confirmAddEquipment} type="button">Adicionar{selectedEquipmentIds.length ? ` (${selectedEquipmentIds.length})` : ''}</button></footer>
+          <header><div><h2>{equipmentItemToAdd ? equipmentItemToAdd.name : 'Adicionar equipamento'}</h2><p>{equipmentItemToAdd ? 'Confira os detalhes e informe a quantidade e as anotações.' : 'Escolha um item para adicionar ao inventário.'}</p></div><button aria-label="Fechar painel" onClick={closeEquipmentDrawer} type="button"><span aria-hidden="true" className="material-symbols-rounded">close</span></button></header>
+          {equipmentItemToAdd ? <>
+            <div className="play-sheet__equipment-item-details">{renderEquipmentDetails(equipmentItemToAdd)}</div>
+            <form className="play-sheet__equipment-add-form" onSubmit={(event) => { event.preventDefault(); confirmAddEquipment() }}>
+              <label><span>Quantidade</span><input aria-label="Quantidade a adicionar" min="1" step="1" type="number" value={equipmentAddQuantity} onChange={(event) => setEquipmentAddQuantity(event.target.value)} /></label>
+              <label><span>Anotações</span><textarea aria-label="Anotações do item" value={equipmentAddNotes} onChange={(event) => setEquipmentAddNotes(event.target.value)} /></label>
+              <footer className="play-sheet__equipment-drawer-actions"><button className="play-sheet__equipment-cancel" onClick={() => { setEquipmentItemToAdd(null); setEquipmentAddQuantity('1'); setEquipmentAddNotes('') }} type="button">Cancelar</button><button className="play-sheet__equipment-confirm" disabled={!Number.isSafeInteger(Number(equipmentAddQuantity)) || Number(equipmentAddQuantity) < 1} type="submit">Adicionar Item</button></footer>
+            </form>
+          </> : <>
+            <label className="play-sheet__equipment-search"><span className="material-symbols-rounded" aria-hidden="true">search</span><input aria-label="Pesquisar no catálogo de equipamentos" onChange={(event) => setEquipmentSearch(event.target.value)} placeholder="Pesquisar equipamento" type="search" value={equipmentSearch} /></label>
+            <div aria-label="Filtrar equipamentos" className="play-sheet__equipment-filters">
+              {([['all', 'Todos'], ['weapons', 'Armas'], ['armor', 'Armaduras'], ['magic', 'Itens mágicos'], ['general', 'Gerais']] as const).map(([filter, label]) => <button aria-pressed={equipmentFilter === filter} key={filter} onClick={() => setEquipmentFilter(filter)} type="button">{label}</button>)}
+            </div>
+            <div className="play-sheet__equipment-items">
+              {filteredEquipment.map((item) => <article key={item.id}><span><strong>{item.name}</strong><span>{item.weapon ? `${item.weapon.damage} ${item.weapon.damageType}${item.properties.length ? ` · ${item.properties.join(', ')}` : ''}` : item.armor ? `CA ${item.armor.ac}${item.armor.shield ? '' : item.armor.dexterity === 'none' ? '' : ' + Destreza'}` : item.subcategory}</span><small>{item.weightKg ? `${item.weightKg} kg` : 'Peso variável'} · {item.priceCp === null ? 'Preço variável' : `${(item.priceCp / 100).toFixed(item.priceCp % 100 ? 2 : 0)} po`}</small></span><button aria-label={`Adicionar ${item.name}`} onClick={() => { setEquipmentAddQuantity('1'); setEquipmentAddNotes(''); setEquipmentItemToAdd(item) }} type="button"><span aria-hidden="true" className="material-symbols-rounded">add</span></button></article>)}
+              {equipmentLoading && <p role="status">Carregando equipamentos…</p>}
+              {equipmentError && <p role="alert">Não foi possível carregar o catálogo de equipamentos. <button onClick={retryEquipment} type="button">Tentar novamente</button></p>}
+              {catalog && !filteredEquipment.length && <p>Nenhum item encontrado.</p>}
+            </div>
+          </>}
         </div>
       </dialog>
     </div>
@@ -600,6 +730,23 @@ export function CharacterPlaySheet({
       </li>
     }
     return <div className="play-sheet__spell-list">
+      <section aria-label="Habilidade de conjuração" className="play-sheet__spell-stats">
+        <div className="play-sheet__spell-stat">
+          <div aria-hidden="true" className="play-sheet__spell-stat-glass" />
+          <div aria-hidden="true" className="play-sheet__spell-stat-frame" style={frameStyle('spellAbility', frameSvgPaths.spellAbility)} />
+          <span className="play-sheet__spell-stat-label">HABIL.</span><strong>{spellcastingAbility?.[2] ?? '—'}</strong>
+        </div>
+        <div className="play-sheet__spell-stat">
+          <div aria-hidden="true" className="play-sheet__spell-stat-glass" />
+          <div aria-hidden="true" className="play-sheet__spell-stat-frame" style={frameStyle('spellAbility', frameSvgPaths.spellAbility)} />
+          <span className="play-sheet__spell-stat-label">CD</span><strong>{spellSaveDc}</strong>
+        </div>
+        <div className="play-sheet__spell-stat">
+          <div aria-hidden="true" className="play-sheet__spell-stat-glass" />
+          <div aria-hidden="true" className="play-sheet__spell-stat-frame" style={frameStyle('spellAbility', frameSvgPaths.spellAbility)} />
+          <span className="play-sheet__spell-stat-label">ATK</span><strong>{spellAttackBonus}</strong>
+        </div>
+      </section>
       {knownSpells.cantrips.length > 0 && <FramedGlassPanel className="play-sheet__spell-frame" contentClassName="play-sheet__spell-panel" cornerSvg={frameSvgs.corner ?? ''} frameColor={frameColor}><h2>Truques</h2><ul>{knownSpells.cantrips.map((name) => spellItem(name, 'Truque', 0))}</ul></FramedGlassPanel>}
       {spellSlots.map((count, index) => count > 0 && <FramedGlassPanel className="play-sheet__spell-frame play-sheet__spell-level" contentClassName="play-sheet__spell-panel" cornerSvg={frameSvgs.corner ?? ''} frameColor={frameColor} key={index}>
         <header><h2>Magias de nível {index + 1}</h2><span>{count} espaços</span><div className="play-sheet__spell-slots" aria-label={`${count} espaços de magia de nível ${index + 1}`}>
@@ -640,11 +787,18 @@ export function CharacterPlaySheet({
           <div><h1>{character.name}</h1><p>{race} · {background} · {characterClass}</p></div>
         </div>
         <ExperienceBar experiencePoints={Number(character.experiencePoints) || 0} level={character.level} onClick={() => setExperienceDialogOpen(true)} />
-        <button aria-label={`Pontos de vida: ${playState.currentHp} de ${maxHp}${playState.temporaryHp ? `, ${playState.temporaryHp} temporários` : ''}. Abrir controles de PV`} className="play-sheet__hp-card" onClick={() => setHpDialogOpen(true)} type="button">
-          <span className="play-sheet__hp-card-title">Pontos de vida</span>
-          <span className="play-sheet__hp-card-values"><strong>{playState.currentHp}</strong> / {maxHp}{playState.temporaryHp > 0 && <> <strong>+{playState.temporaryHp}</strong></>}</span>
-          <span aria-hidden="true" className="play-sheet__hp-meter"><span className="play-sheet__hp-meter-current" style={{ width: `${maxHp > 0 ? Math.min(100, playState.currentHp / maxHp * 100) : 0}%` }} /><span className="play-sheet__hp-meter-temporary" style={{ width: `${maxHp > 0 ? Math.min(100 - (playState.currentHp / maxHp * 100), playState.temporaryHp / maxHp * 100) : 0}%` }} /></span>
-        </button>
+        <div className="play-sheet__hp-controls">
+          <Button aria-label="Opções de descanso" className="play-sheet__rest-trigger play-sheet__nav-action" onClick={() => setRestDialogOpen(true)} size="icon" title="Descansar" variant="secondary"><span aria-hidden="true" className="material-symbols-rounded">hotel</span></Button>
+          <Button aria-label={activeConditionNames.length ? `${activeConditionNames.length} condições ativas` : 'Condições'} className={`play-sheet__conditions-trigger play-sheet__nav-action${activeConditionNames.length ? ' play-sheet__conditions-trigger--active' : ''}`} onClick={() => setConditionsDialogOpen(true)} size="icon" title={activeConditionNames.length ? `Condições: ${activeConditionNames.join(', ')}` : 'Condições'} variant="secondary">
+            <span aria-hidden="true" className="material-symbols-rounded">{currentConditionIcon}</span>
+            {activeConditionNames.length > 0 && <span aria-label={`${activeConditionNames.length} condições ativas`} className="play-sheet__condition-count">{activeConditionNames.length}</span>}
+          </Button>
+          <button aria-label={`Pontos de vida: ${playState.currentHp} de ${maxHp}${playState.temporaryHp ? `, ${playState.temporaryHp} temporários` : ''}. Abrir controles de PV`} className="play-sheet__hp-card" onClick={() => setHpDialogOpen(true)} type="button">
+            <span className="play-sheet__hp-card-title">Pontos de vida</span>
+            <span className="play-sheet__hp-card-values"><strong>{playState.currentHp}</strong> / {maxHp}{playState.temporaryHp > 0 && <> <strong>+{playState.temporaryHp}</strong></>}</span>
+            <span aria-hidden="true" className="play-sheet__hp-meter"><span className="play-sheet__hp-meter-current" style={{ width: `${maxHp > 0 ? Math.min(100, playState.currentHp / maxHp * 100) : 0}%` }} /><span className="play-sheet__hp-meter-temporary" style={{ width: `${maxHp > 0 ? Math.min(100 - (playState.currentHp / maxHp * 100), playState.temporaryHp / maxHp * 100) : 0}%` }} /></span>
+          </button>
+        </div>
       </div>
     </header>
     <div aria-hidden="true" className="play-sheet__hero">
@@ -672,28 +826,46 @@ export function CharacterPlaySheet({
     {saveError && <p className="play-sheet__error" role="alert">{saveError}</p>}
     {experienceDialogOpen && <ExperienceDialog experiencePoints={Number(character.experiencePoints) || 0} theme={darkMode ? 'dark' : 'light'} onCancel={() => setExperienceDialogOpen(false)} onConfirm={saveExperience} />}
     {levelUpTarget && <LevelUpDrawer character={character} classData={classData} classId={classId} race={race} targetExperience={levelUpTarget.experience} targetLevel={levelUpTarget.level} theme={darkMode ? 'dark' : 'light'} onCancel={() => setLevelUpTarget(null)} onComplete={() => setLevelUpTarget(null)} onConfirm={save} />}
-    {selectedInventoryEntry && <Modal open title={selectedInventoryEntry.name} theme={darkMode ? 'dark' : 'light'} onClose={() => setSelectedInventoryEntry(null)} footer={<button onClick={() => setSelectedInventoryEntry(null)} type="button">Fechar</button>}>
-      <div className="play-sheet__inventory-details">
-        <dl>
-          <div><dt>Categoria</dt><dd>{inventoryCategories.find(({ id }) => id === selectedInventoryEntry.category)?.label ?? 'Gerais'}</dd></div>
-          <div><dt>Quantidade</dt><dd>{selectedInventoryEntry.quantity}</dd></div>
-          <div><dt>Peso</dt><dd>{catalog?.items.find((item) => item.id === selectedInventoryEntry.itemId)?.weightKg ? `${(catalog.items.find((item) => item.id === selectedInventoryEntry.itemId)!.weightKg! * selectedInventoryEntry.quantity)} kg` : 'Variável'}</dd></div>
-          {selectedInventoryEntry.notes && <div><dt>Observações</dt><dd>{selectedInventoryEntry.notes}</dd></div>}
-          {catalog?.items.find((item) => item.id === selectedInventoryEntry.itemId)?.description && <div><dt>Descrição</dt><dd>{catalog.items.find((item) => item.id === selectedInventoryEntry.itemId)?.description}</dd></div>}
-        </dl>
+    {restDialogOpen && <Modal open title="Opções de descanso" theme={darkMode ? 'dark' : 'light'} onClose={() => setRestDialogOpen(false)}>
+      <div className="play-sheet__rest-modal">
+        <button onClick={() => { setRestDialogOpen(false); rest(false) }} type="button"><h3>Descanso curto</h3><p>Uma pausa de pelo menos 1 hora. Bruxos recuperam seus espaços de magia de pacto; outros recursos dependem das características da classe.</p></button>
+        <button onClick={() => { setRestDialogOpen(false); rest(true) }} type="button"><h3>Descanso longo</h3><p>Uma pausa prolongada que restaura seus pontos de vida máximos, remove os pontos de vida temporários e recupera os espaços de magia gastos.</p></button>
       </div>
     </Modal>}
-    {quantityDialog && <Modal open title={`Quantidade de ${quantityDialog.name}`} theme={darkMode ? 'dark' : 'light'} onClose={() => setQuantityDialog(null)} footer={<><button className={quantityDraft === 0 ? 'play-sheet__quantity-confirm--delete' : undefined} onClick={confirmInventoryQuantity} type="button">{quantityDraft === 0 ? 'Excluir item' : 'Concluir'}</button><button onClick={() => setQuantityDialog(null)} type="button">Cancelar</button></>}>
+    {conditionsDialogOpen && <Modal open title="Condições" theme={darkMode ? 'dark' : 'light'} onClose={() => setConditionsDialogOpen(false)} variant="wide" footer={<Button onClick={() => setConditionsDialogOpen(false)} variant="secondary">Fechar</Button>}>
+      <div className="play-sheet__conditions-list">{conditions.map(([name, icon, description]) => <label className="play-sheet__condition-option" key={name}>
+        <input aria-label={`Marcar condição ${name}`} checked={activeConditionNames.includes(name)} disabled={conditionSavePending} onChange={() => toggleActiveCondition(name)} type="checkbox" />
+        <span aria-hidden="true" className="material-symbols-rounded">{icon}</span>
+        <span className="play-sheet__condition-option-text"><strong>{name}</strong><small>{description}</small></span>
+      </label>)}</div>
+    </Modal>}
+    {selectedInventoryEntry && <Modal open title={selectedInventoryEntry.name} theme={darkMode ? 'dark' : 'light'} onClose={() => setSelectedInventoryEntry(null)} footer={<Button onClick={() => setSelectedInventoryEntry(null)} variant="secondary">Fechar</Button>}>
+      <div className="play-sheet__inventory-details">
+        <dl>
+          <div><dt>Quantidade no inventário</dt><dd>{selectedInventoryEntry.quantity}</dd></div>
+          <div><dt>Peso total</dt><dd>{catalog?.items.find((item) => item.id === selectedInventoryEntry.itemId)?.weightKg !== null && catalog?.items.find((item) => item.id === selectedInventoryEntry.itemId)?.weightKg !== undefined ? `${catalog.items.find((item) => item.id === selectedInventoryEntry.itemId)!.weightKg! * selectedInventoryEntry.quantity} kg` : 'Variável'}</dd></div>
+          <div><dt>Estado</dt><dd>{selectedInventoryEntry.equipped ? 'Em uso' : 'Guardado'}</dd></div>
+          <div><dt>Origem</dt><dd>{selectedInventoryEntry.sourceLabel}</dd></div>
+          {selectedInventoryEntry.notes && <div><dt>Anotações</dt><dd>{selectedInventoryEntry.notes}</dd></div>}
+          {selectedInventoryEntry.attackBonus !== undefined && <div><dt>Bônus de ataque personalizado</dt><dd>{signed(selectedInventoryEntry.attackBonus)}</dd></div>}
+          {selectedInventoryEntry.remainingUses !== undefined && <div><dt>Usos restantes</dt><dd>{selectedInventoryEntry.remainingUses}</dd></div>}
+        </dl>
+        {catalog?.items.find((item) => item.id === selectedInventoryEntry.itemId)
+          ? renderEquipmentDetails(catalog.items.find((item) => item.id === selectedInventoryEntry.itemId)!)
+          : <p>Os detalhes do catálogo não estão disponíveis para este item.</p>}
+      </div>
+    </Modal>}
+    {quantityDialog && <Modal open title={`Quantidade de ${quantityDialog.name}`} theme={darkMode ? 'dark' : 'light'} onClose={() => setQuantityDialog(null)} footer={<><Button onClick={confirmInventoryQuantity} variant={quantityDraft === 0 ? 'danger' : 'primary'}>{quantityDraft === 0 ? 'Excluir item' : 'Concluir'}</Button><Button onClick={() => setQuantityDialog(null)} variant="secondary">Cancelar</Button></>}>
       <div className="play-sheet__quantity-adjuster">
         <button aria-label="Diminuir quantidade" onClick={() => setQuantityDraft((current) => Math.max(0, current - 1))} type="button">−</button>
         <strong aria-live="polite" className="play-sheet__quantity-value">{quantityDraft}</strong>
         <button aria-label="Aumentar quantidade" onClick={() => setQuantityDraft((current) => current + 1)} type="button">+</button>
       </div>
     </Modal>}
-    {inventoryEntryToDelete && <Modal open title="Excluir item?" theme={darkMode ? 'dark' : 'light'} onClose={() => setInventoryEntryToDelete(null)} footer={<><button className="play-sheet__quantity-confirm--delete" onClick={confirmDeleteInventoryEntry} type="button">Excluir</button><button onClick={() => setInventoryEntryToDelete(null)} type="button">Cancelar</button></>}>
+    {inventoryEntryToDelete && <Modal open title="Excluir item?" theme={darkMode ? 'dark' : 'light'} onClose={() => setInventoryEntryToDelete(null)} footer={<><Button onClick={confirmDeleteInventoryEntry} variant="danger">Excluir</Button><Button onClick={() => setInventoryEntryToDelete(null)} variant="secondary">Cancelar</Button></>}>
       <p>O item “{inventoryEntryToDelete.name}” será removido do inventário.</p>
     </Modal>}
-    {hpDialogOpen && <Modal open title="Pontos de vida" theme={darkMode ? 'dark' : 'light'} onClose={() => setHpDialogOpen(false)} footer={<button onClick={() => setHpDialogOpen(false)} type="button">Concluir</button>}>
+    {hpDialogOpen && <Modal open title="Pontos de vida" theme={darkMode ? 'dark' : 'light'} onClose={() => setHpDialogOpen(false)} footer={<Button onClick={() => setHpDialogOpen(false)}>Concluir</Button>}>
       <div className="play-sheet__hp-dialog">
         <div className="play-sheet__hp-adjuster">
           <button aria-label="Diminuir quantidade" onClick={() => setHpAmount((value) => String(Math.max(1, (Number(value) || 1) - 1)))} type="button">−</button>

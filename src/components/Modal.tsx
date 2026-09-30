@@ -48,7 +48,7 @@ export function Modal({
         <header className="app-modal__header">
           <h2 id={titleId}>{title}</h2>
           {showCloseButton && (
-            <button aria-label="Fechar modal" className="app-modal__close" onClick={onClose} type="button">×</button>
+            <button aria-label="Fechar modal" className="app-modal__close" onClick={onClose} type="button"><span aria-hidden="true" className="material-symbols-rounded">close</span></button>
           )}
         </header>
       )}

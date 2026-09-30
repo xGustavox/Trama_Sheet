@@ -4,6 +4,7 @@ import { classArmorProficiencies } from '../lib/classArmorProficiencies'
 import { rebaseClassFeatureChoicesForSubclass, type ClassFeatureData } from '../lib/classFeatures'
 import { experienceThresholds, hasConfirmedAbilityIncrease, levelForExperience } from '../lib/experience'
 import { feats, getFeatAbilityBonus, getFeatPrerequisiteFailure, type Feat } from '../lib/feats'
+import { Button } from './Button'
 import { Modal } from './Modal'
 import './CharacterExperience.css'
 
@@ -38,9 +39,9 @@ export function ExperienceBar({
 
   return <button aria-label={`Experiência: nível ${level}, ${formatExperience(experiencePoints)} de ${formatExperience(threshold)} XP. Abrir controles de experiência`} className="play-sheet__experience-bar" onClick={onClick} type="button">
     <span className="play-sheet__experience-labels">
-      <span>Level {level}</span>
-      <strong>{formatExperience(experiencePoints)} / {formatExperience(threshold)}</strong>
-      <span>{level >= 20 ? 'Max Level' : `Level ${level + 1}`}</span>
+      <span><span className="play-sheet__experience-prefix-full">Level</span><span className="play-sheet__experience-prefix-mobile">Lv.</span> {level}</span>
+      <strong><span className="play-sheet__experience-total-full">{formatExperience(experiencePoints)} / {formatExperience(threshold)}</span><span className="play-sheet__experience-total-mobile">{formatExperience(experiencePoints)} XP</span></strong>
+      <span className="play-sheet__experience-next-level">{level >= 20 ? 'Max Level' : `Level ${level + 1}`}</span>
     </span>
     <span aria-label={`${Math.round(progress)}% até o próximo nível`} aria-valuemax={threshold} aria-valuemin={0} aria-valuenow={Math.min(experiencePoints, threshold)} className="play-sheet__experience-meter" role="progressbar">
       <span style={{ width: `${progress}%` }} />
@@ -80,7 +81,7 @@ export function ExperienceDialog({
     if (saved) onCancel()
   }
 
-  return <Modal open title="Pontos de experiência" theme={theme} onClose={() => { if (!saving) onCancel() }} footer={<button disabled={saving} onClick={() => void confirm()} type="button">{saving ? 'Salvando…' : 'Concluir'}</button>}>
+  return <Modal open title="Pontos de experiência" theme={theme} onClose={() => { if (!saving) onCancel() }} footer={<Button disabled={saving} onClick={() => void confirm()}>{saving ? 'Salvando…' : 'Concluir'}</Button>}>
     <div className="play-sheet__experience-dialog">
       <p className="play-sheet__experience-current">XP atual: <strong>{formatExperience(draftPoints)}</strong></p>
       <p className="play-sheet__experience-current">{nextLevelThreshold === undefined ? 'Nível máximo alcançado.' : `Faltam ${formatExperience(nextLevelThreshold - draftPoints)} XP para o nível ${currentLevel + 1}.`}</p>
@@ -282,7 +283,7 @@ export function LevelUpDrawer({
     if (saved) onComplete()
   }
 
-  return <Modal open title="Avanço de nível" theme={theme} onClose={() => { if (!saving) onCancel() }} footer={<><button className="play-sheet__level-up-cancel" disabled={saving} onClick={onCancel} type="button">Cancelar</button><button disabled={!selectionsComplete || saving} onClick={() => void confirm()} type="button">{saving ? 'Salvando…' : 'Concluir avanço'}</button></>}>
+  return <Modal open title="Avanço de nível" theme={theme} onClose={() => { if (!saving) onCancel() }} footer={<><Button className="play-sheet__level-up-cancel" disabled={saving} onClick={onCancel} variant="secondary">Cancelar</Button><Button disabled={!selectionsComplete || saving} onClick={() => void confirm()}>{saving ? 'Salvando…' : 'Concluir avanço'}</Button></>}>
     <div className="play-sheet__level-up-drawer">
       <p>Nível {character.level} → {targetLevel}. Revise e faça as escolhas liberadas para a classe.</p>
       <div className="play-sheet__level-up-content">
