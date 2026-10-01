@@ -10,6 +10,7 @@ import { useToast } from './components/ToastContext'
 import type { CharacterDetails, CharacterDraft, CharacterRecord } from './lib/characterData'
 import {
   deleteCharacter as deleteOwnedCharacter,
+  deleteCharacterBackground,
   deleteCharacterDraft,
   deletePortrait,
   listCharacterBackgrounds,
@@ -530,6 +531,10 @@ function App() {
       onLoadBackgrounds={() => {
         if (!session?.user.id) throw new Error('Sua sessão expirou.')
         return listCharacterBackgrounds(session.user.id)
+      }}
+      onDeleteBackground={(path) => {
+        if (!session?.user.id) throw new Error('Sua sessão expirou.')
+        return deleteCharacterBackground(session.user.id, path)
       }}
     />
   }

@@ -181,6 +181,24 @@ export async function listCharacterBackgrounds(userId: string) {
     }))
 }
 
+export async function deleteCharacterBackground(userId: string, path: string) {
+  if (!path.startsWith(`${userId}/background-`)) throw new Error('Esta imagem não pertence à sua biblioteca.')
+
+  const client = requireClient()
+  const [{ data: characters, error: charactersError }, { data: draft, error: draftError }] = await Promise.all([
+    client.from('characters').select('id').eq('user_id', userId).contains('details', { sheetBackgroundPath: path }).limit(1),
+    client.from('character_drafts').select('id').eq('user_id', userId).contains('details', { sheetBackgroundPath: path }).limit(1),
+  ])
+  if (charactersError) throw charactersError
+  if (draftError) throw draftError
+  if (characters?.length || draft?.length) {
+    throw new Error('Altere o plano de fundo dos personagens ou rascunhos que usam esta imagem antes de excluí-la.')
+  }
+
+  const { error } = await client.storage.from(portraitBucket).remove([path])
+  if (error) throw error
+}
+
 export async function deletePortrait(path: string) {
   const client = requireClient()
   const { error } = await client.storage.from(portraitBucket).remove([path])

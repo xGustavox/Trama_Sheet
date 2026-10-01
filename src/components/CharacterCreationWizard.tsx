@@ -2,7 +2,7 @@ import { Component, useCallback, useEffect, useRef, useState, type ErrorInfo, ty
 import Cropper, { type ReactCropperElement } from 'react-cropper'
 import { createPortal } from 'react-dom'
 import { AppSidebar, type SidebarSection } from './AppSidebar'
-import { arcaneTricksterSpellProgression, bardSpellProgression, clericSpellProgression, classFeatures, druidSpellProgression, eldritchKnightSpellProgression, getKnownSpellCountAtClassLevel, getMaximumSpellCountAtOrAboveLevel, getSpellSlotsAtClassLevel, monkProgression, paladinSpellProgression, rebaseClassFeatureChoicesForSubclass, rangerSpellProgression, rogueSneakAttackProgression, sorcererSpellProgression, warlockInvocationIsAvailable, warlockSpellProgression, wizardSpellProgression, type ClassFeature, type ClassFeatureData, type ClassSubclass } from '../lib/classFeatures'
+import { arcaneTricksterSpellProgression, bardSpellProgression, clericSpellProgression, classFeatures, classHitDice, druidSpellProgression, eldritchKnightSpellProgression, getKnownSpellCountAtClassLevel, getMaximumSpellCountAtOrAboveLevel, getSpellSlotsAtClassLevel, monkProgression, paladinSpellProgression, rebaseClassFeatureChoicesForSubclass, rangerSpellProgression, rogueSneakAttackProgression, sorcererSpellProgression, warlockInvocationIsAvailable, warlockSpellProgression, wizardSpellProgression, type ClassFeature, type ClassFeatureData, type ClassSubclass } from '../lib/classFeatures'
 import { supabase } from '../lib/supabase'
 import { feats, getFeatAbilityBonus, getFeatPrerequisiteFailure } from '../lib/feats'
 import { canSelectSpellAtSlot, groupSpellChoicesByLevel } from '../lib/spellSelection'
@@ -344,7 +344,6 @@ const abilityScoreMethods: { id: AbilityScoreMethod; name: string; description: 
 const standardArray = [15, 14, 13, 12, 10, 8]
 const pointBuyCosts: Record<number, number> = { 8: 0, 9: 1, 10: 2, 11: 3, 12: 4, 13: 5, 14: 7, 15: 9 }
 
-const classHitDice: Record<string, number> = { barbaro: 12, guerreiro: 10, paladino: 10, patrulheiro: 10, bardo: 8, bruxo: 8, clerigo: 8, druida: 8, ladino: 8, monge: 8, feiticeiro: 6, mago: 6 }
 const skillAbilities: Record<string, string> = {
   Acrobacia: 'dexterity', 'Adestrar Animais': 'wisdom', Arcanismo: 'intelligence', Atletismo: 'strength',
   Atuação: 'charisma', Enganação: 'charisma', Furtividade: 'dexterity', História: 'intelligence',
@@ -4344,17 +4343,6 @@ function CharacterCreationWizardContent({
         </div>
       </nav>, document.body)}
 
-      {createPortal(<footer className="wizard__actions">
-        <div className="wizard__actions-inner">
-          <Button disabled={activeStep === 0 || completing || portraitUploading} onClick={() => void navigateTo(activeStep - 1)} variant="secondary">
-            Voltar
-          </Button>
-          <Button disabled={completing || portraitUploading} onClick={() => void navigateTo(activeStep + 1)}>
-            {completing ? 'Salvando…' : isFinalStep ? 'Salvar personagem' : 'Continuar'}
-          </Button>
-        </div>
-      </footer>, document.body)}
-
       <div className="creation-shell">
         <aside className="wizard__steps" aria-label="Etapas de criação">
           {visibleSteps.map(({ label: step, index }) => (
@@ -4407,6 +4395,16 @@ function CharacterCreationWizardContent({
             {activeStep !== 2 && activeStep !== 3 && activeStep !== 4 && activeStep !== 5 && renderStepHeading()}
             {renderStepContent()}
           </section>
+          <footer className="wizard__actions">
+            <div className="wizard__actions-inner">
+              <Button disabled={activeStep === 0 || completing || portraitUploading} onClick={() => void navigateTo(activeStep - 1)} variant="secondary">
+                Voltar
+              </Button>
+              <Button disabled={completing || portraitUploading} onClick={() => void navigateTo(activeStep + 1)}>
+                {completing ? 'Salvando…' : isFinalStep ? 'Salvar personagem' : 'Continuar'}
+              </Button>
+            </div>
+          </footer>
 
         </div>
       </div>

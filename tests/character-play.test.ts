@@ -1,12 +1,13 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import type { CharacterDetails, CharacterPlayState } from '../src/lib/characterData'
-import { adjustHitPoints, applyHitPointAdjustment, applyHitPointDamage, availableSpellSlotLevels, availableSpellSlots, getInitialCharacterPlayState, healHitPoints, recoverFromLongRest, recoverFromShortRest, setTemporaryHitPoints, toggleDeathSaveMark, toggleSpellSlot } from '../src/lib/characterPlay'
+import { adjustHitPoints, applyHitPointAdjustment, applyHitPointDamage, availableSpellSlotLevels, availableSpellSlots, getInitialCharacterPlayState, healHitPoints, recoverFromLongRest, recoverFromShortRest, setTemporaryHitPoints, spendHitDiceOnShortRest, toggleDeathSaveMark, toggleSpellSlot } from '../src/lib/characterPlay'
 
 const spentState: CharacterPlayState = {
   currentHp: 3,
   temporaryHp: 4,
   spentSpellSlots: ['1:0', '2:0'],
+  spentHitDice: 0,
 }
 
 test('initial play state preserves saved resources and defaults new characters to full hit points', () => {
@@ -15,17 +16,28 @@ test('initial play state preserves saved resources and defaults new characters t
     currentHp: 15,
     temporaryHp: 0,
     spentSpellSlots: [],
+    spentHitDice: 0,
   })
 })
 
-test('long rest restores hit points and all spell slots, and clears temporary hit points', () => {
-  assert.deepEqual(recoverFromLongRest(17), {
+test('long rest restores hit points and spell slots, clears temporary hit points, and recovers half the spent hit dice', () => {
+  assert.deepEqual(recoverFromLongRest({ ...spentState, spentHitDice: 4 }, 17, 6), {
+    ...spentState,
     currentHp: 17,
     temporaryHp: 0,
     spentSpellSlots: [],
+    spentHitDice: 1,
     deathSaveSuccesses: [],
     deathSaveFailures: [],
   })
+  assert.equal(recoverFromLongRest({ ...spentState, spentHitDice: 1 }, 10, 1).spentHitDice, 0)
+})
+
+test('short rest tracks hit dice spent without rolling dice or changing hit points', () => {
+  const state = { ...spentState, currentHp: 4, spentHitDice: 2 }
+  assert.deepEqual(spendHitDiceOnShortRest(state, 2, 5), { ...state, spentHitDice: 4 })
+  assert.deepEqual(spendHitDiceOnShortRest(state, 9, 5), { ...state, spentHitDice: 5 })
+  assert.deepEqual(spendHitDiceOnShortRest(state, -1, 5), state)
 })
 
 test('death save marks toggle independently and always retain exactly three circles', () => {

@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import type { CharacterDetails, PrimalPath, PrimalTotemChoices } from '../lib/characterData'
 import { classArmorProficiencies } from '../lib/classArmorProficiencies'
-import { rebaseClassFeatureChoicesForSubclass, type ClassFeatureData } from '../lib/classFeatures'
-import { experienceThresholds, hasConfirmedAbilityIncrease, levelForExperience } from '../lib/experience'
+import { classHitDice, rebaseClassFeatureChoicesForSubclass, type ClassFeatureData } from '../lib/classFeatures'
+import { experienceThresholds, hasConfirmedAbilityIncrease, hitPointGainForLevel, levelForExperience } from '../lib/experience'
 import { feats, getFeatAbilityBonus, getFeatPrerequisiteFailure, type Feat } from '../lib/feats'
 import { Button } from './Button'
 import { Modal } from './Modal'
@@ -121,7 +121,7 @@ export function LevelUpDrawer({
   theme?: 'light' | 'dark'
   onCancel: () => void
   onComplete: () => void
-  onConfirm: (character: CharacterDetails) => Promise<boolean>
+  onConfirm: (character: CharacterDetails, hitPointIncrease: number) => Promise<boolean>
 }) {
   const [subclassId, setSubclassId] = useState(character.classSubclassId)
   const [primalPath, setPrimalPath] = useState<PrimalPath>(character.primalPath)
@@ -131,7 +131,12 @@ export function LevelUpDrawer({
   const [abilityIncreaseModes, setAbilityIncreaseModes] = useState<Record<number, 'ability' | 'feat'>>({})
   const [featSelections, setFeatSelections] = useState<Record<number, string>>({})
   const [featAbilitySelections, setFeatAbilitySelections] = useState<Record<number, string>>({})
+  const [hitPointModes, setHitPointModes] = useState<Record<number, 'average' | 'rolled'>>({})
+  const [hitPointRolls, setHitPointRolls] = useState<Record<number, string>>({})
   const [saving, setSaving] = useState(false)
+  const hitDieSize = classHitDice[classId] ?? 8
+  const constitutionModifier = Math.floor((Number(character.abilities.constitution) - 10) / 2)
+  const hitPointLevels = Array.from({ length: Math.max(0, targetLevel - character.level) }, (_, index) => character.level + index + 1)
   const subclass = classData?.subclasses.find((item) => item.id === subclassId)
   const subclassLevel = classData?.subclasses[0]?.selectionLevel
   const subclassRequired = Boolean(subclassLevel && targetLevel >= subclassLevel && !character.classSubclassId)
@@ -182,7 +187,7 @@ export function LevelUpDrawer({
     const prerequisiteFailure = getFeatPrerequisiteFailure(feat, character.abilities, canCastSpells, armorProficiencies)
     return prerequisiteFailure || ((alreadySelected || selectedAtAnotherLevel) && !feat.repeatable ? 'Este talento só pode ser escolhido uma vez.' : '')
   }
-  const selectionsComplete = (!subclassRequired || Boolean(subclassId)) && (!barbarianPathRequired || Boolean(primalPath)) && totemChoicesToMake.every(({ key }) => Boolean(primalTotemChoices[key])) && choicesToMake.every(({ feature, choice }) => {
+  const selectionsComplete = hitPointLevels.every((level) => hitPointModes[level] !== 'rolled' || (Number.isSafeInteger(Number(hitPointRolls[level])) && Number(hitPointRolls[level]) >= 1 && Number(hitPointRolls[level]) <= hitDieSize)) && (!subclassRequired || Boolean(subclassId)) && (!barbarianPathRequired || Boolean(primalPath)) && totemChoicesToMake.every(({ key }) => Boolean(primalTotemChoices[key])) && choicesToMake.every(({ feature, choice }) => {
     const key = `${character.characterClassId}:${subclassId}:${feature.level}:${feature.name}:${choice.id}`
     return (choices[key]?.length ?? 0) === choice.choose
   }) && abilityIncreases.every((feature) => {
@@ -273,6 +278,10 @@ export function LevelUpDrawer({
     }
 
     setSaving(true)
+    const hitPointIncrease = hitPointLevels.reduce((total, level) => {
+      const rolledResult = hitPointModes[level] === 'rolled' ? Number(hitPointRolls[level]) : undefined
+      return total + hitPointGainForLevel(hitDieSize, constitutionModifier, rolledResult)
+    }, 0)
     const saved = await onConfirm({
       ...character,
       classSubclassId: subclassId,
@@ -284,7 +293,8 @@ export function LevelUpDrawer({
       abilityScoreIncreases: { classId: character.characterClassId, selections: confirmedIncreases },
       level: targetLevel,
       experiencePoints: String(targetExperience),
-    })
+      maxHp: String((Number(character.maxHp) || 0) + hitPointIncrease),
+    }, hitPointIncrease)
     setSaving(false)
     if (saved) onComplete()
   }
@@ -293,6 +303,20 @@ export function LevelUpDrawer({
     <div className="play-sheet__level-up-drawer">
       <p>Nível {character.level} → {targetLevel}. Revise e faça as escolhas liberadas para a classe.</p>
       <div className="play-sheet__level-up-content">
+        {hitPointLevels.map((level) => {
+          const mode = hitPointModes[level] ?? 'average'
+          const rolledResult = mode === 'rolled' ? Number(hitPointRolls[level]) : undefined
+          const rolledResultValid = mode !== 'rolled' || (Number.isSafeInteger(rolledResult) && rolledResult! >= 1 && rolledResult! <= hitDieSize)
+          const gain = rolledResultValid ? hitPointGainForLevel(hitDieSize, constitutionModifier, rolledResult) : null
+          return <fieldset className="play-sheet__level-up-choice" key={`hit-points-${level}`}>
+            <legend>Pontos de vida — nível {level}</legend>
+            <div className="play-sheet__level-up-options">
+              <label><input checked={mode === 'average'} name={`hit-points-${level}`} onChange={() => setHitPointModes((current) => ({ ...current, [level]: 'average' }))} type="radio" /><span><strong>Usar valor padrão</strong><small>{Math.ceil((hitDieSize + 1) / 2)} + Constituição ({constitutionModifier >= 0 ? '+' : ''}{constitutionModifier}) = {Math.max(1, Math.ceil((hitDieSize + 1) / 2) + constitutionModifier)} PV</small></span></label>
+              <label><input checked={mode === 'rolled'} name={`hit-points-${level}`} onChange={() => setHitPointModes((current) => ({ ...current, [level]: 'rolled' }))} type="radio" /><span><strong>Informar resultado do dado</strong><small>Role 1d{hitDieSize} fora da ficha e informe o resultado; Constituição será somada automaticamente.</small></span></label>
+            </div>
+            {mode === 'rolled' && <label className="play-sheet__level-up-hit-point-roll"><span>Resultado do dado (1–{hitDieSize})</span><input aria-label={`Resultado do dado de vida no nível ${level}`} inputMode="numeric" max={hitDieSize} min="1" onChange={(event) => setHitPointRolls((current) => ({ ...current, [level]: event.target.value }))} step="1" type="number" value={hitPointRolls[level] ?? ''} />{gain !== null && <small>Ganho neste nível: {gain} PV</small>}</label>}
+          </fieldset>
+        })}
         {subclassRequired && <fieldset className="play-sheet__level-up-choice">
           <legend>Escolha uma subclasse</legend>
           {classData?.subclasses.map((option) => <label key={option.id}><input checked={subclassId === option.id} name="level-up-subclass" onChange={() => updateSubclass(option.id)} type="radio" /><span>{option.name}</span></label>)}

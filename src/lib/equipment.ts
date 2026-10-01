@@ -103,6 +103,21 @@ export function getWeaponAttackModifier(
   return { ability, proficient, modifier: abilityModifier + (proficient ? proficiencyBonus : 0) }
 }
 
+export function getFinesseWeaponAttackModifiers(
+  item: EquipmentItem | undefined,
+  strengthModifier: number,
+  dexterityModifier: number,
+  proficiencyBonus: number,
+  proficient: boolean,
+) {
+  if (!item?.weapon || !item.properties.some((property) => normalizedWeaponName(property) === 'acuidade')) return null
+  const proficiency = proficient ? proficiencyBonus : 0
+  return {
+    strength: strengthModifier + proficiency,
+    dexterity: dexterityModifier + proficiency,
+  }
+}
+
 export type InventoryEntry = {
   id: string
   itemId: string | null

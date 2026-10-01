@@ -5,12 +5,15 @@ export function getInitialCharacterPlayState(character: CharacterDetails): Chara
     currentHp: Number(character.maxHp) || 0,
     temporaryHp: 0,
     spentSpellSlots: [],
+    spentHitDice: 0,
   }
   const maxHp = Math.max(0, Number(character.maxHp) || 0)
+  const totalHitDice = Math.max(1, Math.trunc(Number(character.level) || 1))
   return {
     ...state,
     currentHp: Math.max(0, Math.min(maxHp, Number(state.currentHp) || 0)),
     temporaryHp: Math.max(0, Number(state.temporaryHp) || 0),
+    spentHitDice: Math.min(totalHitDice, Math.max(0, Math.trunc(Number(state.spentHitDice) || 0))),
   }
 }
 
@@ -68,8 +71,27 @@ export function recoverFromShortRest(state: CharacterPlayState, characterClassId
   return { ...state, spentSpellSlots: [] }
 }
 
-export function recoverFromLongRest(maxHp: number): CharacterPlayState {
-  return { currentHp: maxHp, temporaryHp: 0, spentSpellSlots: [], deathSaveSuccesses: [], deathSaveFailures: [] }
+export function spendHitDiceOnShortRest(
+  state: CharacterPlayState,
+  diceToSpend: number,
+  totalHitDice: number,
+): CharacterPlayState {
+  const availableHitDice = Math.max(0, Math.trunc(totalHitDice) - state.spentHitDice)
+  const diceSpent = Math.min(availableHitDice, Math.max(0, Math.trunc(diceToSpend)))
+  return { ...state, spentHitDice: state.spentHitDice + diceSpent }
+}
+
+export function recoverFromLongRest(state: CharacterPlayState, maxHp: number, totalHitDice: number): CharacterPlayState {
+  const hitDiceRecovered = Math.max(1, Math.floor(Math.max(1, totalHitDice) / 2))
+  return {
+    ...state,
+    currentHp: maxHp,
+    temporaryHp: 0,
+    spentSpellSlots: [],
+    spentHitDice: Math.max(0, state.spentHitDice - hitDiceRecovered),
+    deathSaveSuccesses: [],
+    deathSaveFailures: [],
+  }
 }
 
 export function toggleDeathSaveMark(marks: boolean[], index: number): boolean[] {

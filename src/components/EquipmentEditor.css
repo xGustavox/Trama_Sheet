@@ -926,3 +926,89 @@
     font-size: 0.78rem;
   }
 }
+
+:root[data-theme='dark'] .creation-page .equipment__reconfigure-action .button--secondary,
+:root[data-theme='dark'] .creation-page .equipment__pagination .button--secondary {
+  border-color: var(--line-strong);
+  background: #343842;
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] .creation-page .equipment__reconfigure-action .button--secondary:hover:not(:disabled),
+:root[data-theme='dark'] .creation-page .equipment__pagination .button--secondary:hover:not(:disabled) {
+  border-color: #737b88;
+  background: #414651;
+}
+
+:root[data-theme='dark'] .creation-page .equipment__filter-trigger,
+:root[data-theme='dark'] .creation-page .equipment__search--open {
+  border-color: var(--line-strong);
+  background: #191b20;
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] .creation-page .equipment__inventory-table input:not([type='checkbox']) {
+  border-color: var(--line-strong);
+  background: #191b20;
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] .creation-page .equipment__table tbody tr:nth-child(odd):hover,
+:root[data-theme='dark'] .creation-page .equipment__table tbody tr:nth-child(odd):focus-within {
+  background: #343840;
+}
+
+:root[data-theme='dark'] .creation-page .equipment__table tbody tr:nth-child(even):hover,
+:root[data-theme='dark'] .creation-page .equipment__table tbody tr:nth-child(even):focus-within {
+  background: #292c33;
+}
+
+:root[data-theme='dark'] .creation-page :is(.equipment__add-column-table, .equipment__remove-column-table) thead th:last-child {
+  background: #22252c;
+}
+
+:root[data-theme='dark'] .creation-page :is(.equipment__add-column-table, .equipment__remove-column-table) tbody tr:nth-child(odd) td:last-child {
+  background: #2a2d34;
+}
+
+:root[data-theme='dark'] .creation-page :is(.equipment__add-column-table, .equipment__remove-column-table) tbody tr:nth-child(even) td:last-child {
+  background: #22252c;
+}
+
+:root[data-theme='dark'] .creation-page :is(.equipment__add-column-table, .equipment__remove-column-table) tbody tr:nth-child(odd):hover td:last-child,
+:root[data-theme='dark'] .creation-page :is(.equipment__add-column-table, .equipment__remove-column-table) tbody tr:nth-child(odd):focus-within td:last-child {
+  background: #343840;
+}
+
+:root[data-theme='dark'] .creation-page :is(.equipment__add-column-table, .equipment__remove-column-table) tbody tr:nth-child(even):hover td:last-child,
+:root[data-theme='dark'] .creation-page :is(.equipment__add-column-table, .equipment__remove-column-table) tbody tr:nth-child(even):focus-within td:last-child {
+  background: #292c33;
+}
+
+:root[data-theme='dark'] .creation-page .equipment__toggle:hover,
+:root[data-theme='dark'] .creation-page .equipment__toggle[aria-pressed='true'] {
+  background: #343842;
+}
+
+:root[data-theme='dark'] .creation-page .equipment__drawer-items {
+  background: #191b20;
+}
+
+:root[data-theme='dark'] .creation-page .equipment__drawer-item,
+:root[data-theme='dark'] .creation-page .equipment__drawer-item:nth-child(even) {
+  border-bottom-color: var(--line);
+  background: #22252c;
+  color: var(--ink);
+}
+
+:root[data-theme='dark'] .creation-page .equipment__drawer-item:nth-child(odd) {
+  background: #2a2d34;
+}
+
+:root[data-theme='dark'] .creation-page .equipment__drawer-item:hover:nth-child(odd) {
+  background: #343840;
+}
+
+:root[data-theme='dark'] .creation-page .equipment__drawer-item:hover:nth-child(even) {
+  background: #292c33;
+}

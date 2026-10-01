@@ -58,6 +58,21 @@ export type ClassFeatureData = {
   subclasses: ClassSubclass[]
 }
 
+export const classHitDice: Record<string, number> = {
+  barbaro: 12,
+  guerreiro: 10,
+  paladino: 10,
+  patrulheiro: 10,
+  bardo: 8,
+  bruxo: 8,
+  clerigo: 8,
+  druida: 8,
+  ladino: 8,
+  monge: 8,
+  feiticeiro: 6,
+  mago: 6,
+}
+
 const asi = (level: number): ClassFeature => ({
   level,
   name: 'Incremento no Valor de Habilidade',

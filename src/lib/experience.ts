@@ -11,6 +11,11 @@ export function levelForExperience(experience: number) {
   return experienceThresholds.reduce((level, threshold, index) => safeExperience >= threshold ? index + 1 : level, 1)
 }
 
+export function hitPointGainForLevel(hitDieSize: number, constitutionModifier: number, rolledResult?: number) {
+  const dieValue = rolledResult ?? Math.ceil((hitDieSize + 1) / 2)
+  return Math.max(1, dieValue + constitutionModifier)
+}
+
 export function hasConfirmedAbilityIncrease(character: CharacterDetails, level: number) {
   const key = `ability-score-increase:${character.characterClassId}:${level}`
   const mode = character.classFeatureChoices[`${key}:mode`]?.[0]

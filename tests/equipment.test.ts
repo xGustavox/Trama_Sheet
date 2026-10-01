@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
 import test from 'node:test'
-import { addInventoryItem, addPack, calculateArmorClass, convertCurrency, currencyDenominations, emptyInventory, equipOneInventoryUnit, equipmentGrantFingerprint, findEquipment, getArmorClassBreakdown, getCurrencyBalances, getCurrencyDisplay, getWeaponAttackModifier, isEquippable, readInventory, reconcileEquipment } from '../src/lib/equipment'
+import { addInventoryItem, addPack, calculateArmorClass, convertCurrency, currencyDenominations, emptyInventory, equipOneInventoryUnit, equipmentGrantFingerprint, findEquipment, getArmorClassBreakdown, getCurrencyBalances, getCurrencyDisplay, getFinesseWeaponAttackModifiers, getWeaponAttackModifier, isEquippable, readInventory, reconcileEquipment } from '../src/lib/equipment'
 import { startingEquipmentPlan, type EquipmentContext } from '../src/lib/startingEquipment'
 import { loadEquipmentCatalogFixture } from './fixtures/equipmentCatalog'
 
@@ -180,6 +180,15 @@ test('weapon attack modifiers use Strength for melee, Dexterity for ranged, and 
   assert.deepEqual(getWeaponAttackModifier(shortbow, 'mago', '', 1, 4, -1, 2, false, false), { ability: 'dexterity', proficient: false, modifier: -1 })
   assert.deepEqual(getWeaponAttackModifier(greatsword, 'bardo', 'colegio-da-bravura', 2, 0, 1, 2, false, false), { ability: 'strength', proficient: false, modifier: 0 })
   assert.deepEqual(getWeaponAttackModifier(greatsword, 'bardo', 'colegio-da-bravura', 3, 0, 1, 2, false, false), { ability: 'strength', proficient: true, modifier: 2 })
+})
+
+test('finesse weapons expose both ability modifiers and add proficiency only when trained', () => {
+  const rapier = findEquipment(catalog, 'Rapieira')!
+  const greatsword = findEquipment(catalog, 'Espada Grande')!
+
+  assert.deepEqual(getFinesseWeaponAttackModifiers(rapier, 2, 4, 3, true), { strength: 5, dexterity: 7 })
+  assert.deepEqual(getFinesseWeaponAttackModifiers(rapier, -1, 3, 2, false), { strength: -1, dexterity: 3 })
+  assert.equal(getFinesseWeaponAttackModifiers(greatsword, 2, 4, 3, true), null)
 })
 
 test('packs share canonical items, preserve quantities and retain source ownership', () => {

@@ -32,6 +32,43 @@
   border-radius: 14px 0 0 14px;
 }
 
+.app-modal--drawer[open] {
+  animation: app-modal-drawer-in 180ms ease-out both;
+  will-change: transform;
+}
+
+.app-modal--drawer[open]::backdrop {
+  animation: app-modal-backdrop-in 180ms ease-out both;
+}
+
+.app-modal--drawer[open].app-modal--closing {
+  animation: app-modal-drawer-out 180ms ease-in both;
+}
+
+.app-modal--drawer[open].app-modal--closing::backdrop {
+  animation: app-modal-backdrop-out 180ms ease-in both;
+}
+
+@keyframes app-modal-drawer-in {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes app-modal-drawer-out {
+  from { transform: translateX(0); }
+  to { transform: translateX(100%); }
+}
+
+@keyframes app-modal-backdrop-in {
+  from { background-color: rgb(17 24 39 / 0%); }
+  to { background-color: rgb(17 24 39 / 48%); }
+}
+
+@keyframes app-modal-backdrop-out {
+  from { background-color: rgb(17 24 39 / 48%); }
+  to { background-color: rgb(17 24 39 / 0%); }
+}
+
 .app-modal__header,
 .app-modal__footer {
   display: flex;
@@ -150,5 +187,30 @@
     height: min(88dvh, 760px);
     max-height: 88dvh;
     border-radius: 16px 16px 0 0;
+  }
+
+  .app-modal--drawer[open] {
+    animation-name: app-modal-drawer-up;
+  }
+
+  .app-modal--drawer[open].app-modal--closing {
+    animation-name: app-modal-drawer-down;
+  }
+
+  @keyframes app-modal-drawer-up {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
+
+  @keyframes app-modal-drawer-down {
+    from { transform: translateY(0); }
+    to { transform: translateY(100%); }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-modal--drawer[open],
+  .app-modal--drawer[open]::backdrop {
+    animation-duration: 1ms;
   }
 }

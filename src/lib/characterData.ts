@@ -16,6 +16,7 @@ export type CharacterPlayState = {
   currentHp: number
   temporaryHp: number
   spentSpellSlots: string[]
+  spentHitDice: number
   deathSaveSuccesses?: boolean[]
   deathSaveFailures?: boolean[]
 }
