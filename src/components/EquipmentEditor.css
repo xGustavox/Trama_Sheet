@@ -250,9 +250,15 @@
   cursor: not-allowed;
 }
 
-.equipment__fixed-item input {
+.wizard .equipment__fixed-item input {
+  box-sizing: border-box;
   flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  min-height: 16px;
   margin: 0;
+  padding: 0;
+  border-radius: 3px;
   accent-color: var(--primary);
 }
 

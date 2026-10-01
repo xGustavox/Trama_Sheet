@@ -51,6 +51,8 @@
   --ink-muted: #b0b6c0;
   --line: #3c414b;
   --line-strong: #555c68;
+  --primary: #75421f;
+  --primary-hover: #8a512d;
   --primary-surface: #392e32;
   --accent: #d9b7a4;
   background-color: var(--canvas);

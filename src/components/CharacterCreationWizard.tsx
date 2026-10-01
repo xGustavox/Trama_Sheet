@@ -2633,10 +2633,7 @@ function CharacterCreationWizardContent({
   async function navigateTo(target: number) {
     if (target === activeStep) return
     const isHiddenSpellStepTarget = !hasSpellcastingChoices && target >= 5 && activeStep === 4
-    const furthestVisibleStep = hasSpellcastingChoices ? lastReachedStep : Math.min(lastReachedStep, 4)
-    const destination = isHiddenSpellStepTarget
-      ? steps.length
-      : target > activeStep ? Math.min(target, Math.max(furthestVisibleStep, activeStep + 1)) : target
+    const destination = isHiddenSpellStepTarget ? steps.length : target
     if (destination > activeStep && activeStep === 2 && canConfirmRacialBonuses()) {
       pendingStep.current = destination
       setRacialConfirmation('continue')
@@ -3306,6 +3303,7 @@ function CharacterCreationWizardContent({
                       onClick={() => toggleAbilityChoice(key)}
                       type="button"
                     >
+                      <span aria-hidden="true" className="wizard__selection-dot wizard__selection-dot--checkbox" />
                       {label}
                     </button>
                   )
@@ -4334,17 +4332,28 @@ function CharacterCreationWizardContent({
             </div>}
           </div>
           <button
-            aria-label={isFinalStep ? 'Salvar personagem' : 'Avançar'}
+            aria-label={isFinalStep ? 'Salvar personagem' : 'Continuar'}
             className="wizard__mobile-navigation-arrow wizard__mobile-navigation-next"
             disabled={completing || portraitUploading}
             onClick={() => void navigateTo(activeStep + 1)}
             type="button"
           >
-            <span>{isFinalStep ? 'Salvar' : 'Avançar'}</span>
+            <span>{isFinalStep ? 'Salvar' : 'Continuar'}</span>
             <span aria-hidden="true" className="material-symbols-rounded">chevron_right</span>
           </button>
         </div>
       </nav>, document.body)}
+
+      {createPortal(<footer className="wizard__actions">
+        <div className="wizard__actions-inner">
+          <Button disabled={activeStep === 0 || completing || portraitUploading} onClick={() => void navigateTo(activeStep - 1)} variant="secondary">
+            Voltar
+          </Button>
+          <Button disabled={completing || portraitUploading} onClick={() => void navigateTo(activeStep + 1)}>
+            {completing ? 'Salvando…' : isFinalStep ? 'Salvar personagem' : 'Continuar'}
+          </Button>
+        </div>
+      </footer>, document.body)}
 
       <div className="creation-shell">
         <aside className="wizard__steps" aria-label="Etapas de criação">
@@ -4399,14 +4408,6 @@ function CharacterCreationWizardContent({
             {renderStepContent()}
           </section>
 
-          <footer className="wizard__actions">
-            <Button disabled={activeStep === 0 || completing || portraitUploading} onClick={() => void navigateTo(activeStep - 1)} variant="secondary">
-              Voltar
-            </Button>
-            <Button disabled={completing || portraitUploading} onClick={() => void navigateTo(activeStep + 1)}>
-              {completing ? 'Salvando…' : isFinalStep ? 'Salvar personagem' : 'Continuar'}
-            </Button>
-          </footer>
         </div>
       </div>
       <Modal open={Boolean(portraitCropSource)} title="Ajustar foto de perfil" theme={theme} variant="crop" showHeader={false} onClose={closePortraitCropper}>
