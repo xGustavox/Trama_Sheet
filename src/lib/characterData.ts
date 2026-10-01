@@ -16,6 +16,8 @@ export type CharacterPlayState = {
   currentHp: number
   temporaryHp: number
   spentSpellSlots: string[]
+  deathSaveSuccesses?: boolean[]
+  deathSaveFailures?: boolean[]
 }
 
 export type CharacterDetails = {
@@ -37,6 +39,15 @@ export type CharacterDetails = {
   height: string
   weight: string
   alignment: string
+  eyeColor?: string
+  skin?: string
+  hair?: string
+  personalityTraits?: string
+  ideals?: string
+  bonds?: string
+  flaws?: string
+  backstory?: string
+  notes?: string
   abilityScoreMethod: AbilityScoreMethod | ''
   abilities: Record<string, string>
   abilityScoreIncreases?: AbilityScoreIncreases
@@ -57,6 +68,8 @@ export type CharacterDetails = {
   activeConditions?: string[]
   frameColor?: string
   darkMode?: boolean
+  sheetBackgroundPath?: string
+  sheetBackgroundUrl?: string
 }
 
 export type CharacterDraft = {

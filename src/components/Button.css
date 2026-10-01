@@ -63,6 +63,17 @@
   background: #ffefed;
 }
 
+.button--success {
+  border-color: #b8dfc2;
+  background: #f1faf3;
+  color: #226b38;
+}
+
+.button--success:hover:not(:disabled) {
+  border-color: #8dc99c;
+  background: #e7f6eb;
+}
+
 .button--ghost {
   border-color: transparent;
   background: transparent;

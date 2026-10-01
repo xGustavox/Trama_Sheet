@@ -12,18 +12,23 @@ export type EquipmentContext = {
 type ItemPick = { id: string; label: string; itemIds: string[] }
 type Option = { id: string; label: string; items: ItemQuantity[]; picks: ItemPick[] }
 export type EquipmentChoice = { key: string; label: string; options: Option[] }
-export type StartingEquipmentPlan = { grants: EquipmentGrant[]; choices: EquipmentChoice[]; missing: string[] }
+export type StartingEquipmentPlan = { grants: EquipmentGrant[]; fixedGrants: EquipmentGrant[]; choices: EquipmentChoice[]; missing: string[] }
 
 // 2014 class alternatives, cross-checked against 5e-bits/5e-database src/2014/en/5e-SRD-Classes.json.
 // Quantity uses the catalog's listed unit: one "Flechas (20)" is one bundle, not 20 bundles.
 export function startingEquipmentPlan(catalog: EquipmentCatalog, context: EquipmentContext, inventory: Inventory): StartingEquipmentPlan {
   const grants: EquipmentGrant[] = []
+  const fixedGrants: EquipmentGrant[] = []
   const choices: EquipmentChoice[] = []
   const missing: string[] = []
   const klass = normalizeEquipment(context.className)
   const item = (itemId: string, quantity = 1): ItemQuantity => ({ itemId, quantity })
   const pack = (id: string) => catalog.packs.find(pack => pack.id === id)?.items ?? []
-  const fixed = (key: string, label: string, items: ItemQuantity[], currencyCp = 0) => grants.push({ key, label, items, currencyCp })
+  const fixed = (key: string, label: string, items: ItemQuantity[], currencyCp = 0, required = false) => {
+    const grant = { key, label, items, currencyCp }
+    grants.push(grant)
+    if (required) fixedGrants.push(grant)
+  }
   const option = (id: string, label: string, items: ItemQuantity[] = [], picks: ItemPick[] = []): Option => ({ id, label, items, picks })
   const pick = (id: string, label: string, filter: (item: EquipmentItem) => boolean): ItemPick => ({ id, label, itemIds: catalog.items.filter(filter).map(item => item.id) })
   const simple = (entry: EquipmentItem) => entry.category === 'weapons' && entry.subcategory.includes('simples')
@@ -43,7 +48,7 @@ export function startingEquipmentPlan(catalog: EquipmentCatalog, context: Equipm
   const martialChoice = () => choice('weapons', 'Armas principais', [
     flexible('shield', 'Arma marcial e escudo', martial, 1, [item('escudo')]), flexible('two', 'Duas armas marciais', martial, 2),
   ])
-  const classFixed = (items: ItemQuantity[]) => fixed(`class:${klass}:fixed`, `Classe: ${context.className}`, items)
+  const classFixed = (items: ItemQuantity[]) => fixed(`class:${klass}:fixed`, `Classe: ${context.className}`, items, 0, true)
   switch (klass) {
     case 'barbaro':
       classFixed([...pack('explorer'), item('azagaia', 4)])
@@ -121,9 +126,9 @@ export function startingEquipmentPlan(catalog: EquipmentCatalog, context: Equipm
     const key = `background:${background}:${index}`
     const label = `Antecedente: ${context.backgroundName}`
     const purse = text.match(/^Bolsa com (\d+) po$/)
-    if (purse) { fixed(key, label, [item('algibeira')], Number(purse[1]) * 100); continue }
+    if (purse) { fixed(key, label, [item('algibeira')], Number(purse[1]) * 100, true); continue }
     if (text === 'Mula e carroça no lugar das ferramentas de artesão') {
-      fixed(key, label, [item('mula'), item('carroca')])
+      fixed(key, label, [item('mula'), item('carroca')], 0, true)
       continue
     }
     if (text === 'Livro de preces ou conta de orações') {
@@ -153,16 +158,20 @@ export function startingEquipmentPlan(catalog: EquipmentCatalog, context: Equipm
       'Fetiche de um inimigo caído': 'fetiche-de-inimigo-caido',
     }
     const found = findEquipment(catalog, aliases[name] ?? name)
-    if (found) fixed(key, label, [item(found.id, Number(match?.[1] ?? 1))])
-    else grants.push({ key, label, items: [], unlistedItems: [{ name, quantity: Number(match?.[1] ?? 1) }] })
+    if (found) fixed(key, label, [item(found.id, Number(match?.[1] ?? 1))], 0, true)
+    else {
+      const grant = { key, label, items: [], unlistedItems: [{ name, quantity: Number(match?.[1] ?? 1) }] }
+      grants.push(grant)
+      fixedGrants.push(grant)
+    }
   }
 
   if (klass === 'bruxo' && context.character.level >= 3) {
     const key = `${context.character.characterClassId}:${context.character.classSubclassId}:3:Dádiva do Pacto:dadiva-do-pacto`
-    if (context.character.classFeatureChoices[key]?.includes('pacto-do-tomo')) fixed('feature:book-of-shadows', 'Dádiva do Pacto: Pacto do Tomo', [item('livro-das-sombras')])
+    if (context.character.classFeatureChoices[key]?.includes('pacto-do-tomo')) fixed('feature:book-of-shadows', 'Dádiva do Pacto: Pacto do Tomo', [item('livro-das-sombras')], 0, true)
   }
   if (klass === 'barbaro' && context.character.level >= 3 && context.character.primalPath === 'totem-warrior' && context.character.primalTotemChoices.spiritualTotem) {
-    fixed('feature:spiritual-totem', 'Totem Espiritual', [item('totem-espiritual')])
+    fixed('feature:spiritual-totem', 'Totem Espiritual', [item('totem-espiritual')], 0, true)
   }
   // Proficiency and the ability to craft/conjure an item do not themselves grant ownership.
   for (const group of choices) {
@@ -177,5 +186,5 @@ export function startingEquipmentPlan(catalog: EquipmentCatalog, context: Equipm
     }
     if (complete) fixed(group.key, group.key.startsWith('class:') ? `Classe: ${context.className} · ${group.label}` : `Antecedente: ${context.backgroundName} · ${group.label}`, items)
   }
-  return { grants, choices, missing }
+  return { grants, fixedGrants, choices, missing }
 }

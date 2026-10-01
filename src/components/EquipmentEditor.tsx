@@ -1,9 +1,9 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
-import { createPortal } from 'react-dom'
 import { addInventoryItem, addPack, equipmentDetails, formatPrice, normalizeEquipment, readInventory, reconcileEquipment, type EquipmentCatalog, type EquipmentItem, type Inventory, type InventoryEntry } from '../lib/equipment'
 import { startingEquipmentPlan, type EquipmentContext } from '../lib/startingEquipment'
 import { Button } from './Button'
 import { Modal } from './Modal'
+import { useToast } from './ToastContext'
 import './EquipmentEditor.css'
 
 const categories: { id: EquipmentItem['category']; name: string; icon: string }[] = [
@@ -117,6 +117,7 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
   onRetry: () => void
   theme: 'light' | 'dark'
 }) {
+  const toast = useToast()
   const [catalogSearch, setCatalogSearch] = useState<Record<string, string>>({})
   const [filters, setFilters] = useState<Record<string, string[]>>({})
   const [inventorySearchOpen, setInventorySearchOpen] = useState(false)
@@ -130,8 +131,6 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
   const [inventoryFilter, setInventoryFilter] = useState<string[]>([])
   const [inventorySearch, setInventorySearch] = useState('')
   const [inventoryPage, setInventoryPage] = useState(1)
-  const [toast, setToast] = useState<{ message: string; id: number } | null>(null)
-  const toastCounter = useRef(0)
   const inventoryRef = useRef<Inventory>(readInventory(value))
   const quantityHoldTimeout = useRef<ReturnType<typeof window.setTimeout> | null>(null)
   const quantityHoldInterval = useRef<ReturnType<typeof window.setInterval> | null>(null)
@@ -156,17 +155,10 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
     if (quantityHoldInterval.current !== null) window.clearInterval(quantityHoldInterval.current)
   }, [])
 
-  useEffect(() => {
-    if (!toast) return
-    const timeout = window.setTimeout(() => setToast(null), 2800)
-    return () => window.clearTimeout(timeout)
-  }, [toast])
-
   const change = (next: Inventory) => {
     inventoryRef.current = next
     onChange(JSON.stringify(next))
   }
-  const showToast = (message: string) => setToast({ message, id: ++toastCounter.current })
   const updateEntry = (id: string, patch: Partial<InventoryEntry>) => {
     const current = inventoryRef.current
     change({ ...current, entries: current.entries.map(entry => entry.id === id ? { ...entry, ...patch } : entry) })
@@ -254,6 +246,27 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
     {!catalog && loading && <p role="status">Carregando catálogo de equipamentos…</p>}
     {catalog && !ready && <p>Selecione classe e antecedente para definir o equipamento inicial.</p>}
     {ready && plan && <>
+      {plan.fixedGrants.length > 0 && <section aria-label="Equipamento obrigatório" className="equipment__fixed-grants">
+        <h3>Itens obrigatórios</h3>
+        {plan.fixedGrants.map(grant => <fieldset className="equipment__fixed-grant" key={grant.key}>
+          <legend>{grant.label}</legend>
+          {grant.items.map(({ itemId, quantity }) => {
+            const item = catalog!.items.find(candidate => candidate.id === itemId)
+            return <label className="equipment__fixed-item" key={itemId}>
+              <input checked disabled readOnly type="checkbox" />
+              <span><strong>{quantity > 1 ? `${quantity} × ` : ''}{item?.name ?? itemId}</strong></span>
+            </label>
+          })}
+          {grant.unlistedItems?.map(item => <label className="equipment__fixed-item" key={item.name}>
+            <input checked disabled readOnly type="checkbox" />
+            <span><strong>{item.quantity > 1 ? `${item.quantity} × ` : ''}{item.name}</strong></span>
+          </label>)}
+          {grant.currencyCp ? <label className="equipment__fixed-item">
+            <input checked disabled readOnly type="checkbox" />
+            <span><strong>{formatPrice(grant.currencyCp)} em moedas</strong></span>
+          </label> : null}
+        </fieldset>)}
+      </section>}
       <div className="equipment__choices">{plan.choices.map(group => <fieldset className="equipment__choice-group" key={group.key}>
         <div className="equipment__choice-options" role="group" aria-label={group.label}>
           {group.options.map((option, index) => {
@@ -328,6 +341,7 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
     {startingEquipmentComplete && <>
     <section className="wizard__equipment-card" aria-labelledby="inventory-title">
       <div className="wizard__equipment-title"><span aria-hidden="true" className="material-symbols-rounded">backpack</span><h2 id="inventory-title">Inventário</h2></div>
+      <div className="equipment__reconfigure-action"><Button onClick={() => change({ ...inventory, initialEquipmentConfirmed: false })} type="button" variant="secondary"><span aria-hidden="true" className="material-symbols-rounded">undo</span>Reconfigurar equipamento inicial</Button></div>
       <p className="equipment__weight">Peso conhecido: <strong>{weight.toLocaleString('pt-BR')} kg</strong>{hasUnknownWeight && ' + itens sem peso informado'}.</p>
       <div className="equipment__inventory-controls">
         <EquipmentFilters label="inventário" options={[{ id: 'all', label: 'Todos' }, ...inventoryFilters.filter(filter => filter.id !== 'all')]} selected={inventoryFilter} onChange={selected => { setInventoryFilter(selected); setInventoryPage(1) }} />
@@ -373,11 +387,12 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
     {startingEquipmentComplete && catalog && <>
       <section className="wizard__equipment-card" aria-labelledby="equipment-packs-title">
         <h2 id="equipment-packs-title">Pacotes de equipamento</h2>
+        <p className="equipment__pack-description">Ao adicionar um pacote, cada item incluído nele é adicionado separadamente ao inventário.</p>
         <div className="wizard__barbarian-table-wrap"><table className="wizard__barbarian-table equipment__table equipment__add-column-table">
           <thead><tr><th scope="col">Pacote</th><th scope="col">Custo</th><th aria-label="Adicionar" scope="col" title="Adicionar">+</th></tr></thead>
           <tbody>{catalog.packs.map(pack => {
             return <tr key={pack.id} onClick={toggleDisclosureRow}><th scope="row"><EquipmentDisclosure name={pack.name} lines={pack.items} catalog={catalog} /></th><td>{formatPrice(pack.priceCp)}</td>
-              <td><Button className="equipment__toggle" variant="ghost" size="icon" type="button" aria-label={`Adicionar ${pack.name}`} onClick={() => { change(addPack(inventory, catalog, pack.id)); showToast(`${pack.name} adicionado ao inventário.`) }}><span aria-hidden="true" className="material-symbols-rounded">add_circle</span></Button></td></tr>
+              <td><Button className="equipment__toggle" variant="ghost" size="icon" type="button" aria-label={`Adicionar ${pack.name}`} onClick={() => { change(addPack(inventory, catalog, pack.id)); toast.info(`${pack.name} adicionado à ficha. As alterações serão salvas ao concluir a criação.`) }}><span aria-hidden="true" className="material-symbols-rounded">add_circle</span></Button></td></tr>
           })}</tbody>
         </table></div>
       </section>
@@ -409,7 +424,7 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
         </section>
       })}
     </>}
-    <Modal open={Boolean(addingItem || drawerPick || editingNotesId)} title={drawerPick && drawerSelection ? `Escolher ${drawerSelection.label}` : editingNotesId ? 'Editar anotações' : addingItem ? `Adicionar ${addingItem.name}` : 'Equipamento'} theme={theme} onClose={() => { setAddingItem(null); setDrawerPick(null); setEditingNotesId(null) }}>
+    <Modal open={Boolean(addingItem || drawerPick || editingNotesId)} title={drawerPick && drawerSelection ? `Escolher ${drawerSelection.label}` : editingNotesId ? 'Editar anotações' : addingItem ? `Adicionar ${addingItem.name}` : 'Equipamento'} theme={theme} variant={drawerPick ? 'drawer' : 'default'} onClose={() => { setAddingItem(null); setDrawerPick(null); setEditingNotesId(null) }}>
       <div className={drawerPick ? 'equipment__drawer' : editingNotesId ? 'equipment__notes-dialog' : 'equipment__add-dialog'}>
       {drawerPick && drawerSelection && catalog && <div className="equipment__drawer-content">
         <div className="equipment__drawer-items">{drawerSelection.itemIds.map(itemId => {
@@ -452,7 +467,7 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
         const next = addInventoryItem(inventory, addingItem, quantity, `manual:${crypto.randomUUID()}`)
         const added = next.entries.at(-1)!
         change({ ...next, entries: next.entries.map(entry => entry.id === added.id ? { ...entry, notes: itemNotes } : entry) })
-        showToast(`${quantity} × ${addingItem.name} adicionado ao inventário.`)
+        toast.info(`${quantity} × ${addingItem.name} adicionado à ficha. As alterações serão salvas ao concluir a criação.`)
         setAddingItem(null)
       }}>
         <label className="wizard__field"><span>Quantidade</span><input autoFocus aria-label="Quantidade a adicionar" type="number" min="1" step="1" value={addQuantity} onChange={event => setAddQuantity(event.target.value)} /></label>
@@ -461,6 +476,5 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
       </form>}
       </div>
     </Modal>
-    {createPortal(<div className={`equipment__toast${toast ? ' equipment__toast--visible' : ''}`} role="status" aria-live="polite">{toast?.message}</div>, document.body)}
   </div>
 }

@@ -18,12 +18,13 @@ test('currency denominations are ordered from lowest to highest value', () => {
   assert.deepEqual(currencyDenominations.map(({ code }) => code), ['cp', 'sp', 'ep', 'gp', 'pp'])
 })
 
-test('currency display chooses the largest exact coin denomination without rounding', () => {
+test('currency display uses the largest denomination that stays exact to two decimal places', () => {
   assert.deepEqual(getCurrencyDisplay(1000), { amount: 1, code: 'pp', name: 'platina' })
-  assert.deepEqual(getCurrencyDisplay(200), { amount: 2, code: 'gp', name: 'ouro' })
-  assert.deepEqual(getCurrencyDisplay(150), { amount: 3, code: 'ep', name: 'electro' })
-  assert.deepEqual(getCurrencyDisplay(60), { amount: 6, code: 'sp', name: 'prata' })
-  assert.deepEqual(getCurrencyDisplay(25), { amount: 25, code: 'cp', name: 'cobre' })
+  assert.deepEqual(getCurrencyDisplay(200), { amount: 0.2, code: 'pp', name: 'platina' })
+  assert.deepEqual(getCurrencyDisplay(150), { amount: 0.15, code: 'pp', name: 'platina' })
+  assert.deepEqual(getCurrencyDisplay(4500), { amount: 4.5, code: 'pp', name: 'platina' })
+  assert.deepEqual(getCurrencyDisplay(4501), { amount: 45.01, code: 'gp', name: 'ouro' })
+  assert.deepEqual(getCurrencyDisplay(5), { amount: 0.05, code: 'gp', name: 'ouro' })
   assert.deepEqual(getCurrencyDisplay(0), { amount: 0, code: 'gp', name: 'ouro' })
 })
 
@@ -31,6 +32,16 @@ test('currency balances split total copper into denomination counts without losi
   const balances = getCurrencyBalances(1726)
   assert.deepEqual(balances, { gp: 7, sp: 2, ep: 0, cp: 6, pp: 1 })
   assert.equal(currencyDenominations.reduce((total, { code, valueCp }) => total + balances[code] * valueCp, 0), 1726)
+})
+
+test('inventory preserves manually entered currency denominations and upgrades old copper-only saves', () => {
+  const enteredGold = { cp: 0, sp: 0, ep: 0, gp: 15, pp: 0 }
+  const stored = readInventory(JSON.stringify({ ...emptyInventory(), currencyCp: 1500, currencyBalances: enteredGold }))
+  assert.equal(stored.currencyCp, 1500)
+  assert.deepEqual(stored.currencyBalances, enteredGold)
+
+  const legacy = readInventory(JSON.stringify({ ...emptyInventory(), currencyCp: 1500, currencyBalances: undefined }))
+  assert.deepEqual(legacy.currencyBalances, { cp: 0, sp: 0, ep: 0, gp: 5, pp: 1 })
 })
 
 test('currency conversion spends only complete source-coin groups and preserves total value', () => {
@@ -218,6 +229,25 @@ test('class alternatives do not grant both options; ammo is one listed bundle', 
   assert.equal(count(result, 'escudo'), 0)
   assert.equal(count(result, 'virotes'), 0)
   assert.equal(count(result, 'piton'), 10)
+})
+
+test('mandatory class and background equipment is separated from selectable grants', () => {
+  const ctx = context('Bárbaro')
+  const inventory = emptyInventory()
+  const plan = startingEquipmentPlan(catalog, ctx, inventory)
+  const classFixed = plan.fixedGrants.find(grant => grant.key === 'class:barbaro:fixed')!
+  const backgroundFixed = plan.fixedGrants.find(grant => grant.key.startsWith('background:'))!
+  const explorerPack = catalog.packs.find(pack => pack.id === 'explorer')!
+
+  assert.equal(classFixed.items.find(({ itemId }) => itemId === 'azagaia')?.quantity, 4)
+  for (const packItem of explorerPack.items) assert.ok(classFixed.items.some(item => item.itemId === packItem.itemId && item.quantity === packItem.quantity), packItem.itemId)
+  assert.ok(backgroundFixed.items.some(({ itemId }) => itemId === 'tinta-frasco-de-30ml'))
+  assert.ok(!plan.fixedGrants.some(grant => grant.key === 'class:barbaro:weapon'))
+
+  inventory.choices['class:barbaro:weapon'] = 'machado-grande'
+  const selectedPlan = startingEquipmentPlan(catalog, ctx, inventory)
+  assert.ok(selectedPlan.grants.some(grant => grant.key === 'class:barbaro:weapon'))
+  assert.ok(!selectedPlan.fixedGrants.some(grant => grant.key === 'class:barbaro:weapon'))
 })
 
 test('consumed grants stay consumed across serialization; changing one choice preserves others', () => {

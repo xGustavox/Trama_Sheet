@@ -11,6 +11,7 @@ import { experienceThresholds, levelForExperience } from '../lib/experience'
 import { Button } from './Button'
 import { EquipmentEditor } from './EquipmentEditor'
 import { Modal } from './Modal'
+import { useToast } from './ToastContext'
 import { equipmentGrantFingerprint, readInventory } from '../lib/equipment'
 import { useEquipmentCatalog } from '../lib/useEquipmentCatalog'
 import { classArmorProficiencies } from '../lib/classArmorProficiencies'
@@ -936,6 +937,7 @@ function CharacterCreationWizardContent({
   onUploadPortrait,
 }: CharacterCreationWizardProps) {
   const activeStep = initialStep
+  const toast = useToast()
   const { catalog: equipmentCatalog, loading: equipmentLoading, error: equipmentError, retry: retryEquipmentCatalog } = useEquipmentCatalog(true, activeStep >= 4)
   const [character, setCharacter] = useState(() => {
     const draft = initialCharacterData ?? initialDraft?.character
@@ -969,12 +971,11 @@ function CharacterCreationWizardContent({
   const [classes, setClasses] = useState<ReferenceItem[]>([])
   const [backgrounds, setBackgrounds] = useState<ReferenceItem[]>([])
   const [loadError, setLoadError] = useState('')
-  const [completionMessage, setCompletionMessage] = useState('')
-  const [saveError, setSaveError] = useState('')
   const [portraitUploading, setPortraitUploading] = useState(false)
   const [portraitError, setPortraitError] = useState('')
   const [portraitCropSource, setPortraitCropSource] = useState('')
   const [portraitCropReady, setPortraitCropReady] = useState(false)
+  const [portraitCropError, setPortraitCropError] = useState('')
   const [completing, setCompleting] = useState(false)
   const [showHigherClassLevels, setShowHigherClassLevels] = useState(false)
   const [cantripPanelOpen, setCantripPanelOpen] = useState(false)
@@ -1131,6 +1132,16 @@ function CharacterCreationWizardContent({
   const selectedLeveledSpellCount = hasLearnedSpellProgression
     ? selectedKnownSpellSlots.filter(Boolean).length
     : Object.values(selectedSpellsByLevel).reduce((total, spells) => total + spells.length, 0)
+  const canSelectLeveledSpells = hasLearnedSpellProgression
+    ? currentKnownSpellCount > 0
+    : spellcastingProgression.selectionLimit !== null && spellcastingProgression.selectionLimit > 0 && maxSpellLevel > 0
+  const hasSpellcastingChoices = cantripCount > 0 || canSelectLeveledSpells
+  const visibleSteps = steps
+    .map((label, index) => ({ label, index }))
+    .filter(({ index }) => index !== 5 || hasSpellcastingChoices)
+  const activeVisibleStep = visibleSteps.findIndex(({ index }) => index === activeStep)
+  const displayedStepIndex = activeVisibleStep >= 0 ? activeVisibleStep : visibleSteps.length - 1
+  const isFinalStep = activeStep === (hasSpellcastingChoices ? 5 : 4)
   const selectedPreparedSpells = Object.entries(selectedSpellsByLevel)
     .flatMap(([level, spells]) => spells.map((name) => ({ name, level: Number(level) })))
   const hitDie = classHitDice[className]
@@ -1158,7 +1169,6 @@ function CharacterCreationWizardContent({
       furthestStep: Math.max(activeStep, lastReachedStep, step),
       lastStep: step,
     }
-    setSaveError('')
     const pendingSave = draftSaveQueue.current.then(() => callbacks.current.onPersistDraft(nextDraft))
     draftSaveQueue.current = pendingSave.then(() => undefined, () => undefined)
 
@@ -1167,14 +1177,19 @@ function CharacterCreationWizardContent({
       if (!characterId) draftId.current = persisted.id
       lastSavedSnapshot.current = JSON.stringify(savedCharacter)
     } catch {
-      setSaveError('Não foi possível salvar suas alterações na conta. Verifique a conexão e tente novamente.')
+      toast.error('Não foi possível salvar as alterações da ficha. Verifique a conexão e tente novamente.')
       throw new Error('character-save-failed')
     }
-  }, [activeStep, baseMaxHp, character, characterId, lastReachedStep])
+  }, [activeStep, baseMaxHp, character, characterId, lastReachedStep, toast])
 
   useEffect(() => {
     callbacks.current = { onComplete, onClose, onDeletePortrait, onPersistDraft, onSidebarSelect, onStepChange, onUploadPortrait }
   }, [onComplete, onClose, onDeletePortrait, onPersistDraft, onSidebarSelect, onStepChange, onUploadPortrait])
+
+  useEffect(() => {
+    if (activeStep !== 5 || hasSpellcastingChoices || (character.characterClassId && classes.length === 0)) return
+    void persistDraftNow(4).then(() => callbacks.current.onStepChange(4)).catch(() => undefined)
+  }, [activeStep, character.characterClassId, classes.length, hasSpellcastingChoices, persistDraftNow])
 
   useEffect(() => {
     if (!featPanelOpen) return
@@ -1559,6 +1574,7 @@ function CharacterCreationWizardContent({
   function openPortraitCropper(file?: File) {
     if (!file) return
     setPortraitError('')
+    setPortraitCropError('')
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       setPortraitError('Use uma imagem JPG, PNG ou WebP.')
       return
@@ -1578,28 +1594,28 @@ function CharacterCreationWizardContent({
     portraitCropSourceRef.current = ''
     setPortraitCropSource('')
     setPortraitCropReady(false)
+    setPortraitCropError('')
   }
 
   async function confirmPortraitCrop() {
-    const canvas = portraitCropperRef.current?.cropper.getCroppedCanvas({
-      width: 512,
-      height: 512,
-      fillColor: '#fff',
-      imageSmoothingEnabled: true,
-      imageSmoothingQuality: 'high',
-    })
-    if (!canvas) {
-      setPortraitError('Não foi possível recortar a imagem. Tente escolher outro arquivo.')
+    try {
+      const canvas = portraitCropperRef.current?.cropper.getCroppedCanvas({
+        width: 512,
+        height: 512,
+        fillColor: '#fff',
+        imageSmoothingEnabled: true,
+        imageSmoothingQuality: 'high',
+      })
+      if (!canvas) throw new Error('crop-canvas-unavailable')
+
+      const blob = await new Promise<Blob>((resolve, reject) => {
+        canvas.toBlob((result) => result ? resolve(result) : reject(new Error('crop-blob-unavailable')), 'image/jpeg', 0.9)
+      })
       closePortraitCropper()
-      return
+      void selectPortrait(new File([blob], 'retrato-personagem.jpg', { type: 'image/jpeg' }))
+    } catch {
+      setPortraitCropError('Não foi possível processar o recorte. Ajuste a imagem e tente novamente.')
     }
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9))
-    closePortraitCropper()
-    if (!blob) {
-      setPortraitError('Não foi possível processar o recorte. Tente novamente.')
-      return
-    }
-    void selectPortrait(new File([blob], 'retrato-personagem.jpg', { type: 'image/jpeg' }))
   }
 
   function getAbilityModifier(ability: string) {
@@ -2087,7 +2103,8 @@ function CharacterCreationWizardContent({
 
   function stepIsComplete(step: number) {
     if (step === 6) return activeStep === 6 && [0, 1, 2, 3, 4].every((requiredStep) => Object.keys(getErrors(requiredStep)).length === 0)
-    if (step === 5) return (cantripCount === 0 || selectedCantrips.length === cantripCount)
+    if (step === 5) return Boolean(character.characterClassId && className)
+      && (cantripCount === 0 || selectedCantrips.length === cantripCount)
       && (spellcastingProgression.selectionLimit === null || selectedLeveledSpellCount === spellcastingProgression.selectionLimit)
     if (step === 4) return backgroundSectionIsComplete() && Object.keys(getErrors(step)).length === 0
     if (step === 3) return [0, 1, 2].every((requiredStep) => Object.keys(getErrors(requiredStep)).length === 0) && Object.keys(getErrors(step)).length === 0
@@ -2615,7 +2632,11 @@ function CharacterCreationWizardContent({
 
   async function navigateTo(target: number) {
     if (target === activeStep) return
-    const destination = target > activeStep ? Math.min(target, Math.max(lastReachedStep, activeStep + 1)) : target
+    const isHiddenSpellStepTarget = !hasSpellcastingChoices && target >= 5 && activeStep === 4
+    const furthestVisibleStep = hasSpellcastingChoices ? lastReachedStep : Math.min(lastReachedStep, 4)
+    const destination = isHiddenSpellStepTarget
+      ? steps.length
+      : target > activeStep ? Math.min(target, Math.max(furthestVisibleStep, activeStep + 1)) : target
     if (destination > activeStep && activeStep === 2 && canConfirmRacialBonuses()) {
       pendingStep.current = destination
       setRacialConfirmation('continue')
@@ -2663,14 +2684,15 @@ function CharacterCreationWizardContent({
     }
 
     setCompleting(true)
-    setCompletionMessage('')
+    let draftSaved = false
     try {
       await persistDraftNow(activeStep)
+      draftSaved = true
       const id = characterId ?? draftId.current ?? crypto.randomUUID()
       await callbacks.current.onComplete({ ...character, maxHp, portraitUrl: '' }, id)
-      setCompletionMessage('Ficha salva na sua conta.')
+      toast.success(`Ficha de ${character.name} salva na sua conta.`)
     } catch {
-      setSaveError('Não foi possível concluir e salvar a ficha. Tente novamente.')
+      if (draftSaved) toast.error(`Não foi possível concluir e salvar a ficha de ${character.name}. Tente novamente.`)
     } finally {
       setCompleting(false)
     }
@@ -3680,9 +3702,6 @@ function CharacterCreationWizardContent({
             : className === 'mago'
               ? `Seu grimório pode começar com ${spellcastingProgression.selectionLimit} magias conhecidas; o limite inicial considera seis magias no 1º nível e duas por nível adicional.`
               : `Escolha ${spellcastingProgression.selectionLimit} ${spellSelectionLabel} no total entre os níveis disponíveis.`
-        const canSelectLeveledSpells = hasLearnedSpellProgression
-          ? currentKnownSpellCount > 0
-          : spellcastingProgression.selectionLimit !== null && spellcastingProgression.selectionLimit > 0 && maxSpellLevel > 0
         const spellSlotSummary = spellcastingProgression.slots
           .map((count, index) => count > 0 ? `${index + 1}º nível: ${count}` : '')
           .filter(Boolean)
@@ -4260,14 +4279,14 @@ function CharacterCreationWizardContent({
         }}
       >
         <div
-          aria-label={`Etapa ${activeStep + 1} de ${steps.length}`}
-          aria-valuemax={steps.length}
+          aria-label={`Etapa ${displayedStepIndex + 1} de ${visibleSteps.length}`}
+          aria-valuemax={visibleSteps.length}
           aria-valuemin={1}
-          aria-valuenow={activeStep + 1}
+          aria-valuenow={displayedStepIndex + 1}
           className="wizard__mobile-progress"
           role="progressbar"
         >
-          <span style={{ width: `${((activeStep + 1) / steps.length) * 100}%` }} />
+          <span style={{ width: `${((displayedStepIndex + 1) / visibleSteps.length) * 100}%` }} />
         </div>
         <div className="wizard__mobile-navigation-header">
           <button
@@ -4293,7 +4312,7 @@ function CharacterCreationWizardContent({
               <span aria-hidden="true" className="material-symbols-rounded">expand_more</span>
             </button>
             {mobileStepsOpen && <div aria-label="Etapas disponíveis" className="wizard__mobile-step-list" id="wizard-mobile-step-list" role="group">
-              {steps.map((step, index) => (
+              {visibleSteps.map(({ label: step, index }) => (
                 <button
                   aria-current={index === activeStep ? 'step' : undefined}
                   className={index === activeStep
@@ -4315,13 +4334,13 @@ function CharacterCreationWizardContent({
             </div>}
           </div>
           <button
-            aria-label={activeStep === steps.length - 1 ? 'Salvar personagem' : 'Avançar'}
+            aria-label={isFinalStep ? 'Salvar personagem' : 'Avançar'}
             className="wizard__mobile-navigation-arrow wizard__mobile-navigation-next"
             disabled={completing || portraitUploading}
             onClick={() => void navigateTo(activeStep + 1)}
             type="button"
           >
-            <span>{activeStep === steps.length - 1 ? 'Salvar' : 'Avançar'}</span>
+            <span>{isFinalStep ? 'Salvar' : 'Avançar'}</span>
             <span aria-hidden="true" className="material-symbols-rounded">chevron_right</span>
           </button>
         </div>
@@ -4329,7 +4348,7 @@ function CharacterCreationWizardContent({
 
       <div className="creation-shell">
         <aside className="wizard__steps" aria-label="Etapas de criação">
-          {steps.map((step, index) => (
+          {visibleSteps.map(({ label: step, index }) => (
             <button
               className={index === activeStep
                 ? 'wizard__step wizard__step--active'
@@ -4378,8 +4397,6 @@ function CharacterCreationWizardContent({
           <section className={`wizard${activeStep === 2 || activeStep === 3 || activeStep === 4 || activeStep === 5 ? ' wizard--separate-cards' : ''}${activeStep === 5 ? ' wizard--spell-step' : ''}`} aria-label={activeStep === 4 ? 'Criação de personagem' : undefined} aria-labelledby={activeStep === 4 ? undefined : 'wizard-title'}>
             {activeStep !== 2 && activeStep !== 3 && activeStep !== 4 && activeStep !== 5 && renderStepHeading()}
             {renderStepContent()}
-            {completionMessage && <p className="wizard__notice">{completionMessage}</p>}
-            {saveError && <p className="wizard__field-error" role="alert">{saveError}</p>}
           </section>
 
           <footer className="wizard__actions">
@@ -4387,7 +4404,7 @@ function CharacterCreationWizardContent({
               Voltar
             </Button>
             <Button disabled={completing || portraitUploading} onClick={() => void navigateTo(activeStep + 1)}>
-              {completing ? 'Salvando…' : activeStep === steps.length - 1 ? 'Salvar personagem' : 'Continuar'}
+              {completing ? 'Salvando…' : isFinalStep ? 'Salvar personagem' : 'Continuar'}
             </Button>
           </footer>
         </div>
@@ -4396,6 +4413,7 @@ function CharacterCreationWizardContent({
         <div className="wizard__portrait-dialog">
         <h2 id="portrait-crop-title">Ajustar foto de perfil</h2>
         <p id="portrait-crop-description">Arraste a imagem para posicioná-la e use o controle de zoom para ajustar o recorte quadrado.</p>
+        {portraitCropError && <p className="wizard__field-error" role="alert">{portraitCropError}</p>}
         {portraitCropSource && <Cropper
           alt="Imagem para recortar como foto de perfil"
           aspectRatio={1}

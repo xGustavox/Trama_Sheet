@@ -6,15 +6,18 @@ import { Button } from './components/Button'
 import { Modal } from './components/Modal'
 import { CharacterCreationWizard } from './components/CharacterCreationWizard'
 import { CharacterPlaySheet } from './components/CharacterPlaySheet'
+import { useToast } from './components/ToastContext'
 import type { CharacterDetails, CharacterDraft, CharacterRecord } from './lib/characterData'
 import {
   deleteCharacter as deleteOwnedCharacter,
   deleteCharacterDraft,
   deletePortrait,
+  listCharacterBackgrounds,
   loadCharacterDraft,
   loadCharacters,
   saveCharacter,
   saveCharacterDraft,
+  uploadCharacterBackground,
   uploadPortrait,
 } from './lib/characterRepository'
 import { supabase } from './lib/supabase'
@@ -77,7 +80,7 @@ function toCharacterCard(record: CharacterRecord): Character {
     maxHp,
     tempHp: record.details.playState?.temporaryHp ?? 0,
     portrait: record.portrait_url ?? '',
-    landscape: '/images/forest-ranger.jpg',
+    landscape: record.details.sheetBackgroundUrl || '/images/backgrounds/forest-ranger.jpg',
     landscapePosition: '35% center',
     portraitPath: record.portrait_path ?? '',
     details: record.details,
@@ -183,10 +186,10 @@ function App() {
   const [accountDraft, setAccountDraft] = useState<CharacterDraft | null>(null)
   const [accountDataReady, setAccountDataReady] = useState(false)
   const [accountDataError, setAccountDataError] = useState('')
-  const [feedback, setFeedback] = useState('')
   const [characterPendingDeletion, setCharacterPendingDeletion] = useState<Character | null>(null)
   const [accountDialogOpen, setAccountDialogOpen] = useState(false)
   const [signingOut, setSigningOut] = useState(false)
+  const toast = useToast()
   const [signOutError, setSignOutError] = useState('')
   const [draftPromptOpen, setDraftPromptOpen] = useState(false)
   const [draftResetError, setDraftResetError] = useState('')
@@ -280,10 +283,6 @@ function App() {
     return () => window.removeEventListener('hashchange', syncRoute)
   }, [])
 
-  function notify(message: string) {
-    setFeedback(message)
-  }
-
   async function refreshAccountData() {
     if (!session?.user.id) return
     const [records, draft] = await Promise.all([
@@ -361,7 +360,11 @@ function App() {
 
   async function savePlayedCharacter(id: string, details: CharacterDetails) {
     if (!session?.user.id) throw new Error('Sua sessão expirou.')
+    const previousPortrait = characters.find((character) => character.id === id)?.portraitPath
     await saveCharacter(session.user.id, details, id)
+    if (previousPortrait && previousPortrait !== details.portraitPath) {
+      await deletePortrait(previousPortrait).catch(() => undefined)
+    }
     const records = await loadCharacters(session.user.id)
     setCharacters(records.map(toCharacterCard))
   }
@@ -372,9 +375,9 @@ function App() {
       await deleteOwnedCharacter(session.user.id, character.id)
       setCharacters((current) => current.filter(({ id }) => id !== character.id))
       setCharacterPendingDeletion(null)
-      notify(`${character.name} foi excluído da sua conta.`)
+      toast.success(`${character.name} foi excluído da sua conta.`)
     } catch {
-      notify('Não foi possível excluir o personagem. Tente novamente.')
+      toast.error(`Não foi possível excluir ${character.name} da sua conta. Tente novamente.`)
     }
   }
 
@@ -411,7 +414,7 @@ function App() {
     setCharacters(records.map(toCharacterCard))
     setAccountDataError('')
     setAccountDataReady(true)
-    if (draftCleanupFailed) notify('A ficha foi salva, mas não foi possível remover o rascunho concluído.')
+    if (draftCleanupFailed) toast.error(`A ficha de ${character.name} foi salva, mas não foi possível remover o rascunho concluído.`)
     navigateToHash('')
   }
 
@@ -434,7 +437,7 @@ function App() {
       daggerheart: 'Daggerheart',
       settings: 'Configurações',
     }
-    notify(`${labels[section]} estarão disponíveis em breve.`)
+    toast.info(`${labels[section]} estarão disponíveis em breve.`)
   }
 
   async function signOut() {
@@ -516,6 +519,18 @@ function App() {
         navigateToHash('')
       }}
       onSave={(details) => savePlayedCharacter(playingCharacter.id, details)}
+      onUploadPortrait={(file) => {
+        if (!session?.user.id) throw new Error('Sua sessão expirou.')
+        return uploadPortrait(session.user.id, file)
+      }}
+      onUploadBackground={(file) => {
+        if (!session?.user.id) throw new Error('Sua sessão expirou.')
+        return uploadCharacterBackground(session.user.id, file)
+      }}
+      onLoadBackgrounds={() => {
+        if (!session?.user.id) throw new Error('Sua sessão expirou.')
+        return listCharacterBackgrounds(session.user.id)
+      }}
     />
   }
 
@@ -641,20 +656,6 @@ function App() {
           </section>
         )}
 
-        {feedback && (
-          <div className="feedback" role="status">
-            <span>{feedback}</span>
-            <Button
-              aria-label="Fechar aviso"
-              className="feedback__close"
-              onClick={() => setFeedback('')}
-              size="icon"
-              variant="ghost"
-            >
-              <Icon name="close" />
-            </Button>
-          </div>
-        )}
       </div>
     </main>
   )

@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes } from 'react'
 import './Button.css'
 
-type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost'
+type ButtonVariant = 'primary' | 'secondary' | 'success' | 'danger' | 'ghost'
 type ButtonSize = 'default' | 'small' | 'icon'
 
 type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {

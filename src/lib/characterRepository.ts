@@ -9,7 +9,7 @@ function requireClient() {
 }
 
 export function serializeCharacter(character: CharacterDetails) {
-  return { ...character, portraitUrl: '' }
+  return { ...character, portraitUrl: '', sheetBackgroundUrl: '' }
 }
 
 export async function loadCharacters(userId: string): Promise<CharacterRecord[]> {
@@ -24,7 +24,14 @@ export async function loadCharacters(userId: string): Promise<CharacterRecord[]>
 
   const records = await Promise.all((data ?? []).map(async (row) => ({
     ...row,
-    details: row.details as CharacterDetails,
+    details: {
+      ...row.details as CharacterDetails,
+      sheetBackgroundUrl: row.details.sheetBackgroundPath
+        ? row.details.sheetBackgroundPath.startsWith('/images/')
+          ? row.details.sheetBackgroundPath
+          : await createPortraitUrl(row.details.sheetBackgroundPath)
+        : '',
+    },
     race: firstRelation(row.race) as CharacterRecord['race'],
     character_class: firstRelation(row.character_class) as CharacterRecord['character_class'],
     background: firstRelation(row.background) as CharacterRecord['background'],
@@ -52,7 +59,15 @@ export async function loadCharacterDraft(userId: string): Promise<CharacterDraft
   const portraitUrl = character.portraitPath ? await createPortraitUrl(character.portraitPath) : ''
   return {
     id: data.id,
-    character: { ...character, portraitUrl },
+    character: {
+      ...character,
+      portraitUrl,
+      sheetBackgroundUrl: character.sheetBackgroundPath
+        ? character.sheetBackgroundPath.startsWith('/images/')
+          ? character.sheetBackgroundPath
+          : await createPortraitUrl(character.sheetBackgroundPath)
+        : '',
+    },
     furthestStep: data.furthest_step,
     lastStep: data.last_step,
   }
@@ -118,6 +133,54 @@ export async function uploadPortrait(userId: string, file: File) {
   }
 }
 
+export async function uploadCharacterBackground(userId: string, file: File) {
+  const client = requireClient()
+  const supportedTypes: Record<string, string> = {
+    'image/jpeg': 'jpg',
+    'image/png': 'png',
+    'image/webp': 'webp',
+  }
+  const extension = supportedTypes[file.type]
+  if (!extension) throw new Error('Use uma imagem JPG, PNG ou WebP.')
+  if (file.size > 5 * 1024 * 1024) throw new Error('A imagem deve ter no máximo 5 MB.')
+
+  const path = `${userId}/background-${crypto.randomUUID()}.${extension}`
+  const { error } = await client.storage.from(portraitBucket).upload(path, file, {
+    contentType: file.type,
+    upsert: false,
+    metadata: { originalName: file.name },
+  })
+  if (error) throw error
+
+  try {
+    return { path, url: await createPortraitUrl(path) }
+  } catch (error) {
+    await client.storage.from(portraitBucket).remove([path])
+    throw error
+  }
+}
+
+export async function listCharacterBackgrounds(userId: string) {
+  const client = requireClient()
+  const { data, error } = await client.storage.from(portraitBucket).list(userId, {
+    limit: 1000,
+    sortBy: { column: 'created_at', order: 'desc' },
+  })
+  if (error) throw error
+
+  return Promise.all((data ?? [])
+    .filter((file) => file.id && file.name.startsWith('background-'))
+    .map(async (file, index) => {
+      const path = `${userId}/${file.name}`
+      const originalName = file.metadata?.originalName
+      return {
+        path,
+        url: await createPortraitUrl(path),
+        name: typeof originalName === 'string' ? originalName : `Imagem enviada ${index + 1}`,
+      }
+    }))
+}
+
 export async function deletePortrait(path: string) {
   const client = requireClient()
   const { error } = await client.storage.from(portraitBucket).remove([path])
@@ -154,7 +217,7 @@ export async function deleteCharacter(userId: string, id: string) {
     .delete()
     .eq('id', id)
     .eq('user_id', userId)
-    .select('portrait_path')
+    .select('portrait_path, details')
     .maybeSingle()
 
   if (error) throw error

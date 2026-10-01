@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type { AnimationItem } from 'lottie-web'
 import type { Swiper as SwiperInstance } from 'swiper/types'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/css'
@@ -6,15 +7,17 @@ import { classFeatures, getSpellSlotsAtClassLevel } from '../lib/classFeatures'
 import type { CharacterDetails, CharacterPlayState } from '../lib/characterData'
 import { addInventoryItem, calculateArmorClass, convertCurrency, currencyDenominations, equipOneInventoryUnit, formatPrice, getArmorClassBreakdown, getCurrencyBalances, getCurrencyDisplay, getWeaponAttackModifier, isEquippable, readInventory, type CurrencyBalances, type CurrencyCode, type EquipmentItem, type InventoryEntry } from '../lib/equipment'
 import { useEquipmentCatalog } from '../lib/useEquipmentCatalog'
-import { applyHitPointAdjustment, applyHitPointDamage, availableSpellSlotLevels, availableSpellSlots, getInitialCharacterPlayState, healHitPoints, recoverFromLongRest, recoverFromShortRest, setTemporaryHitPoints, toggleSpellSlot } from '../lib/characterPlay'
-import { levelForExperience } from '../lib/experience'
+import { applyHitPointAdjustment, applyHitPointDamage, availableSpellSlotLevels, availableSpellSlots, getInitialCharacterPlayState, healHitPoints, recoverFromLongRest, recoverFromShortRest, setTemporaryHitPoints, toggleDeathSaveMark, toggleSpellSlot } from '../lib/characterPlay'
+import { hasLevelUpChoices, levelForExperience } from '../lib/experience'
 import { getSpellDetails } from '../lib/spellDetails'
 import { groupSpellChoicesByLevel } from '../lib/spellSelection'
 import { getSpellPreparationLimit } from '../lib/spellPreparation'
 import { tintSvgDataUri } from '../lib/tintSvg'
 import { ExperienceBar, ExperienceDialog, LevelUpDrawer } from './CharacterExperience'
+import { CharacterAbout } from './CharacterAbout'
 import { Button } from './Button'
 import { Modal } from './Modal'
+import { useToast } from './ToastContext'
 import { getSpellListForSelection, leveledSpellsByClass, spellcastingAbilityByClass } from '../lib/spellCatalog'
 import { FramedGlassPanel } from './FramedGlassPanel'
 import './CharacterPlaySheet.css'
@@ -23,6 +26,42 @@ type SheetTab = 'Habilidades' | 'Características' | 'Inventário' | 'Magias' | 
 type Skill = { name: string; ability: string }
 type SpellToCast = { name: string; level: number }
 type QuantityDialogState = { entryId: string; name: string; quantity: number }
+
+function SpellCastAnimation({ onComplete }: { onComplete: () => void }) {
+  const containerRef = useRef<HTMLSpanElement>(null)
+  const onCompleteRef = useRef(onComplete)
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete
+  }, [onComplete])
+
+  useEffect(() => {
+    if (!containerRef.current) return
+    let animation: AnimationItem | null = null
+    let cancelled = false
+    const handleComplete = () => onCompleteRef.current()
+    void import('lottie-web/build/player/lottie_light').then(({ default: lottie }) => {
+      if (cancelled || !containerRef.current) return
+      animation = lottie.loadAnimation({
+        container: containerRef.current,
+        renderer: 'svg',
+        loop: false,
+        autoplay: true,
+        path: '/images/spell-cast-sparks.json',
+      })
+      animation.addEventListener('complete', handleComplete)
+    }).catch(() => {
+      if (!cancelled) onCompleteRef.current()
+    })
+    return () => {
+      cancelled = true
+      animation?.removeEventListener('complete', handleComplete)
+      animation?.destroy()
+    }
+  }, [])
+
+  return <span aria-hidden="true" className="play-sheet__spell-cast-animation" ref={containerRef} />
+}
 
 const tabs: SheetTab[] = ['Habilidades', 'Características', 'Inventário', 'Magias', 'Sobre']
 const conditions = [
@@ -176,18 +215,18 @@ function selectedSpells(value: string, classId: string) {
 
 type CurrencyDraft = Record<CurrencyCode, string>
 
-function currencyDraftFromCp(currencyCp: number): CurrencyDraft {
-  const balances = getCurrencyBalances(currencyCp)
+function currencyDraftFromBalances(balances: CurrencyBalances): CurrencyDraft {
   return Object.fromEntries(currencyDenominations.map(({ code }) => [code, String(balances[code])])) as CurrencyDraft
 }
 
-function CurrencyManagementDrawer({ initialCurrencyCp, theme, onClose, onSave }: {
+function CurrencyManagementDrawer({ initialCurrencyCp, initialCurrencyBalances, theme, onClose, onSave }: {
   initialCurrencyCp: number
+  initialCurrencyBalances?: CurrencyBalances
   theme: 'light' | 'dark'
   onClose: () => void
-  onSave: (currencyCp: number) => Promise<boolean>
+  onSave: (currencyCp: number, currencyBalances: CurrencyBalances) => Promise<boolean>
 }) {
-  const [draft, setDraft] = useState(() => currencyDraftFromCp(initialCurrencyCp))
+  const [draft, setDraft] = useState(() => currencyDraftFromBalances(initialCurrencyBalances ?? getCurrencyBalances(initialCurrencyCp)))
   const [conversionOpen, setConversionOpen] = useState(false)
   const [source, setSource] = useState<CurrencyCode>('gp')
   const [target, setTarget] = useState<CurrencyCode>('sp')
@@ -262,11 +301,10 @@ function CurrencyManagementDrawer({ initialCurrencyCp, theme, onClose, onSave }:
     }
     savingRef.current = true
     setSaving(true)
-    const saved = await onSave(currencyCp)
+    const saved = await onSave(currencyCp, values)
     savingRef.current = false
     setSaving(false)
     if (saved) onClose()
-    else setError('Não foi possível salvar o dinheiro. Tente novamente.')
   }
 
   const footer = conversionOpen
@@ -307,6 +345,9 @@ export function CharacterPlaySheet({
   landscape,
   onBack,
   onSave,
+  onUploadPortrait,
+  onUploadBackground,
+  onLoadBackgrounds,
 }: {
   character: CharacterDetails
   characterClass: string
@@ -316,11 +357,18 @@ export function CharacterPlaySheet({
   landscape: string
   onBack: () => void
   onSave: (character: CharacterDetails) => Promise<void>
+  onUploadPortrait: (file: File) => Promise<{ path: string; url: string }>
+  onUploadBackground: (file: File) => Promise<{ path: string; url: string }>
+  onLoadBackgrounds: () => Promise<{ path: string; url: string; name: string }[]>
 }) {
   const { catalog, loading: equipmentLoading, error: equipmentError, retry: retryEquipment } = useEquipmentCatalog(false)
+  const toast = useToast()
   const [activeTab, setActiveTab] = useState<SheetTab>('Habilidades')
-  const [saveError, setSaveError] = useState('')
   const [experienceDialogOpen, setExperienceDialogOpen] = useState(false)
+  const [deathSaveDialogOpen, setDeathSaveDialogOpen] = useState(false)
+  const [deathSaveDraft, setDeathSaveDraft] = useState({ successes: [false, false, false], failures: [false, false, false], currentHp: 0 })
+  const [deathSaveHealAmount, setDeathSaveHealAmount] = useState('')
+  const [deathSaveSaving, setDeathSaveSaving] = useState(false)
   const [restDialogOpen, setRestDialogOpen] = useState(false)
   const [spellPreparationPromptOpen, setSpellPreparationPromptOpen] = useState(false)
   const [spellPreparationDrawerOpen, setSpellPreparationDrawerOpen] = useState(false)
@@ -328,8 +376,12 @@ export function CharacterPlaySheet({
   const [spellPreparationLevelFilter, setSpellPreparationLevelFilter] = useState<number | null>(null)
   const [spellPreparationSaving, setSpellPreparationSaving] = useState(false)
   const [conditionsDialogOpen, setConditionsDialogOpen] = useState(false)
-  const [activeConditionNames, setActiveConditionNames] = useState<string[]>(() => character.activeConditions ?? [])
-  const [conditionDraftNames, setConditionDraftNames] = useState<string[]>(() => character.activeConditions ?? [])
+  const initialConditions = character.activeConditions ?? []
+  const initialConditionNames = getInitialCharacterPlayState(character).currentHp === 0 && !initialConditions.includes('Inconsciente')
+    ? [...initialConditions, 'Inconsciente']
+    : initialConditions
+  const [activeConditionNames, setActiveConditionNames] = useState<string[]>(initialConditionNames)
+  const [conditionDraftNames, setConditionDraftNames] = useState<string[]>(initialConditionNames)
   const [conditionIconIndex, setConditionIconIndex] = useState(0)
   const [conditionSavePending, setConditionSavePending] = useState(false)
   const [levelUpTarget, setLevelUpTarget] = useState<{ experience: number; level: number } | null>(null)
@@ -346,6 +398,7 @@ export function CharacterPlaySheet({
   const [spellToCast, setSpellToCast] = useState<SpellToCast | null>(null)
   const [selectedSpellSlotLevel, setSelectedSpellSlotLevel] = useState<number | null>(null)
   const [pendingSpellSlots, setPendingSpellSlots] = useState<string[]>([])
+  const [spellCastAnimation, setSpellCastAnimation] = useState<{ name: string; id: number } | null>(null)
   const [storedSearchOpen, setStoredSearchOpen] = useState(false)
   const [storedSearch, setStoredSearch] = useState('')
   const [currencyDrawerOpen, setCurrencyDrawerOpen] = useState(false)
@@ -374,7 +427,10 @@ export function CharacterPlaySheet({
     }
   })
   const [frameSvgs, setFrameSvgs] = useState<Partial<Record<FrameSvg, string>>>({})
+  const [backgroundImages, setBackgroundImages] = useState<string[]>([])
+  const [backgroundPreview, setBackgroundPreview] = useState(landscape)
   const castDialogRef = useRef<HTMLElement>(null)
+  const spellCastAnimationId = useRef(0)
   const sheetSwiperRef = useRef<SwiperInstance | null>(null)
   const equipmentDrawerRef = useRef<HTMLDialogElement>(null)
   const equipmentDrawerCloseTimer = useRef<number | null>(null)
@@ -384,6 +440,18 @@ export function CharacterPlaySheet({
   const hpHoldIntervalRef = useRef<number | null>(null)
   const hpHoldTriggeredRef = useRef(false)
   const maxHp = Number(character.maxHp) || 0
+
+  useEffect(() => {
+    setBackgroundPreview(landscape)
+  }, [landscape])
+  useEffect(() => {
+    const previousTheme = document.body.dataset.playSheetToastTheme
+    document.body.dataset.playSheetToastTheme = darkMode ? 'dark' : 'light'
+    return () => {
+      if (previousTheme === undefined) delete document.body.dataset.playSheetToastTheme
+      else document.body.dataset.playSheetToastTheme = previousTheme
+    }
+  }, [darkMode])
   const [playState, setPlayState] = useState(() => {
     const state = getInitialCharacterPlayState(character)
     return { ...state, currentHp: Math.max(0, Math.min(maxHp, state.currentHp)) }
@@ -467,6 +535,15 @@ export function CharacterPlaySheet({
     return () => { active = false }
   }, [])
 
+  useEffect(() => {
+    let active = true
+    void fetch('/images/backgrounds/index.json')
+      .then((response) => response.ok ? response.json() as Promise<string[]> : [])
+      .then((images) => { if (active && Array.isArray(images)) setBackgroundImages(images) })
+      .catch(() => undefined)
+    return () => { active = false }
+  }, [])
+
   function frameStyle(frame: FrameSvg, fallbackPath: string) {
     const svg = frameSvgs[frame]
     return { backgroundImage: `url("${svg ? tintSvgDataUri(svg, frameColor) : fallbackPath}")` }
@@ -533,22 +610,44 @@ export function CharacterPlaySheet({
     if (storedSearchOpen) storedSearchRef.current?.focus()
   }, [storedSearchOpen])
 
-  async function save(next: CharacterDetails, nextState = playState): Promise<boolean> {
-    setSaveError('')
+  async function save(next: CharacterDetails, nextState = playState, messages?: { success?: string; error?: string }): Promise<boolean> {
     try {
       await onSave({ ...next, playState: nextState })
       setPlayState(nextState)
+      if (messages?.success) toast.success(messages.success)
       return true
     } catch {
-      setSaveError('Não foi possível salvar a alteração. Verifique a conexão e tente novamente.')
+      toast.error(messages?.error ?? 'Não foi possível salvar as alterações da ficha. Verifique a conexão e tente novamente.')
       return false
     }
   }
 
+  useEffect(() => {
+    const savedConditions = character.activeConditions ?? []
+    if (playState.currentHp !== 0 || savedConditions.includes('Inconsciente')) return
+    const activeConditions = [...savedConditions, 'Inconsciente']
+    void save({ ...character, activeConditions }, playState).then((saved) => {
+      if (saved) {
+        setActiveConditionNames(activeConditions)
+        setConditionDraftNames(activeConditions)
+      }
+    })
+  }, [character.activeConditions, playState.currentHp])
+
   async function saveExperience(experience: number) {
     const targetLevel = levelForExperience(experience)
-    const saved = await save({ ...character, experiencePoints: String(experience) })
-    if (saved && targetLevel > character.level) setLevelUpTarget({ experience, level: targetLevel })
+    const levelGained = targetLevel > character.level
+    const needsChoices = levelGained && hasLevelUpChoices(character, classId, classData, targetLevel)
+    const levelMessage = levelGained ? ` O personagem alcançou o nível ${targetLevel}.` : ''
+    const saved = await save({
+      ...character,
+      experiencePoints: String(experience),
+      ...(!needsChoices && levelGained ? { level: targetLevel } : {}),
+    }, playState, {
+      success: `Pontos de XP atualizados para ${experience.toLocaleString('pt-BR')}.${levelMessage}`,
+      error: 'Não foi possível atualizar os pontos de XP. Tente novamente.',
+    })
+    if (saved && needsChoices) setLevelUpTarget({ experience, level: targetLevel })
     return saved
   }
 
@@ -572,7 +671,25 @@ export function CharacterPlaySheet({
   }
 
   async function confirmHpDialog() {
-    if (await save(character, hpDraftRef.current)) setHpDialogOpen(false)
+    const editedState = hpDraftRef.current
+    const wasUnconsciousAtZeroHp = hpStartingStateRef.current.currentHp === 0
+    const state = wasUnconsciousAtZeroHp && editedState.currentHp > 0
+      ? { ...editedState, deathSaveSuccesses: [], deathSaveFailures: [] }
+      : editedState
+    const nextConditions = state.currentHp === 0
+      ? [...new Set([...activeConditionNames, 'Inconsciente'])]
+      : wasUnconsciousAtZeroHp
+        ? activeConditionNames.filter((condition) => condition !== 'Inconsciente')
+        : activeConditionNames
+    const temporary = state.temporaryHp > 0 ? ` + ${state.temporaryHp} PV temporários` : ''
+    if (await save({ ...character, activeConditions: nextConditions }, state, {
+      success: `Pontos de vida atualizados: ${state.currentHp}${temporary} de ${maxHp}.`,
+      error: 'Não foi possível atualizar os pontos de vida. Tente novamente.',
+    })) {
+      setActiveConditionNames(nextConditions)
+      setConditionDraftNames(nextConditions)
+      setHpDialogOpen(false)
+    }
   }
 
   function changeHpByButtons(change: number) {
@@ -624,16 +741,83 @@ export function CharacterPlaySheet({
     setHpAmount('')
   }
 
+  function openDeathSaveDialog() {
+    setDeathSaveDraft({
+      successes: Array.from({ length: 3 }, (_, index) => Boolean(playState.deathSaveSuccesses?.[index])),
+      failures: Array.from({ length: 3 }, (_, index) => Boolean(playState.deathSaveFailures?.[index])),
+      currentHp: playState.currentHp,
+    })
+    setDeathSaveHealAmount('')
+    setDeathSaveDialogOpen(true)
+  }
+
+  function applyDeathSaveHealing() {
+    const amount = Math.trunc(Number(deathSaveHealAmount))
+    if (!Number.isFinite(amount) || amount <= 0) return
+    setDeathSaveDraft((current) => ({
+      ...current,
+      currentHp: healHitPoints({ ...playState, currentHp: current.currentHp }, amount, maxHp).currentHp,
+    }))
+    setDeathSaveHealAmount('')
+  }
+
+  function toggleDeathSave(kind: 'successes' | 'failures', index: number) {
+    setDeathSaveDraft((current) => ({ ...current, [kind]: toggleDeathSaveMark(current[kind], index) }))
+  }
+
+  async function confirmDeathSaveDialog() {
+    if (deathSaveSaving || playState.currentHp !== 0) return
+    setDeathSaveSaving(true)
+    const recovered = deathSaveDraft.currentHp > 0
+    const nextState = {
+      ...playState,
+      currentHp: deathSaveDraft.currentHp,
+      deathSaveSuccesses: recovered ? [] : deathSaveDraft.successes,
+      deathSaveFailures: recovered ? [] : deathSaveDraft.failures,
+    }
+    const nextConditions = recovered
+      ? activeConditionNames.filter((condition) => condition !== 'Inconsciente')
+      : [...new Set([...activeConditionNames, 'Inconsciente'])]
+    try {
+      const saved = await save({ ...character, activeConditions: nextConditions }, nextState, {
+        success: recovered
+          ? `Pontos de vida atualizados: ${nextState.currentHp} de ${maxHp}.`
+          : 'Testes de resistência contra a morte atualizados.',
+        error: recovered
+          ? 'Não foi possível salvar os pontos de vida. Tente novamente.'
+          : 'Não foi possível salvar os testes de resistência contra a morte.',
+      })
+      if (saved) {
+        setActiveConditionNames(nextConditions)
+        setConditionDraftNames(nextConditions)
+        setDeathSaveDialogOpen(false)
+      }
+    } finally {
+      setDeathSaveSaving(false)
+    }
+  }
+
   function updatePlayState(update: (current: CharacterPlayState) => CharacterPlayState) {
     const nextState = update(playState)
     void save(character, nextState)
   }
 
-  function castUsingSlot(slotId: string) {
+  function showSpellCastAnimation(name: string) {
+    spellCastAnimationId.current += 1
+    setSpellCastAnimation({ name, id: spellCastAnimationId.current })
+  }
+
+  function finishSpellCastAnimation(id: number) {
+    setSpellCastAnimation((current) => current?.id === id ? null : current)
+  }
+
+  function castUsingSlot(slotId: string, spellName: string) {
     if (spentSpellSlotsForCasting.includes(slotId)) return
     setPendingSpellSlots((current) => current.includes(slotId) ? current : [...current, slotId])
     const nextState = toggleSpellSlot(playState, slotId)
-    void save(character, nextState).finally(() => {
+    void save(character, nextState, { error: `Não foi possível conjurar ${spellName}. Tente novamente.` }).then((saved) => {
+      if (saved) showSpellCastAnimation(spellName)
+    }).finally(() => {
       setPendingSpellSlots((current) => current.filter((pendingSlot) => pendingSlot !== slotId))
     })
   }
@@ -652,10 +836,10 @@ export function CharacterPlaySheet({
     void persistInventory(nextInventory)
   }
 
-  function persistInventory(nextInventory: ReturnType<typeof readInventory>) {
+  function persistInventory(nextInventory: ReturnType<typeof readInventory>, messages?: { success?: string; error?: string }) {
     const nextEquipment = JSON.stringify(nextInventory)
     setOptimisticEquipment({ base: character.equipment, value: nextEquipment })
-    return save({ ...character, equipment: nextEquipment }).then((saved) => {
+    return save({ ...character, equipment: nextEquipment }, playState, messages).then((saved) => {
       if (!saved) setOptimisticEquipment((current) => current?.value === nextEquipment ? null : current)
       return saved
     })
@@ -678,6 +862,9 @@ export function CharacterPlaySheet({
     persistInventory({
       ...nextInventory,
       entries: [entries.find((entry) => entry.id === addedEntry.id)!, ...entries.filter((entry) => entry.id !== addedEntry.id)],
+    }, {
+      success: `${quantity} ${quantity === 1 ? 'unidade' : 'unidades'} de ${addedEntry.name} adicionada${quantity === 1 ? '' : 's'} ao inventário.`,
+      error: `Não foi possível adicionar ${addedEntry.name} ao inventário. Tente novamente.`,
     })
     setEquipmentItemToAdd(null)
     setEquipmentAddQuantity('1')
@@ -697,8 +884,12 @@ export function CharacterPlaySheet({
   }
 
   function deleteStoredEquipment(entryId: string) {
+    const removed = inventory.entries.find((entry) => entry.id === entryId)
     const nextInventory = { ...inventory, entries: inventory.entries.filter((entry) => entry.id !== entryId) }
-    persistInventory(nextInventory)
+    return persistInventory(nextInventory, removed ? {
+      success: `${removed.name} removido do inventário.`,
+      error: `Não foi possível excluir ${removed.name} do inventário. Tente novamente.`,
+    } : undefined)
   }
 
   function openQuantityDialog(entry: InventoryEntry) {
@@ -726,14 +917,23 @@ export function CharacterPlaySheet({
     const nextState = long
       ? recoverFromLongRest(maxHp)
       : recoverFromShortRest(playState, classId)
-    const saved = await save(character, nextState)
+    const nextConditions = long && playState.currentHp === 0 && nextState.currentHp > 0
+      ? activeConditionNames.filter((condition) => condition !== 'Inconsciente')
+      : activeConditionNames
+    const saved = await save({ ...character, activeConditions: nextConditions }, nextState, {
+      success: long ? 'Descanso longo concluído. Pontos de vida e espaços de magia restaurados.' : 'Descanso curto concluído.',
+      error: `Não foi possível salvar o descanso ${long ? 'longo' : 'curto'}. Tente novamente.`,
+    })
+    if (saved && nextConditions !== activeConditionNames) {
+      setActiveConditionNames(nextConditions)
+      setConditionDraftNames(nextConditions)
+    }
     if (long && saved && canPrepareSpells) setSpellPreparationPromptOpen(true)
   }
 
   function openSpellPreparationDrawer() {
     setSpellPreparationDraft(preparedSpellNames)
     setSpellPreparationLevelFilter(null)
-    setSaveError('')
     setSpellPreparationPromptOpen(false)
     setSpellPreparationDrawerOpen(true)
   }
@@ -753,7 +953,10 @@ export function CharacterPlaySheet({
     })
     setSpellPreparationSaving(true)
     try {
-      const saved = await save({ ...character, spells })
+      const saved = await save({ ...character, spells }, playState, {
+        success: `Lista de magias atualizada. ${spellPreparationDraft.length} ${spellPreparationDraft.length === 1 ? 'magia preparada' : 'magias preparadas'}.`,
+        error: 'Não foi possível atualizar a lista de magias. Tente novamente.',
+      })
       if (saved) setSpellPreparationDrawerOpen(false)
     } finally {
       setSpellPreparationSaving(false)
@@ -762,12 +965,11 @@ export function CharacterPlaySheet({
 
   function openConditionsDialog() {
     setConditionDraftNames(activeConditionNames)
-    setSaveError('')
     setConditionsDialogOpen(true)
   }
 
   function toggleActiveCondition(name: string) {
-    if (conditionSavePending) return
+    if (conditionSavePending || (name === 'Inconsciente' && playState.currentHp === 0)) return
     setConditionDraftNames((current) => current.includes(name)
       ? current.filter((condition) => condition !== name)
       : [...current, name])
@@ -775,17 +977,24 @@ export function CharacterPlaySheet({
 
   async function closeConditionsDialog() {
     if (conditionSavePending) return
-    const conditionsChanged = conditionDraftNames.length !== activeConditionNames.length
-      || conditionDraftNames.some((name) => !activeConditionNames.includes(name))
+    const nextConditions = playState.currentHp === 0
+      ? [...new Set([...conditionDraftNames, 'Inconsciente'])]
+      : conditionDraftNames
+    const conditionsChanged = nextConditions.length !== activeConditionNames.length
+      || nextConditions.some((name) => !activeConditionNames.includes(name))
     if (!conditionsChanged) {
       setConditionsDialogOpen(false)
       return
     }
 
     setConditionSavePending(true)
-    const saved = await save({ ...character, activeConditions: conditionDraftNames })
+    const saved = await save({ ...character, activeConditions: nextConditions }, playState, {
+      success: nextConditions.length ? `Condições atualizadas: ${nextConditions.join(', ')}.` : 'Todas as condições foram removidas.',
+      error: 'Não foi possível atualizar as condições. Tente novamente.',
+    })
     if (saved) {
-      setActiveConditionNames(conditionDraftNames)
+      setActiveConditionNames(nextConditions)
+      setConditionDraftNames(nextConditions)
       setConditionIconIndex(0)
       setConditionsDialogOpen(false)
     }
@@ -798,7 +1007,7 @@ export function CharacterPlaySheet({
     if (level > 0 && availableLevels.length === 1) {
       const firstSlot = availableSpellSlots(spellSlots, spentSpellSlotsForCasting, level)
         .find((slotId) => Number(slotId.split(':')[0]) === availableLevels[0])
-      if (firstSlot) castUsingSlot(firstSlot)
+      if (firstSlot) castUsingSlot(firstSlot, name)
       return
     }
     setSpellToCast({ name, level })
@@ -812,7 +1021,9 @@ export function CharacterPlaySheet({
       const slotId = availableSpellSlots(spellSlots, spentSpellSlotsForCasting, spellToCast.level)
         .find((availableId) => Number(availableId.split(':')[0]) === selectedSpellSlotLevel)
       if (!slotId) return
-      castUsingSlot(slotId)
+      castUsingSlot(slotId, spellToCast.name)
+    } else {
+      showSpellCastAnimation(spellToCast.name)
     }
     setSpellToCast(null)
   }
@@ -1033,7 +1244,7 @@ export function CharacterPlaySheet({
           </>}
         </div>
       </dialog>
-      {currencyDrawerOpen && <CurrencyManagementDrawer initialCurrencyCp={inventory.currencyCp} onClose={() => setCurrencyDrawerOpen(false)} onSave={(currencyCp) => persistInventory({ ...inventory, currencyCp })} theme={darkMode ? 'dark' : 'light'} />}
+      {currencyDrawerOpen && <CurrencyManagementDrawer initialCurrencyCp={inventory.currencyCp} initialCurrencyBalances={inventory.currencyBalances} onClose={() => setCurrencyDrawerOpen(false)} onSave={(currencyCp, currencyBalances) => persistInventory({ ...inventory, currencyCp, currencyBalances }, { success: 'Saldo de moedas atualizado.', error: 'Não foi possível salvar o saldo de moedas. Tente novamente.' })} theme={darkMode ? 'dark' : 'light'} />}
     </div>
   }
 
@@ -1048,7 +1259,7 @@ export function CharacterPlaySheet({
           {details && <small>Conjuração: {details.castingTime} · Alcance: {details.range}</small>}
           {details && <small>Componentes: {details.components} · Duração: {details.duration}</small>}
         </div>
-        <div className="play-sheet__spell-actions"><span>{level}</span><button disabled={!canCast} onClick={() => openCastDialog(name, spellLevel)} title={canCast ? 'Conjurar magia' : 'Sem espaços disponíveis deste nível ou superiores'} type="button">Conjurar</button></div>
+        <div className="play-sheet__spell-actions"><span>{level}</span><button className="play-sheet__spell-cast-button" disabled={!canCast} onClick={() => openCastDialog(name, spellLevel)} title={canCast ? 'Conjurar magia' : 'Sem espaços disponíveis deste nível ou superiores'} type="button">Conjurar{spellCastAnimation?.name === name && <SpellCastAnimation key={spellCastAnimation.id} onComplete={() => finishSpellCastAnimation(spellCastAnimation.id)} />}</button></div>
       </li>
     }
     return <div className="play-sheet__spell-list">
@@ -1085,20 +1296,10 @@ export function CharacterPlaySheet({
   }
 
   function renderAbout() {
-    return <div className="play-sheet__about">
-      <FramedGlassPanel className="play-sheet__about-frame" contentClassName="play-sheet__about-content" cornerSvg={frameSvgs.corner ?? ''} frameColor={frameColor}>
-      <section className="play-sheet__about-section play-sheet__frame-color"><h2>Personalização da ficha</h2>
-        <label className="play-sheet__dark-mode"><input checked={darkMode} onChange={(event) => updateDarkMode(event.target.checked)} type="checkbox" />Modo escuro</label>
-        <div className="play-sheet__frame-color-trigger">
-          <span>Cor das molduras</span>
-          <Button aria-label={`Cor atual das molduras: ${frameColor}`} className="play-sheet__frame-color-open" onClick={openFrameColorDialog} variant="secondary"><span aria-hidden="true" className="play-sheet__frame-color-swatch" style={{ backgroundColor: frameColor }} />Alterar cor</Button>
-        </div>
-      </section>
-      <section className="play-sheet__about-section play-sheet__about-facts"><h2>Sobre</h2>
-        {[['Idade', character.age ? `${character.age} anos` : '—'], ['Altura', character.height || '—'], ['Peso', character.weight ? `${character.weight} kg` : '—'], ['Tendência', character.alignment || '—'], ['Antecedente', background]].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}
-      </section>
-      </FramedGlassPanel>
-    </div>
+    return <CharacterAbout background={background} backgroundImages={backgroundImages} backgroundPreview={backgroundPreview} character={character} cornerSvg={frameSvgs.corner ?? ''} frameColor={frameColor} onDarkModeChange={updateDarkMode} onFrameColorClick={openFrameColorDialog} onLoadBackgrounds={onLoadBackgrounds} onPreviewBackground={setBackgroundPreview} onSave={(changes) => save({ ...character, ...changes }, playState, { success: 'Informações da ficha atualizadas.' })} onSaveBackground={(changes) => save({ ...character, ...changes }, playState, {
+      success: 'Plano de fundo da ficha atualizado.',
+      error: 'Não foi possível atualizar o plano de fundo da ficha. Tente novamente.',
+    })} onUploadBackground={onUploadBackground} onUploadPortrait={onUploadPortrait} portrait={portrait} theme={darkMode ? 'dark' : 'light'} />
   }
 
   return <main className={`play-sheet${darkMode ? ' play-sheet--dark' : ''}`}>
@@ -1112,24 +1313,31 @@ export function CharacterPlaySheet({
         <ExperienceBar experiencePoints={Number(character.experiencePoints) || 0} level={character.level} onClick={() => setExperienceDialogOpen(true)} />
         <div className="play-sheet__hp-controls">
           <Button aria-label="Opções de descanso" className="play-sheet__rest-trigger play-sheet__nav-action" onClick={() => setRestDialogOpen(true)} size="icon" title="Descansar" variant="secondary"><span aria-hidden="true" className="material-symbols-rounded">hotel</span></Button>
-          <Button aria-label={activeConditionNames.length ? `Condições marcadas: ${activeConditionNames.join(', ')}` : 'Condições'} className={`play-sheet__conditions-trigger play-sheet__nav-action${activeConditionNames.length ? ' play-sheet__conditions-trigger--active' : ''}`} data-tooltip={activeConditionNames.length ? `Condições marcadas: ${activeConditionNames.join(', ')}` : undefined} disabled={conditionSavePending} onClick={openConditionsDialog} size="icon" variant="secondary">
+          <Button aria-label={activeConditionNames.length ? `Condições marcadas: ${activeConditionNames.join(', ')}` : 'Condições'} className={`play-sheet__conditions-trigger play-sheet__nav-action${activeConditionNames.length ? ' play-sheet__conditions-trigger--active' : ''}`} data-tooltip={activeConditionNames.length ? activeConditionNames.join(', ') : undefined} disabled={conditionSavePending} onClick={openConditionsDialog} size="icon" variant="secondary">
             <span aria-hidden="true" className="material-symbols-rounded">{currentConditionIcon}</span>
             {activeConditionNames.length > 0 && <span aria-label={`${activeConditionNames.length} condições ativas`} className="play-sheet__condition-count">{activeConditionNames.length}</span>}
           </Button>
-          <button aria-label={`Pontos de vida: ${playState.currentHp}${playState.temporaryHp ? ` mais ${playState.temporaryHp} temporários` : ''} de ${maxHp}. Abrir controles de PV`} className="play-sheet__hp-card" onClick={openHpDialog} type="button">
-            <span className="play-sheet__hp-card-title">PONTOS DE VIDA</span>
-            <span className="play-sheet__hp-card-values"><strong>{playState.currentHp}</strong>{playState.temporaryHp > 0 && <> + <strong className="play-sheet__hp-temporary-value">{playState.temporaryHp}</strong></>} <span>/ {maxHp}</span></span>
-            <span aria-hidden="true" className="play-sheet__hp-meter"><span className="play-sheet__hp-meter-current" style={{ width: `${maxHp > 0 ? Math.min(playState.temporaryHp > 0 ? 78 : 100, playState.currentHp / maxHp * (playState.temporaryHp > 0 ? 78 : 100)) : 0}%` }} /><span className="play-sheet__hp-meter-temporary" style={{ width: `${playState.temporaryHp > 0 ? Math.max(16, Math.min(22, playState.temporaryHp / Math.max(1, maxHp) * 100)) : 0}%` }} /></span>
+          {playState.currentHp === 0 && (playState.deathSaveSuccesses?.filter(Boolean).length ?? 0) < 3
+            ? <button aria-label="Testes de resistência contra a morte. Abrir controles" className="play-sheet__death-save-card" onClick={openDeathSaveDialog} type="button">
+               <span className="play-sheet__death-save-row"><strong>SUCESSO</strong><span aria-hidden="true" className="play-sheet__death-save-marks">{Array.from({ length: 3 }, (_, index) => <i className={playState.deathSaveSuccesses?.[index] ? 'play-sheet__death-save-mark play-sheet__death-save-mark--success' : 'play-sheet__death-save-mark'} key={index} />)}</span></span>
+               <span className="play-sheet__death-save-row"><strong>FALHA</strong><span aria-hidden="true" className="play-sheet__death-save-marks">{Array.from({ length: 3 }, (_, index) => <i className={playState.deathSaveFailures?.[index] ? 'play-sheet__death-save-mark play-sheet__death-save-mark--failure' : 'play-sheet__death-save-mark'} key={index} />)}</span></span>
           </button>
+             : <button aria-label={`Pontos de vida: ${playState.currentHp}${playState.temporaryHp ? ` mais ${playState.temporaryHp} temporários` : ''} de ${maxHp}. Abrir controles de PV`} className="play-sheet__hp-card" onClick={openHpDialog} type="button">
+               <span className="play-sheet__hp-card-title">PONTOS DE VIDA</span>
+               <span className="play-sheet__hp-card-values"><strong>{playState.currentHp}</strong>{playState.temporaryHp > 0 && <> + <strong className="play-sheet__hp-temporary-value">{playState.temporaryHp}</strong></>} <span>/ {maxHp}</span></span>
+               <span aria-hidden="true" className="play-sheet__hp-meter"><span className="play-sheet__hp-meter-current" style={{ width: `${maxHp > 0 ? Math.min(playState.temporaryHp > 0 ? 78 : 100, playState.currentHp / maxHp * (playState.temporaryHp > 0 ? 78 : 100)) : 0}%` }} /><span className="play-sheet__hp-meter-temporary" style={{ width: `${playState.temporaryHp > 0 ? Math.max(16, Math.min(22, playState.temporaryHp / Math.max(1, maxHp) * 100)) : 0}%` }} /></span>
+             </button>}
         </div>
       </div>
     </header>
     <div aria-hidden="true" className="play-sheet__hero">
-      <img className="play-sheet__backdrop" src={landscape} />
+      <img className="play-sheet__backdrop" src={backgroundPreview} />
     </div>
     <div className="play-sheet__paper">
       <nav aria-label="Seções da ficha" className="play-sheet__tabs" role="tablist">
-        {tabs.map((tab, index) => <button aria-selected={activeTab === tab} className={activeTab === tab ? 'play-sheet__tab play-sheet__tab--active' : 'play-sheet__tab'} key={tab} onClick={() => sheetSwiperRef.current?.slideTo(index)} role="tab" type="button"><span aria-hidden="true" className="material-symbols-rounded">{tabIcons[tab]}</span>{tab}</button>)}
+        <div className="play-sheet__tabs-inner">
+          {tabs.map((tab, index) => <button aria-selected={activeTab === tab} className={activeTab === tab ? 'play-sheet__tab play-sheet__tab--active' : 'play-sheet__tab'} key={tab} onClick={() => sheetSwiperRef.current?.slideTo(index)} role="tab" type="button"><span aria-hidden="true" className="material-symbols-rounded">{tabIcons[tab]}</span>{tab}</button>)}
+        </div>
       </nav>
       <Swiper
         autoHeight
@@ -1148,7 +1356,6 @@ export function CharacterPlaySheet({
         <SwiperSlide><div className="play-sheet__tab-content">{renderAbout()}</div></SwiperSlide>
       </Swiper>
     </div>
-    {saveError && <p className="play-sheet__error" role="alert">{saveError}</p>}
     {experienceDialogOpen && <ExperienceDialog experiencePoints={Number(character.experiencePoints) || 0} theme={darkMode ? 'dark' : 'light'} onCancel={() => setExperienceDialogOpen(false)} onConfirm={saveExperience} />}
     {levelUpTarget && <LevelUpDrawer character={character} classData={classData} classId={classId} race={race} targetExperience={levelUpTarget.experience} targetLevel={levelUpTarget.level} theme={darkMode ? 'dark' : 'light'} onCancel={() => setLevelUpTarget(null)} onComplete={() => setLevelUpTarget(null)} onConfirm={save} />}
     {restDialogOpen && <Modal open title="Opções de descanso" theme={darkMode ? 'dark' : 'light'} onClose={() => setRestDialogOpen(false)}>
@@ -1183,16 +1390,15 @@ export function CharacterPlaySheet({
             </label>
           })}
         </div>
-        {saveError && <p className="play-sheet__spell-preparation-error" role="alert">{saveError}</p>}
         <footer><Button disabled={spellPreparationSaving} onClick={() => setSpellPreparationDrawerOpen(false)} variant="secondary">Cancelar</Button><Button disabled={!spellPreparationDraft.length || spellPreparationSaving} onClick={() => void confirmSpellPreparation()}>{spellPreparationSaving ? 'Salvando…' : 'Confirmar seleção'}</Button></footer>
       </div>
     </Modal>}
     {conditionsDialogOpen && <Modal open title="Condições" theme={darkMode ? 'dark' : 'light'} onClose={closeConditionsDialog} variant="wide" footer={<Button disabled={conditionSavePending} onClick={closeConditionsDialog} variant="secondary">Concluir</Button>}>
       <div aria-busy={conditionSavePending} className="play-sheet__conditions-list">{conditions.map(([name, icon, description]) => <label className="play-sheet__condition-option" key={name}>
-        <input aria-label={`Marcar condição ${name}`} checked={conditionDraftNames.includes(name)} disabled={conditionSavePending} onChange={() => toggleActiveCondition(name)} type="checkbox" />
+        <input aria-label={`Marcar condição ${name}`} checked={conditionDraftNames.includes(name)} disabled={conditionSavePending || (name === 'Inconsciente' && playState.currentHp === 0)} onChange={() => toggleActiveCondition(name)} type="checkbox" />
         <span aria-hidden="true" className="material-symbols-rounded">{icon}</span>
         <span className="play-sheet__condition-option-text"><strong>{name}</strong><small>{description}</small></span>
-      </label>)}{saveError && <p className="play-sheet__conditions-save-error" role="alert">{saveError}</p>}</div>
+      </label>)}</div>
     </Modal>}
     {selectedInventoryEntry && <Modal open title={selectedInventoryEntry.name} theme={darkMode ? 'dark' : 'light'} onClose={() => setSelectedInventoryEntry(null)} footer={<Button onClick={() => setSelectedInventoryEntry(null)} variant="secondary">Fechar</Button>} variant="drawer">
       <div className="play-sheet__inventory-details">
@@ -1227,16 +1433,37 @@ export function CharacterPlaySheet({
           <div aria-live="polite" className="play-sheet__hp-current-value">{hpAdjustmentVisible && hpAdjustment !== 0 && <small className={`play-sheet__hp-adjustment${hpAdjustment > 0 ? ' play-sheet__hp-adjustment--positive' : ' play-sheet__hp-adjustment--negative'}`}>{hpAdjustment > 0 ? '+' : ''}{hpAdjustment}</small>}<span className="play-sheet__hp-current-total"><strong>{hpDraft.currentHp}</strong>{hpDraft.temporaryHp > 0 && <span className="play-sheet__hp-temporary-value">+{hpDraft.temporaryHp}</span>}<span> / {maxHp}</span></span></div>
           <button aria-label="Aumentar pontos de vida; segure para aumentar de cinco em cinco" disabled={hpDraft.currentHp >= maxHp && !canRestoreTemporaryHp} onClick={() => { if (hpHoldTriggeredRef.current) { hpHoldTriggeredRef.current = false; return } changeHpByButtons(1) }} onPointerCancel={stopHpButtonHold} onPointerDown={() => startHpButtonHold(1)} onPointerLeave={stopHpButtonHold} onPointerUp={stopHpButtonHold} type="button">+</button>
         </div>
+        <div aria-hidden="true" className="play-sheet__hp-divider" />
         <div className="play-sheet__hp-actions">
-          <button className="play-sheet__hp-damage" disabled={!Number(hpAmount) || Number(hpAmount) <= 0} onClick={() => applyHpAmount(applyHitPointDamage)} type="button">Dano</button>
+          <Button className="play-sheet__hp-damage" disabled={!Number(hpAmount) || Number(hpAmount) <= 0} onClick={() => applyHpAmount(applyHitPointDamage)} variant="danger">Dano</Button>
           <input aria-label="Quantidade de pontos de vida" min="1" onChange={(event) => setHpAmount(event.target.value)} type="number" value={hpAmount} />
-          <button className="play-sheet__hp-heal" disabled={!Number(hpAmount) || Number(hpAmount) <= 0} onClick={() => applyHpAmount((current, amount) => healHitPoints(current, amount, maxHp))} type="button">Curar</button>
-          <button className="play-sheet__hp-temporary" disabled={!Number(hpAmount) || Number(hpAmount) <= 0} onClick={() => applyHpAmount(setTemporaryHitPoints)} type="button">Definir PV temporários</button>
+          <Button className="play-sheet__hp-heal" disabled={!Number(hpAmount) || Number(hpAmount) <= 0} onClick={() => applyHpAmount((current, amount) => healHitPoints(current, amount, maxHp))} variant="success">Curar</Button>
+          <Button className="play-sheet__hp-temporary" disabled={!Number(hpAmount) || Number(hpAmount) <= 0} onClick={() => applyHpAmount(setTemporaryHitPoints)} variant="secondary">Definir PV temporários</Button>
           <p className="play-sheet__hp-rule">O dano reduz primeiro os PV temporários. A cura não ultrapassa o máximo de PV.</p>
         </div>
       </div>
     </Modal>}
-    {frameColorDialogOpen && <FrameColorDialog frameColor={frameColor} frameSvg={frameSvgs.ability} landscape={landscape} theme={darkMode ? 'dark' : 'light'} onCancel={() => setFrameColorDialogOpen(false)} onConfirm={(color) => { updateFrameColor(color); setFrameColorDialogOpen(false) }} />}
+    {deathSaveDialogOpen && <Modal open title="Testes de resistência contra a morte" theme={darkMode ? 'dark' : 'light'} onClose={() => { if (!deathSaveSaving) setDeathSaveDialogOpen(false) }} footer={<><Button disabled={deathSaveSaving} onClick={() => setDeathSaveDialogOpen(false)} variant="secondary">Cancelar</Button><Button disabled={deathSaveSaving} onClick={() => void confirmDeathSaveDialog()}>{deathSaveSaving ? 'Salvando…' : 'Concluir'}</Button></>}>
+      <div className="play-sheet__death-save-dialog">
+        {(['successes', 'failures'] as const).map((kind) => <fieldset className={`play-sheet__death-save-checks play-sheet__death-save-checks--${kind}`} key={kind}>
+          <legend>{kind === 'successes' ? 'SUCESSO' : 'FALHA'}</legend>
+          <div>{deathSaveDraft[kind].map((checked, index) => <label aria-label={`${kind === 'successes' ? 'Sucesso' : 'Falha'} ${index + 1}`} key={index}>
+            <input checked={checked} onChange={() => toggleDeathSave(kind, index)} type="checkbox" />
+            <span aria-hidden="true" />
+          </label>)}</div>
+        </fieldset>)}
+        <div className="play-sheet__death-save-heal">
+          <input aria-label="Quantidade de pontos de vida para curar" inputMode="numeric" onChange={(event) => setDeathSaveHealAmount(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); applyDeathSaveHealing() } }} placeholder="Quantidade para curar" type="text" value={deathSaveHealAmount} />
+          <Button className="play-sheet__death-save-heal-button" disabled={!Number.isFinite(Number(deathSaveHealAmount)) || Number(deathSaveHealAmount) <= 0 || deathSaveSaving} onClick={applyDeathSaveHealing} variant="success">Curar</Button>
+          {deathSaveDraft.currentHp > 0 && <small aria-live="polite" className="play-sheet__death-save-heal-preview">PV após concluir: {deathSaveDraft.currentHp}/{maxHp}</small>}
+        </div>
+        <aside className="play-sheet__death-save-rules">
+          <p><strong>Rolando 1 ou 20.</strong> Um 1 no d20 marca duas falhas; um 20 recupera 1 ponto de vida.</p>
+          <p><strong>Sofrendo dano com 0 PV.</strong> O dano marca uma falha; um acerto crítico marca duas. Dano igual ou maior que o máximo de PV causa morte instantânea.</p>
+        </aside>
+      </div>
+    </Modal>}
+    {frameColorDialogOpen && <FrameColorDialog frameColor={frameColor} frameSvg={frameSvgs.ability} landscape={backgroundPreview} theme={darkMode ? 'dark' : 'light'} onCancel={() => setFrameColorDialogOpen(false)} onConfirm={(color) => { updateFrameColor(color); setFrameColorDialogOpen(false) }} />}
     {spellToCast && <div className="play-sheet__cast-backdrop" onClick={() => setSpellToCast(null)} role="presentation">
       <section aria-labelledby="cast-spell-title" aria-modal="true" className="play-sheet__cast-dialog" onClick={(event) => event.stopPropagation()} ref={castDialogRef} role="dialog" tabIndex={-1}>
         <h2 id="cast-spell-title">Conjurar {spellToCast.name}</h2>

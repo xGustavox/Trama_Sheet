@@ -2015,19 +2015,9 @@
 
 .wizard__portrait-dialog {
   box-sizing: border-box;
-  width: min(720px, calc(100vw - 32px));
-  max-height: calc(100dvh - 32px);
-  padding: 24px;
-  overflow: auto;
-  border: 1px solid var(--line);
-  border-radius: 14px;
-  background: #fff;
+  width: 100%;
+  min-height: 0;
   color: var(--ink);
-  box-shadow: 0 24px 64px rgb(28 38 57 / 24%);
-}
-
-.wizard__portrait-dialog::backdrop {
-  background: rgb(20 15 20 / 55%);
 }
 
 .wizard__portrait-dialog h2 {
@@ -3224,7 +3214,6 @@
 :root[data-theme='dark'] .creation-page .wizard__mobile-step-list,
 :root[data-theme='dark'] .creation-page .wizard__ability-popover,
 :root[data-theme='dark'] .creation-page .wizard__cantrip-drawer[open],
-:root[data-theme='dark'] .creation-page .wizard__portrait-dialog,
 :root[data-theme='dark'] .creation-page .wizard__equipment-reset-dialog,
 :root[data-theme='dark'] .creation-page .wizard__racial-confirmation {
   border-color: var(--line);

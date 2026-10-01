@@ -1,0 +1,95 @@
+.character-about { display: grid; min-width: 0; gap: var(--play-content-card-gap); }
+.character-about__top { display: grid; min-width: 0; grid-template-columns: minmax(250px, .92fr) minmax(0, 1.08fr); align-items: stretch; gap: var(--play-content-card-gap); }
+.character-about__profile-card { display: flex; min-height: 100%; flex-direction: column; padding: 24px 28px 20px; }
+.character-about__portrait { display: grid; width: 108px; height: 108px; flex: 0 0 auto; place-items: center; align-self: center; overflow: hidden; margin: 0 auto 14px; border: 2px solid var(--line-strong); border-radius: 50%; color: var(--ink-muted); background: var(--primary-surface); font: 600 13px var(--font-display); }
+.character-about__portrait img { width: 100%; height: 100%; object-fit: cover; }
+.character-about__facts { display: grid; margin: 0; }
+.character-about__facts > div { display: flex; min-width: 0; align-items: baseline; justify-content: space-between; gap: 12px; padding: 9px 2px; border-top: 1px solid var(--line-strong); }
+.character-about__facts dt { color: var(--ink); }
+.character-about__facts dd { min-width: 0; margin: 0; color: var(--ink-muted); text-align: right; overflow-wrap: anywhere; }
+.character-about__profile-edit { align-self: flex-end; margin-top: 12px; }
+.character-about__personality { display: grid; min-width: 0; padding: 6px 24px; }
+.character-about__personality-section { min-width: 0; padding: 14px 0; }
+.character-about__personality-section + .character-about__personality-section { border-top: 1px solid var(--line-strong); }
+.character-about__rich-card,
+.character-about__customization-card { min-width: 0; padding: 20px 24px; }
+.character-about__card-heading { display: flex; min-width: 0; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 10px; }
+.character-about__card-heading h2 { min-width: 0; margin: 0; color: var(--ink); font: 600 1.05rem/1.3 var(--font-display); }
+.character-about__card-heading .button { flex: 0 0 auto; }
+.character-about__plain-value { min-height: 24px; margin: 0; color: var(--ink); line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+.character-about__rich-card .character-rich-text--readonly { padding-top: 9px; border-top: 1px solid var(--line-strong); }
+.character-about__customization-card { display: grid; gap: 12px; }
+.character-about__customization-card > h2 { margin: 0; color: var(--ink); font: 600 1.05rem/1.3 var(--font-display); }
+.character-about__customization-controls { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line-strong); }
+.character-about__background-controls { display: grid; grid-template-columns: minmax(0, 1fr) minmax(140px, 190px); align-items: center; gap: 12px; padding-top: 12px; border-top: 1px solid var(--line-strong); }
+.character-about__background-select { display: grid; justify-items: start; gap: 8px; color: var(--ink); font-size: 14px; font-weight: 600; }
+.character-about__background-preview { grid-column: 2; grid-row: 1; width: 100%; aspect-ratio: 16 / 9; border: 1px solid var(--line-strong); border-radius: 8px; object-fit: cover; }
+.character-about__background-picker { display: grid; max-height: min(68vh, 700px); gap: 20px; overflow: auto; padding: 2px; }
+.character-about__background-upload-card { display: flex; min-height: 76px; align-items: center; gap: 14px; padding: 12px 16px; border: 1px dashed var(--line-strong); border-radius: 10px; color: var(--ink); background: var(--primary-surface); cursor: pointer; }
+.character-about__background-upload-card > .material-symbols-rounded { font-size: 26px; }
+.character-about__background-upload-card > span:nth-child(2) { display: grid; gap: 3px; }
+.character-about__background-upload-card small { color: var(--ink-muted); font-size: 12px; font-weight: 400; }
+.character-about__background-upload-card input { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.character-about__background-upload-card:focus-within { outline: 2px solid var(--primary); outline-offset: 2px; }
+.character-about__background-loading { margin: 0; color: var(--ink-muted); }
+.character-about__background-group { display: grid; gap: 10px; }
+.character-about__background-group h3 { margin: 0; padding-bottom: 8px; border-bottom: 1px solid var(--line-strong); color: var(--ink); font: 600 14px/1.3 var(--font-display); }
+.character-about__background-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.character-about__background-option { position: relative; display: grid; min-width: 0; gap: 7px; padding: 7px; border: 1px solid var(--line-strong); border-radius: 9px; color: var(--ink); background: var(--surface); text-align: left; cursor: pointer; }
+.character-about__background-option:hover { border-color: var(--primary); }
+.character-about__background-option--selected { border: 2px solid var(--primary); padding: 6px; }
+.character-about__background-option img { width: 100%; aspect-ratio: 16 / 9; border-radius: 5px; object-fit: cover; }
+.character-about__background-option > span:nth-of-type(1) { overflow: hidden; font-size: 13px; text-overflow: ellipsis; white-space: nowrap; }
+.character-about__background-option > .material-symbols-rounded { position: absolute; top: 12px; right: 12px; border-radius: 50%; color: var(--primary); background: var(--surface); font-size: 22px; }
+.character-about__dark-mode { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); cursor: pointer; }
+.character-about__dark-mode input { width: 16px; height: 16px; accent-color: var(--primary); }
+.character-about__frame-color-trigger { display: flex; align-items: center; gap: 10px; }
+.character-about__frame-color-trigger > span { color: var(--ink-muted); }
+.character-about__frame-color-open { display: inline-flex; align-items: center; gap: 7px; }
+.character-about__frame-color-swatch { width: 17px; height: 17px; border: 1px solid var(--line-strong); border-radius: 50%; }
+.character-about__drawer-form { display: grid; gap: 14px; }
+.character-about__drawer-form > label { display: grid; gap: 6px; color: var(--ink); font-size: 14px; font-weight: 600; }
+.character-about__drawer-form input,
+.character-about__drawer-form textarea { box-sizing: border-box; width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--line-strong); border-radius: 9px; color: var(--ink); background: var(--surface); font: inherit; font-weight: 400; }
+.character-about__drawer-form input { min-height: 42px; }
+.character-about__drawer-form textarea { min-height: 112px; resize: vertical; line-height: 1.5; }
+.character-about__portrait-edit { display: grid; grid-template-columns: minmax(0, 1fr) 88px; align-items: center; gap: 10px 16px; padding-top: 14px; border-top: 1px solid var(--line-strong); }
+.character-about__portrait-upload { display: grid; min-width: 0; gap: 6px; color: var(--ink); font-size: 14px; font-weight: 600; }
+.character-about__portrait-upload input { height: auto; min-height: 0; padding: 8px; font-size: 13px; }
+.character-about__portrait-upload small { color: var(--ink-muted); font-size: 12px; font-weight: 400; }
+.character-about__portrait-edit-preview { display: grid; width: 88px; height: 88px; place-items: center; overflow: hidden; border: 1px solid var(--line-strong); border-radius: 50%; color: var(--ink-muted); background: var(--primary-surface); }
+.character-about__portrait-edit-preview img { width: 100%; height: 100%; object-fit: cover; }
+.character-about__portrait-edit-preview > .material-symbols-rounded { font-size: 34px; }
+.character-about__portrait-edit > .character-about__save-error,
+.character-about__portrait-crop { grid-column: 1 / -1; }
+.character-about__portrait-crop { display: grid; min-width: 0; gap: 10px; }
+.character-about__portrait-cropper { width: 100%; height: min(36vh, 320px); }
+.character-about__portrait-crop-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.character-about__portrait-crop-tools > .button:last-child { margin-left: auto; }
+.character-about__save-error { margin: 0; color: #b4232e; font-size: 14px; }
+.character-about__drawer-footer { display: flex; width: 100%; justify-content: space-between; gap: 12px; }
+
+@media (max-width: 760px) {
+  .character-about__top { grid-template-columns: minmax(0, 1fr); }
+  .character-about__profile-card { padding: 20px 22px 18px; }
+  .character-about__personality { padding: 4px 20px; }
+  .character-about__rich-card,
+  .character-about__customization-card { padding: 18px 20px; }
+  .character-about__background-controls { grid-template-columns: minmax(0, 1fr) 130px; }
+}
+
+@media (max-width: 420px) {
+  .character-about__card-heading { align-items: flex-start; }
+  .character-about__card-heading h2 { font-size: 1rem; }
+  .character-about__customization-controls,
+  .character-about__frame-color-trigger { align-items: flex-start; flex-direction: column; }
+  .character-about__background-controls { grid-template-columns: minmax(0, 1fr); }
+  .character-about__background-preview { grid-column: 1; grid-row: auto; }
+  .character-about__background-grid { grid-template-columns: repeat(auto-fill, minmax(125px, 1fr)); }
+  .character-about__portrait-edit { grid-template-columns: minmax(0, 1fr) 72px; }
+  .character-about__portrait-edit-preview { width: 72px; height: 72px; }
+  .character-about__portrait-cropper { height: 280px; }
+  .character-rich-text__toolbar { gap: 4px; padding: 6px; }
+  .character-rich-text__toolbar > button { min-width: 30px; padding-inline: 6px; }
+  .character-rich-text__toolbar > select { min-width: 82px; }
+}

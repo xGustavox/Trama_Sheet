@@ -207,6 +207,10 @@
   flex: 1 1 auto;
 }
 
+.character-card__actions .button--secondary {
+  color: #343a46;
+}
+
 .icon {
   display: block;
   width: 18px;
@@ -336,39 +340,6 @@
   line-height: 1.5;
 }
 
-.feedback {
-  position: fixed;
-  z-index: 5;
-  right: 24px;
-  bottom: 24px;
-  display: flex;
-  max-width: min(440px, calc(100vw - 32px));
-  align-items: center;
-  gap: 16px;
-  padding: 14px 16px;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: #fff;
-  box-shadow: 0 12px 30px rgb(28 38 57 / 16%);
-  color: var(--ink);
-  font-size: 0.86rem;
-  -webkit-backdrop-filter: blur(14px);
-  backdrop-filter: blur(14px);
-}
-
-.feedback__close {
-  display: grid;
-  width: 28px;
-  height: 28px;
-  flex: 0 0 auto;
-  place-items: center;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--ink-muted);
-  cursor: pointer;
-}
-
 :root[data-theme='dark'] .character-card {
   background-color: #25282f;
   box-shadow: 0 8px 22px rgb(0 0 0 / 35%);
@@ -376,15 +347,13 @@
 
 :root[data-theme='dark'] .character-card__glass,
 :root[data-theme='dark'] .empty-state,
-:root[data-theme='dark'] .draft-dialog,
-:root[data-theme='dark'] .feedback {
+:root[data-theme='dark'] .draft-dialog {
   border-color: var(--line);
-  background-color: rgb(31 34 40 / 90%);
+  background-color: rgb(31 34 40 / 72%);
   color: var(--ink);
 }
 
-:root[data-theme='dark'] .draft-dialog,
-:root[data-theme='dark'] .feedback {
+:root[data-theme='dark'] .draft-dialog {
   box-shadow: 0 24px 64px rgb(0 0 0 / 48%);
 }
 

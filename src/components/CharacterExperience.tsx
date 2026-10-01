@@ -289,7 +289,7 @@ export function LevelUpDrawer({
     if (saved) onComplete()
   }
 
-  return <Modal open title="Avanço de nível" theme={theme} onClose={() => { if (!saving) onCancel() }} footer={<><Button className="play-sheet__level-up-cancel" disabled={saving} onClick={onCancel} variant="secondary">Cancelar</Button><Button disabled={!selectionsComplete || saving} onClick={() => void confirm()}>{saving ? 'Salvando…' : 'Concluir avanço'}</Button></>}>
+  return <Modal open title="Avanço de nível" theme={theme} onClose={() => { if (!saving) onCancel() }} variant="drawer" footer={<><Button className="play-sheet__level-up-cancel" disabled={saving} onClick={onCancel} variant="secondary">Cancelar</Button><Button disabled={!selectionsComplete || saving} onClick={() => void confirm()}>{saving ? 'Salvando…' : 'Concluir avanço'}</Button></>}>
     <div className="play-sheet__level-up-drawer">
       <p>Nível {character.level} → {targetLevel}. Revise e faça as escolhas liberadas para a classe.</p>
       <div className="play-sheet__level-up-content">

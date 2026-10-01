@@ -1,0 +1,19 @@
+.character-rich-text { min-width: 0; color: var(--ink); }
+.character-rich-text--editable { overflow: hidden; border: 1px solid var(--line-strong); border-radius: 10px; background: var(--surface); }
+.character-rich-text__toolbar { display: flex; min-width: 0; flex-wrap: wrap; align-items: center; gap: 5px; padding: 8px; border-bottom: 1px solid var(--line); }
+.character-rich-text__toolbar > button { display: inline-flex; min-width: 34px; min-height: 32px; align-items: center; justify-content: center; padding: 4px 8px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: var(--surface); cursor: pointer; font: inherit; font-size: 13px; }
+.character-rich-text__toolbar > button[aria-pressed='true'] { border-color: var(--primary); background: var(--primary-surface); }
+.character-rich-text__toolbar > button:focus-visible,
+.character-rich-text__toolbar > select:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.character-rich-text__toolbar-divider { width: 1px; height: 24px; background: var(--line-strong); }
+.character-rich-text__toolbar > select { min-width: 96px; height: 32px; padding: 4px 7px; border: 1px solid var(--line); border-radius: 7px; color: var(--ink); background: var(--surface); font: inherit; font-size: 12px; }
+.character-rich-text__content { min-width: 0; padding: 11px 13px; }
+.character-rich-text--editable .character-rich-text__content { min-height: 190px; max-height: 48vh; overflow: auto; }
+.character-rich-text__content .tiptap { min-height: inherit; outline: none; line-height: 1.55; overflow-wrap: anywhere; }
+.character-rich-text__content .tiptap > :first-child { margin-top: 0; }
+.character-rich-text__content .tiptap > :last-child { margin-bottom: 0; }
+.character-rich-text__content .tiptap p { margin: 0 0 8px; }
+.character-rich-text__content .tiptap ul,
+.character-rich-text__content .tiptap ol { margin: 6px 0; padding-left: 24px; }
+.character-rich-text__content .tiptap li + li { margin-top: 3px; }
+.character-rich-text-empty { margin: 0; color: var(--ink-muted); white-space: pre-wrap; }

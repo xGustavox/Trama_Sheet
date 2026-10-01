@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import type { CharacterDetails, CharacterPlayState } from '../src/lib/characterData'
-import { adjustHitPoints, applyHitPointAdjustment, applyHitPointDamage, availableSpellSlotLevels, availableSpellSlots, getInitialCharacterPlayState, healHitPoints, recoverFromLongRest, recoverFromShortRest, setTemporaryHitPoints, toggleSpellSlot } from '../src/lib/characterPlay'
+import { adjustHitPoints, applyHitPointAdjustment, applyHitPointDamage, availableSpellSlotLevels, availableSpellSlots, getInitialCharacterPlayState, healHitPoints, recoverFromLongRest, recoverFromShortRest, setTemporaryHitPoints, toggleDeathSaveMark, toggleSpellSlot } from '../src/lib/characterPlay'
 
 const spentState: CharacterPlayState = {
   currentHp: 3,
@@ -23,7 +23,15 @@ test('long rest restores hit points and all spell slots, and clears temporary hi
     currentHp: 17,
     temporaryHp: 0,
     spentSpellSlots: [],
+    deathSaveSuccesses: [],
+    deathSaveFailures: [],
   })
+})
+
+test('death save marks toggle independently and always retain exactly three circles', () => {
+  assert.deepEqual(toggleDeathSaveMark([false, true, false], 2), [false, true, true])
+  assert.deepEqual(toggleDeathSaveMark([true, true, false], 0), [false, true, false])
+  assert.deepEqual(toggleDeathSaveMark([true, false], 2), [true, false, true])
 })
 
 test('damage consumes temporary hit points first and carries excess damage into current hit points', () => {

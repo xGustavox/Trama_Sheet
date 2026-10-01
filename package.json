@@ -4,7 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/generate-background-manifest.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/generate-background-manifest.mjs",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "test": "tsx --test tests/*.test.ts",
@@ -12,6 +14,11 @@
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.117.1",
+    "@tiptap/extension-text-style": "^3.31.4",
+    "@tiptap/pm": "^3.31.4",
+    "@tiptap/react": "^3.31.4",
+    "@tiptap/starter-kit": "^3.31.4",
+    "lottie-web": "^5.13.0",
     "react": "^19.2.8",
     "react-cropper": "^2.3.3",
     "react-dom": "^19.2.8",

@@ -123,6 +123,7 @@ export type Inventory = {
   choices: Record<string, string>
   applied: Record<string, string>
   currencyCp: number
+  currencyBalances?: CurrencyBalances
   legacyNotes: string
 }
 
@@ -161,7 +162,7 @@ export function equipOneInventoryUnit(inventory: Inventory, entryId: string, cat
 }
 
 export type EquipmentGrant = { key: string; label: string; items: ItemQuantity[]; unlistedItems?: { name: string; quantity: number }[]; currencyCp?: number }
-export const emptyInventory = (): Inventory => ({ version: 2, initialEquipmentConfirmed: false, entries: [], choices: {}, applied: {}, currencyCp: 0, legacyNotes: '' })
+export const emptyInventory = (): Inventory => ({ version: 2, initialEquipmentConfirmed: false, entries: [], choices: {}, applied: {}, currencyCp: 0, currencyBalances: { cp: 0, sp: 0, ep: 0, gp: 0, pp: 0 }, legacyNotes: '' })
 
 function createInventoryEntryId() {
   const browserCrypto = globalThis.crypto
@@ -204,12 +205,19 @@ export function addPack(inventory: Inventory, catalog: EquipmentCatalog, packId:
 // Applied fingerprints survive removal/consumption. Unchanged grants never resurrect items.
 // Changing a creation choice replaces only that source, preserving manual and other grants.
 export function reconcileEquipment(inventory: Inventory, grants: EquipmentGrant[], catalog: EquipmentCatalog): Inventory {
-  let next = { ...inventory, entries: [...inventory.entries], applied: { ...inventory.applied } }
+  const currencyBalances = inventory.currencyBalances ?? getCurrencyBalances(inventory.currencyCp)
+  const reconciledCurrencyBalances = currencyBalancesTotalCp(currencyBalances) === inventory.currencyCp
+    ? currencyBalances
+    : getCurrencyBalances(inventory.currencyCp)
+  let next: Inventory = { ...inventory, currencyBalances: reconciledCurrencyBalances, entries: [...inventory.entries], applied: { ...inventory.applied } }
   const active = new Set(grants.map(grant => grant.key))
   for (const key of Object.keys(next.applied)) {
     if (active.has(key)) continue
     const previous = JSON.parse(next.applied[key]) as { currencyCp?: number }
-    next.currencyCp = Math.max(0, next.currencyCp - (previous.currencyCp ?? 0))
+    const previousCurrencyCp = previous.currencyCp ?? 0
+    const nextCurrencyCp = Math.max(0, next.currencyCp - previousCurrencyCp)
+    next.currencyBalances = applyCurrencyCpDelta(next.currencyBalances ?? getCurrencyBalances(next.currencyCp), nextCurrencyCp - next.currencyCp)
+    next.currencyCp = nextCurrencyCp
     next.entries = next.entries.filter(entry => entry.source !== key)
     delete next.applied[key]
   }
@@ -218,7 +226,9 @@ export function reconcileEquipment(inventory: Inventory, grants: EquipmentGrant[
     if (next.applied[grant.key] === fingerprint) continue
     const previous = next.applied[grant.key] ? JSON.parse(next.applied[grant.key]) as { currencyCp: number } : null
     next.entries = next.entries.filter(entry => entry.source !== grant.key)
+    const previousCurrencyCp = next.currencyCp
     next.currencyCp = Math.max(0, next.currencyCp + (grant.currencyCp ?? 0) - (previous?.currencyCp ?? 0))
+    next.currencyBalances = applyCurrencyCpDelta(next.currencyBalances ?? getCurrencyBalances(previousCurrencyCp), next.currencyCp - previousCurrencyCp)
     for (const line of grant.items) {
       const item = catalog.items.find(item => item.id === line.itemId)
       if (!item) throw new Error(`Item ausente no catálogo: ${line.itemId}`)
@@ -245,12 +255,24 @@ export function readInventory(value: string, catalog?: EquipmentCatalog): Invent
         try { return isRecord(JSON.parse(entry[1])) } catch { return false }
       }))
       : {}
+    const parsedCurrencyCp = typeof parsed.currencyCp === 'number' && Number.isSafeInteger(parsed.currencyCp) ? Math.max(0, parsed.currencyCp) : null
+    const storedCurrencyBalances = readCurrencyBalances(parsed.currencyBalances)
+    const storedBalancesMatchLegacyTotal = storedCurrencyBalances !== null
+      && parsedCurrencyCp !== null
+      && currencyBalancesTotalCp(storedCurrencyBalances) === parsedCurrencyCp
+    const legacyCurrencyCp = parsedCurrencyCp ?? (storedCurrencyBalances ? currencyBalancesTotalCp(storedCurrencyBalances) : 0)
+    const currencyBalances = storedBalancesMatchLegacyTotal
+      ? storedCurrencyBalances!
+      : parsedCurrencyCp !== null
+        ? getCurrencyBalances(parsedCurrencyCp)
+        : storedCurrencyBalances ?? getCurrencyBalances(0)
     return {
       ...emptyInventory(),
       initialEquipmentConfirmed: parsed.initialEquipmentConfirmed === true,
       choices,
       applied,
-      currencyCp: typeof parsed.currencyCp === 'number' && Number.isFinite(parsed.currencyCp) ? Math.max(0, parsed.currencyCp) : 0,
+      currencyCp: legacyCurrencyCp,
+      currencyBalances,
       legacyNotes: typeof parsed.legacyNotes === 'string' ? parsed.legacyNotes : '',
       entries: parsed.entries.map((rawEntry, index) => {
         const entry = isRecord(rawEntry) ? rawEntry : {}
@@ -302,9 +324,9 @@ export function getCurrencyDisplay(currencyCp: number) {
     { code: 'sp', value: 10, name: 'prata' },
     { code: 'cp', value: 1, name: 'cobre' },
   ] as const
-  const denomination = (currencyCp > 0 && denominations.find(({ value }) => currencyCp % value === 0))
+  const denomination = (currencyCp > 0 && denominations.find(({ value }) => Number.isInteger(currencyCp * 100 / value)))
     || denominations.find(({ code }) => code === 'gp')!
-  return { amount: currencyCp / denomination.value, code: denomination.code, name: denomination.name }
+  return { amount: Math.round(currencyCp / denomination.value * 100) / 100, code: denomination.code, name: denomination.name }
 }
 
 export const currencyDenominations = [
@@ -318,6 +340,17 @@ export const currencyDenominations = [
 export type CurrencyCode = typeof currencyDenominations[number]['code']
 export type CurrencyBalances = Record<CurrencyCode, number>
 
+function currencyBalancesTotalCp(balances: CurrencyBalances) {
+  return currencyDenominations.reduce((total, { code, valueCp }) => total + balances[code] * valueCp, 0)
+}
+
+function readCurrencyBalances(value: unknown): CurrencyBalances | null {
+  if (!isRecord(value)) return null
+  const balances = Object.fromEntries(currencyDenominations.map(({ code }) => [code, value[code]])) as CurrencyBalances
+  if (!currencyDenominations.every(({ code }) => Number.isSafeInteger(balances[code]) && balances[code] >= 0)) return null
+  return Number.isSafeInteger(currencyBalancesTotalCp(balances)) ? balances : null
+}
+
 export function getCurrencyBalances(currencyCp: number): CurrencyBalances {
   let remaining = Math.max(0, Math.trunc(currencyCp))
   const balances = Object.fromEntries(currencyDenominations.map(({ code }) => [code, 0])) as CurrencyBalances
@@ -326,6 +359,34 @@ export function getCurrencyBalances(currencyCp: number): CurrencyBalances {
     remaining %= valueCp
   }
   return balances
+}
+
+function applyCurrencyCpDelta(balances: CurrencyBalances, deltaCp: number): CurrencyBalances {
+  if (deltaCp === 0) return balances
+  if (deltaCp > 0) {
+    const added = getCurrencyBalances(deltaCp)
+    return Object.fromEntries(currencyDenominations.map(({ code }) => [code, balances[code] + added[code]])) as CurrencyBalances
+  }
+
+  const totalCp = currencyBalancesTotalCp(balances)
+  const amountToRemove = -deltaCp
+  if (amountToRemove >= totalCp) return getCurrencyBalances(0)
+
+  const next = { ...balances }
+  let remaining = amountToRemove
+  for (const { code, valueCp } of currencyDenominations) {
+    const spent = Math.min(next[code], Math.floor(remaining / valueCp))
+    next[code] -= spent
+    remaining -= spent * valueCp
+  }
+  if (remaining > 0) {
+    const coinToBreak = currencyDenominations.find(({ code, valueCp }) => valueCp > remaining && next[code] > 0)
+    if (!coinToBreak) return getCurrencyBalances(totalCp - amountToRemove)
+    next[coinToBreak.code] -= 1
+    const change = getCurrencyBalances(coinToBreak.valueCp - remaining)
+    for (const { code } of currencyDenominations) next[code] += change[code]
+  }
+  return next
 }
 
 export function convertCurrency(balances: CurrencyBalances, source: CurrencyCode, target: CurrencyCode, amount: number): CurrencyBalances | null {

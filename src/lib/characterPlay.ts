@@ -69,7 +69,11 @@ export function recoverFromShortRest(state: CharacterPlayState, characterClassId
 }
 
 export function recoverFromLongRest(maxHp: number): CharacterPlayState {
-  return { currentHp: maxHp, temporaryHp: 0, spentSpellSlots: [] }
+  return { currentHp: maxHp, temporaryHp: 0, spentSpellSlots: [], deathSaveSuccesses: [], deathSaveFailures: [] }
+}
+
+export function toggleDeathSaveMark(marks: boolean[], index: number): boolean[] {
+  return Array.from({ length: 3 }, (_, current) => current === index ? !Boolean(marks[current]) : Boolean(marks[current]))
 }
 
 export function toggleSpellSlot(state: CharacterPlayState, slotId: string): CharacterPlayState {

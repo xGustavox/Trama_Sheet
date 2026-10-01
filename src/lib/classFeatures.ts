@@ -846,7 +846,33 @@ const ranger: ClassFeatureData = {
   ],
 }
 
+const barbarian: ClassFeatureData = {
+  features: [
+    { level: 1, name: 'Fúria', description: 'Entre em fúria como ação bônus. Enquanto durar, você tem vantagem em testes e salvaguardas de Força, recebe bônus de dano em ataques corpo a corpo usando Força e resistência a dano de concussão, cortante e perfurante.' },
+    { level: 1, name: 'Defesa sem Armadura', description: 'Sem armadura, sua CA é 10 + seu modificador de Destreza + seu modificador de Constituição. Você ainda pode usar escudo.' },
+    { level: 2, name: 'Ataque Descuidado', description: 'No primeiro ataque corpo a corpo do turno usando Força, você pode atacar descuidadamente para ter vantagem nos ataques corpo a corpo usando Força neste turno, mas ataques contra você têm vantagem até seu próximo turno.' },
+    { level: 2, name: 'Sentido de Perigo', description: 'Você tem vantagem em salvaguardas de Destreza contra efeitos que possa ver, desde que não esteja cego, surdo ou incapacitado.' },
+    { level: 3, name: 'Caminho Primitivo', description: 'Escolha um caminho que molda sua fúria e concede características nos níveis 3, 6, 10 e 14.' },
+    { level: 4, name: 'Incremento no Valor de Habilidade', description: 'Aumente um valor de habilidade em 2, ou dois valores em 1. Nenhum valor pode ultrapassar 20.' },
+    { level: 5, name: 'Ataque Extra', description: 'Você pode atacar duas vezes, em vez de uma, sempre que realizar a ação Atacar no seu turno.' },
+    { level: 5, name: 'Movimento Rápido', description: 'Seu deslocamento aumenta em 3 metros enquanto não estiver usando armadura pesada.' },
+    { level: 7, name: 'Instinto Selvagem', description: 'Você tem vantagem nas jogadas de iniciativa. Se estiver surpreso e não incapacitado, pode agir normalmente ao entrar em fúria no primeiro turno.' },
+    { level: 8, name: 'Incremento no Valor de Habilidade', description: 'Aumente um valor de habilidade em 2, ou dois valores em 1. Nenhum valor pode ultrapassar 20.' },
+    { level: 9, name: 'Crítico Brutal (1 dado)', description: 'Ao determinar o dano extra de um acerto crítico com arma corpo a corpo, role um dado adicional de dano da arma.' },
+    { level: 11, name: 'Fúria Implacável', description: 'Se cair a 0 PV enquanto estiver em fúria e não morrer, faça uma salvaguarda de Constituição CD 10 para ficar com 1 PV. A CD aumenta em 5 a cada uso até um descanso.' },
+    { level: 12, name: 'Incremento no Valor de Habilidade', description: 'Aumente um valor de habilidade em 2, ou dois valores em 1. Nenhum valor pode ultrapassar 20.' },
+    { level: 15, name: 'Fúria Persistente', description: 'Sua fúria só termina prematuramente se você ficar inconsciente ou decidir encerrá-la.' },
+    { level: 16, name: 'Incremento no Valor de Habilidade', description: 'Aumente um valor de habilidade em 2, ou dois valores em 1. Nenhum valor pode ultrapassar 20.' },
+    { level: 17, name: 'Crítico Brutal (3 dados)', description: 'Seu acerto crítico com arma corpo a corpo causa três dados de dano adicionais da arma.' },
+    { level: 18, name: 'Força Indomável', description: 'Se o resultado total de um teste de Força for menor que seu valor de Força, você pode usar seu valor de Força no lugar do resultado.' },
+    { level: 19, name: 'Incremento no Valor de Habilidade', description: 'Aumente um valor de habilidade em 2, ou dois valores em 1. Nenhum valor pode ultrapassar 20.' },
+    { level: 20, name: 'Campeão Primitivo', description: 'Seus valores de Força e Constituição aumentam em 4, até o máximo de 24.' },
+  ],
+  subclasses: [],
+}
+
 export const classFeatures: Record<string, ClassFeatureData> = {
+  barbaro: barbarian,
   bardo: bard,
   bruxo: warlock,
   clerigo: cleric,
