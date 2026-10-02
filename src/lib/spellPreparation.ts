@@ -3,12 +3,16 @@ export function getSpellPreparationLimit(
   level: number,
   wisdomModifier: number,
   charismaModifier: number,
+  intelligenceModifier = 0,
 ): number | null {
   if (classId === 'clerigo' || classId === 'druida') {
     return level >= 1 && level <= 20 ? Math.max(1, level + wisdomModifier) : null
   }
   if (classId === 'paladino') {
     return level >= 2 && level <= 20 ? Math.max(1, Math.floor(level / 2) + charismaModifier) : null
+  }
+  if (classId === 'mago') {
+    return level >= 1 && level <= 20 ? Math.max(1, level + intelligenceModifier) : null
   }
   return null
 }

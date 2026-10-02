@@ -167,7 +167,7 @@ export const subclassSpellsById: Record<string, Record<number, string[]>> = {
   },
 }
 
-const circleOfLandSpells: Record<string, Record<number, string[]>> = {
+export const circleOfLandSpells: Record<string, Record<number, string[]>> = {
   artico: { 2: ['Imobilizar Pessoa', 'Crescer Espinhos'], 3: ['Nevasca', 'Lentidão'], 4: ['Movimentação Livre', 'Tempestade de Gelo'], 5: ['Comunhão com a Natureza', 'Cone de Frio'] },
   costa: { 2: ['Passo Nebuloso', 'Reflexos'], 3: ['Andar na Água', 'Respirar na Água'], 4: ['Movimentação Livre', 'Controlar a Água'], 5: ['Vidência', 'Conjurar Elemental'] },
   deserto: { 2: ['Nublar', 'Silêncio'], 3: ['Criar Alimentos', 'Proteção contra Energia'], 4: ['Praga', 'Terreno Alucinógeno'], 5: ['Muralha de Pedra', 'Praga de Insetos'] },
@@ -189,4 +189,112 @@ export function getSpellListForSelection(classId: string, subclassId: string, ci
     spells[spellLevel] = [...new Set([...(spells[spellLevel] ?? []), ...names])]
   }
   return spells
+}
+
+export function getClericDomainSpellsByLevel(subclassId: string, clericLevel: number): Record<number, string[]> {
+  if (!subclassId.startsWith('dominio-') || !Number.isFinite(clericLevel)) return {}
+  return Object.fromEntries(Object.entries(subclassSpellsById[subclassId] ?? {})
+    .filter(([spellLevel]) => clericLevel >= Number(spellLevel) * 2 - 1))
+}
+
+export function getAlwaysPreparedSpells(classId: string, subclassId: string, classLevel: number, circleTerrain?: string): Record<number, string[]> {
+  if (!Number.isFinite(classLevel) || classLevel < 1) return {}
+  if (classId === 'clerigo') return getClericDomainSpellsByLevel(subclassId, classLevel)
+
+  if (classId === 'paladino') {
+    return Object.fromEntries(Object.entries(subclassSpellsById[subclassId] ?? {})
+      .filter(([spellLevel]) => classLevel >= Number(spellLevel) * 2 + 1))
+  }
+  if (classId === 'druida' && subclassId === 'circulo-da-terra') {
+    return Object.fromEntries(Object.entries(circleOfLandSpells[circleTerrain ?? ''] ?? {})
+      .filter(([spellLevel]) => classLevel >= Number(spellLevel) * 2 - 1))
+  }
+  return {}
+}
+
+const landBonusCantripByChoiceId: Record<string, string> = {
+  'arte-druidica': 'Druidismo',
+  orientacao: 'Orientação',
+  consertar: 'Consertar',
+  'borrifada-venenosa': 'Rajada de Veneno',
+  'produzir-chamas': 'Criar Chamas',
+  resistencia: 'Resistência',
+  'bordao-mistico': 'Bordão Místico',
+  'chicote-de-espinhos': 'Chicote de Espinhos',
+}
+
+export function getGrantedClassCantrips(classId: string, subclassId: string, classLevel: number, selectedCantripId?: string): string[] {
+  if (classId === 'clerigo' && subclassId === 'dominio-da-luz' && classLevel >= 1) return ['Luz']
+  if (classId === 'druida' && subclassId === 'circulo-da-terra' && classLevel >= 2 && selectedCantripId) {
+    const cantrip = landBonusCantripByChoiceId[selectedCantripId]
+    return cantrip ? [cantrip] : []
+  }
+  return []
+}
+
+const ritualSpellNames = new Set([
+  'Alarme', 'Amizade Animal', 'Augúrio', 'Boca Encantada', 'Compreender Idiomas', 'Comunhão',
+  'Comunhão com a Natureza', 'Contato Extraplanar', 'Convocar Familiar', 'Detectar Magia',
+  'Detectar Veneno e Doença', 'Disco Flutuante de Tenser', 'Escrita Ilusória', 'Falar com Animais',
+  'Falar com os Mortos', 'Forjar Morte', 'Identificação', 'Invocação Instantânea de Drawmij',
+  'Ligação Telepática de Rary', 'Localizar Animais ou Plantas', 'Montaria Fantasmagórica',
+  'Pequena Cabana de Leomund', 'Purificar Alimentos', 'Repouso Tranquilo', 'Respirar na Água',
+  'Servo Invisível', 'Silêncio', 'Vidência',
+])
+
+export function isRitualSpell(name: string) {
+  const normalizedName = name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR')
+  return [...ritualSpellNames].some((ritualName) => ritualName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('pt-BR') === normalizedName)
+}
+
+export function getSpellLevel(name: string, preferredClassId?: string): number | undefined {
+  const classes = preferredClassId
+    ? [preferredClassId, ...Object.keys(leveledSpellsByClass).filter((classId) => classId !== preferredClassId)]
+    : Object.keys(leveledSpellsByClass)
+  for (const classId of classes) {
+    for (const [level, names] of Object.entries(leveledSpellsByClass[classId] ?? {})) {
+      if (names.some((candidate) => candidate.localeCompare(name, 'pt-BR', { sensitivity: 'base' }) === 0)) return Number(level)
+    }
+  }
+  for (const list of [...Object.values(subclassSpellsById), ...Object.values(circleOfLandSpells)]) {
+    for (const [level, names] of Object.entries(list)) {
+      if (names.some((candidate) => candidate.localeCompare(name, 'pt-BR', { sensitivity: 'base' }) === 0)) return Number(level)
+    }
+  }
+  return undefined
+}
+
+export function getRitualSpellOptions(maximumLevel = 9) {
+  const allSpells = new Map<string, number>()
+  for (const spellsByLevel of Object.values(leveledSpellsByClass)) {
+    for (const [level, names] of Object.entries(spellsByLevel)) {
+      for (const name of names) {
+        if (isRitualSpell(name) && Number(level) <= maximumLevel) allSpells.set(name, Number(level))
+      }
+    }
+  }
+  for (const spellsByLevel of [...Object.values(subclassSpellsById), ...Object.values(circleOfLandSpells)]) {
+    for (const [level, names] of Object.entries(spellsByLevel)) {
+      for (const name of names) {
+        if (isRitualSpell(name) && Number(level) <= maximumLevel) allSpells.set(name, Number(level))
+      }
+    }
+  }
+  return [...allSpells].map(([name, level]) => ({ name, level })).sort((first, second) => first.level - second.level || first.name.localeCompare(second.name, 'pt-BR'))
+}
+
+export function getAllSpellOptions(maximumLevel = 9, includeCantrips = false) {
+  const allSpells = new Map<string, number>()
+  if (includeCantrips) {
+    for (const cantrips of Object.values(cantripsByClass)) {
+      for (const name of cantrips) allSpells.set(name, 0)
+    }
+  }
+  for (const spellsByLevel of [...Object.values(leveledSpellsByClass), ...Object.values(subclassSpellsById), ...Object.values(circleOfLandSpells)]) {
+    for (const [level, names] of Object.entries(spellsByLevel)) {
+      if (Number(level) > maximumLevel) continue
+      for (const name of names) allSpells.set(name, Number(level))
+    }
+  }
+  return [...allSpells].map(([name, level]) => ({ name, level })).sort((first, second) => first.level - second.level || first.name.localeCompare(second.name, 'pt-BR'))
 }

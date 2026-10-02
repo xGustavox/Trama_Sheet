@@ -6,6 +6,7 @@ export function getInitialCharacterPlayState(character: CharacterDetails): Chara
     temporaryHp: 0,
     spentSpellSlots: [],
     spentHitDice: 0,
+    usedInvocationSpellUses: [],
   }
   const maxHp = Math.max(0, Number(character.maxHp) || 0)
   const totalHitDice = Math.max(1, Math.trunc(Number(character.level) || 1))
@@ -89,6 +90,7 @@ export function recoverFromLongRest(state: CharacterPlayState, maxHp: number, to
     temporaryHp: 0,
     spentSpellSlots: [],
     spentHitDice: Math.max(0, state.spentHitDice - hitDiceRecovered),
+    usedInvocationSpellUses: [],
     deathSaveSuccesses: [],
     deathSaveFailures: [],
   }
@@ -116,4 +118,12 @@ export function availableSpellSlots(spellSlots: number[], spentSpellSlots: strin
 
 export function availableSpellSlotLevels(spellSlots: number[], spentSpellSlots: string[], minimumLevel: number) {
   return [...new Set(availableSpellSlots(spellSlots, spentSpellSlots, minimumLevel).map((slotId) => Number(slotId.split(':')[0])))]
+}
+
+export function spellLevelsToDisplay(spellSlots: number[], knownSpellsByLevel: Record<number, string[]>) {
+  const knownLevels = Object.entries(knownSpellsByLevel)
+    .flatMap(([level, spells]) => spells.length && Number.isInteger(Number(level)) && Number(level) > 0 ? [Number(level)] : [])
+  const highestLevel = Math.max(spellSlots.length, ...knownLevels)
+  return Array.from({ length: highestLevel }, (_, index) => index + 1)
+    .filter((level) => (spellSlots[level - 1] ?? 0) > 0 || (knownSpellsByLevel[level]?.length ?? 0) > 0)
 }

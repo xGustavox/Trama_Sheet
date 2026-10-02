@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { classFeatures, warlockInvocationIsAvailable, warlockSpellProgression } from '../src/lib/classFeatures'
+import { classFeatures, planWarlockInvocationChoices, warlockInvocationIsAvailable, warlockSpellProgression } from '../src/lib/classFeatures'
+
+const invocationChoiceForLevel = (level: number) => classFeatures.bruxo.features
+  .find((feature) => feature.level === level && feature.choices?.some((choice) => choice.id === 'mystic-invocations'))!
+  .choices!.find((choice) => choice.id === 'mystic-invocations')!
 
 test('warlock spell, pact-slot and invocation progression matches the reference at all levels', () => {
   assert.deepEqual(warlockSpellProgression, [
@@ -39,4 +43,54 @@ test('warlock gets the reference ASIs, invocation choices and patron feature lev
       ['o-grande-antigo', 1, [1, 6, 10, 14]],
     ],
   )
+})
+
+test('warlock replacement is applied before new invocation choices and can free the replaced invocation', () => {
+  const options = classFeatures.bruxo.features.flatMap((feature) =>
+    (feature.choices ?? []).filter((choice) => choice.id === 'mystic-invocations').flatMap((choice) => choice.options),
+  )
+  const choice = invocationChoiceForLevel(4)
+  const replacement = { 4: { oldId: 'armadura-de-sombras', newId: 'explosao-agonizante' } }
+  const initialPlan = planWarlockInvocationChoices({
+    levels: [4],
+    knownIds: ['armadura-de-sombras', 'idioma-bestial'],
+    options,
+    choicesByLevel: { 4: { key: 'warlock:4', choice } },
+    selectedChoices: {},
+    replacements: replacement,
+  })[0]
+
+  assert.equal(initialPlan.replacementApplied, true)
+  assert.ok(initialPlan.options.some((option) => option.id === 'armadura-de-sombras'))
+  assert.ok(!initialPlan.options.some((option) => option.id === 'explosao-agonizante'))
+  assert.ok(!initialPlan.options.some((option) => option.id === 'idioma-bestial'))
+
+  const completedPlan = planWarlockInvocationChoices({
+    levels: [4],
+    knownIds: ['armadura-de-sombras', 'idioma-bestial'],
+    options,
+    choicesByLevel: { 4: { key: 'warlock:4', choice } },
+    selectedChoices: { 'warlock:4': ['armadura-de-sombras'] },
+    replacements: replacement,
+  })[0]
+  assert.equal(completedPlan.selectedAtLevelIsValid, true)
+})
+
+test('warlock cannot choose an invocation already selected at an earlier gained level', () => {
+  const options = classFeatures.bruxo.features.flatMap((feature) =>
+    (feature.choices ?? []).filter((choice) => choice.id === 'mystic-invocations').flatMap((choice) => choice.options),
+  )
+  const choiceAtFour = invocationChoiceForLevel(4)
+  const choiceAtSix = invocationChoiceForLevel(6)
+  const plans = planWarlockInvocationChoices({
+    levels: [4, 5, 6],
+    knownIds: ['armadura-de-sombras'],
+    options,
+    choicesByLevel: { 4: { key: 'warlock:4', choice: choiceAtFour }, 6: { key: 'warlock:6', choice: choiceAtSix } },
+    selectedChoices: { 'warlock:4': ['explosao-agonizante'], 'warlock:6': ['explosao-agonizante'] },
+    replacements: {},
+  })
+
+  assert.ok(!plans[1].options.some((option) => option.id === 'explosao-agonizante'))
+  assert.equal(plans[2].selectedAtLevelIsValid, false)
 })

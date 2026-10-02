@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useMemo, useRef, useState, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react'
-import { addInventoryItem, addPack, equipmentDetails, formatPrice, normalizeEquipment, readInventory, reconcileEquipment, type EquipmentCatalog, type EquipmentItem, type Inventory, type InventoryEntry } from '../lib/equipment'
+import { addInventoryItem, addPack, equipmentDetails, formatPrice, normalizeEquipment, readInventory, reconcileEquipment, type EquipmentCatalog, type EquipmentGrant, type EquipmentItem, type Inventory, type InventoryEntry } from '../lib/equipment'
 import { startingEquipmentPlan, type EquipmentContext } from '../lib/startingEquipment'
 import { Button } from './Button'
 import { Modal } from './Modal'
@@ -159,6 +159,13 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
     inventoryRef.current = next
     onChange(JSON.stringify(next))
   }
+  const confirmInitialEquipment = () => {
+    change({ ...inventory, initialEquipmentConfirmed: true })
+    window.requestAnimationFrame(() => {
+      const behavior = window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth'
+      window.scrollTo({ top: 0, behavior })
+    })
+  }
   const updateEntry = (id: string, patch: Partial<InventoryEntry>) => {
     const current = inventoryRef.current
     change({ ...current, entries: current.entries.map(entry => entry.id === id ? { ...entry, ...patch } : entry) })
@@ -206,6 +213,7 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
   }
   const drawerOption = drawerPick && plan?.choices.find(group => group.key === drawerPick.groupKey)?.options.find(option => option.id === drawerPick.optionId)
   const drawerSelection = drawerOption?.picks.find(pick => pick.id === drawerPick?.pickId)
+  const drawerLegacySelectedId = drawerPick && plan?.choices.find(group => group.key === drawerPick.groupKey)?.selectedItems?.[drawerPick.pickId]
   const editingNotesEntry = editingNotesId ? inventory.entries.find(entry => entry.id === editingNotesId) : undefined
   const weight = inventory.entries.reduce((sum, entry) => sum + (catalog?.items.find(item => item.id === entry.itemId)?.weightKg ?? 0) * entry.quantity, 0)
   const hasUnknownWeight = inventory.entries.some(entry => catalog?.items.find(item => item.id === entry.itemId)?.weightKg == null)
@@ -235,9 +243,100 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
   const currentInventoryPage = Math.min(inventoryPage, inventoryPageCount)
   const visibleInventory = filteredInventory.slice((currentInventoryPage - 1) * 10, currentInventoryPage * 10)
 
-  const startingEntries = plan && catalog
-    ? sortInventoryEntries(reconcileEquipment(inventory, plan.grants, catalog).entries.filter(entry => plan.grants.some(grant => grant.key === entry.source)), catalog)
-    : []
+  const renderFixedGrants = (grants: EquipmentGrant[]) => {
+    if (!catalog || grants.length === 0) return null
+    const rows = grants.flatMap(grant => [
+      ...grant.items.map(line => ({ key: `${grant.key}:${line.itemId}`, itemId: line.itemId, quantity: line.quantity, name: catalog.items.find(item => item.id === line.itemId)?.name ?? line.itemId })),
+      ...(grant.unlistedItems ?? []).map(line => ({ key: `${grant.key}:${line.name}`, itemId: null, quantity: line.quantity, name: line.name })),
+      ...(grant.currencyCp ? [{ key: `${grant.key}:currency`, itemId: null, quantity: null, name: `${formatPrice(grant.currencyCp)} em moedas` }] : []),
+    ])
+    if (rows.length === 0) return null
+    return <section aria-label="Adicionados diretamente ao inventário" className="equipment__source-items">
+      <h4>Adicionados diretamente ao inventário</h4>
+      <div className="wizard__barbarian-table-wrap"><table className="wizard__barbarian-table equipment__table equipment__starting-table">
+        <thead><tr><th scope="col">Item</th><th scope="col">Quantidade</th></tr></thead>
+        <tbody>{rows.map(row => {
+          const item = row.itemId ? catalog.items.find(candidate => candidate.id === row.itemId) : undefined
+          return <tr key={row.key}>
+            <th scope="row">{item?.components?.length
+              ? <EquipmentDisclosure name={<span className="equipment__inventory-item"><span aria-hidden="true" className="material-symbols-rounded equipment__item-icon">{categories.find(category => category.id === item.category)?.icon}</span>{row.name}</span>} lines={item.components} catalog={catalog} note="Componentes inclusos no kit; não somam peso novamente." />
+              : <span className="equipment__inventory-item">{item && <span aria-hidden="true" className="material-symbols-rounded equipment__item-icon">{categories.find(category => category.id === item.category)?.icon}</span>}{row.name}</span>}</th>
+            <td>{row.quantity ?? '—'}</td>
+          </tr>
+        })}</tbody>
+      </table></div>
+    </section>
+  }
+
+  const renderChoiceGroups = (groups: NonNullable<typeof plan>['choices']) => <div className="equipment__choices">{groups.map(group => <fieldset className="equipment__choice-group" key={group.key}>
+    <div className="equipment__choice-options" role="group" aria-label={group.label}>
+      {group.options.map((option, index) => {
+        const selected = group.options.length === 1 || (inventory.choices[group.key] ?? group.selectedOptionId) === option.id
+        const pickSelections = option.picks.map(pick => {
+          const itemId = inventory.choices[`${group.key}/${option.id}/${pick.id}`] ?? group.selectedItems?.[pick.id]
+          return Boolean(itemId && pick.itemIds.includes(itemId))
+        })
+        const hasExplicitSelection = inventory.choices[group.key] === option.id
+          || group.selectedOptionId === option.id
+        const showSelectedBorder = option.picks.length > 0
+          ? pickSelections.some(Boolean)
+          : hasExplicitSelection
+        const describeItem = (line: { itemId: string; quantity: number | null }) => {
+          const item = catalog?.items.find(candidate => candidate.id === line.itemId)
+          const matchesTitle = option.items.length === 1 && normalizeEquipment(option.label) === normalizeEquipment(item?.name ?? '')
+          if (matchesTitle && item) return item.weapon || item.armor ? equipmentDetails(item) : item.description || item.subcategory
+          return `${line.quantity} × ${item?.name ?? line.itemId}`
+        }
+        return <Fragment key={option.id}>
+          {index > 0 && <span className="equipment__choice-or" aria-hidden="true">ou</span>}
+          <div className={`equipment__choice-option${showSelectedBorder ? ' equipment__choice-option--selected' : ''}`}>
+            {!selected && <Button className="equipment__choice-button" variant="ghost" type="button" onClick={() => chooseOption(group.key, option.id, option.picks)}>
+              <span aria-hidden="true" className="equipment__choice-radio" />
+              <span className="equipment__choice-label"><strong>{option.label}</strong>{!!option.items.length && <small>{option.items.map(describeItem).join(' · ')}</small>}</span>
+            </Button>}
+            {selected && option.picks.length === 0 && <div className="equipment__choice-fixed">
+              <span aria-hidden="true" className="equipment__choice-radio equipment__choice-radio--checked" />
+              <strong>{option.label}</strong>
+              {!!option.items.length && <small>{option.items.map(describeItem).join(' · ')}</small>}
+            </div>}
+            {selected && option.picks.map(pick => {
+              const selectedId = inventory.choices[`${group.key}/${option.id}/${pick.id}`] ?? group.selectedItems?.[pick.id]
+              const selectedItem = catalog?.items.find(item => item.id === selectedId)
+              const details = selectedItem && (selectedItem.weapon || selectedItem.armor
+                ? equipmentDetails(selectedItem)
+                : selectedItem.description || selectedItem.subcategory)
+              const weaponProperties = selectedItem?.properties.join(', ')
+              return selectedItem
+                ? <div className="equipment__pick-summary" key={pick.id}>
+                  <span aria-hidden="true" className="equipment__choice-radio equipment__choice-radio--checked" />
+                  <span className="equipment__pick-summary-text"><strong>{selectedItem.name}</strong>{details && <small>{selectedItem.weapon
+                    ? <><strong>{selectedItem.weapon.damage} {selectedItem.weapon.damageType}</strong>{weaponProperties ? ` · ${weaponProperties}` : ''}</>
+                    : details}</small>}</span>
+                  <Button className="equipment__edit-button" variant="ghost" size="icon" type="button" aria-label={`Editar ${pick.label}: ${selectedItem.name}`} onClick={() => setDrawerPick({ groupKey: group.key, optionId: option.id, pickId: pick.id })}><span aria-hidden="true" className="material-symbols-rounded">edit</span></Button>
+                </div>
+                : <Button className="equipment__pick-button" variant="secondary" size="small" type="button" key={pick.id} onClick={() => setDrawerPick({ groupKey: group.key, optionId: option.id, pickId: pick.id })}>
+                  <span aria-hidden="true" className="equipment__choice-radio" />
+                  <span className="equipment__pick-label">Escolher {pick.label}</span>
+                  <span aria-hidden="true" className="material-symbols-rounded">chevron_right</span>
+                </Button>
+            })}
+          </div>
+        </Fragment>
+      })}
+    </div>
+  </fieldset>)}</div>
+
+  const renderSourceSection = (title: string, grants: EquipmentGrant[], groups: NonNullable<typeof plan>['choices']) =>
+    grants.length || groups.length ? <section aria-label={title} className="equipment__source-section">
+      <h3>{title}</h3>
+      {renderChoiceGroups(groups)}
+      {renderFixedGrants(grants)}
+    </section> : null
+
+  const classGrants = plan?.fixedGrants.filter(grant => !grant.key.startsWith('background:')) ?? []
+  const backgroundGrants = plan?.fixedGrants.filter(grant => grant.key.startsWith('background:')) ?? []
+  const classChoices = plan?.choices.filter(group => group.key.startsWith('class:')) ?? []
+  const backgroundChoices = plan?.choices.filter(group => group.key.startsWith('background:')) ?? []
 
   const startingEquipmentSection = <section className="wizard__equipment-card" aria-labelledby="starting-equipment-title">
     <h2 id="starting-equipment-title">Defina seu equipamento inicial</h2>
@@ -246,92 +345,11 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
     {!catalog && loading && <p role="status">Carregando catálogo de equipamentos…</p>}
     {catalog && !ready && <p>Selecione classe e antecedente para definir o equipamento inicial.</p>}
     {ready && plan && <>
-      {plan.fixedGrants.length > 0 && <section aria-label="Equipamento obrigatório" className="equipment__fixed-grants">
-        <h3>Itens obrigatórios</h3>
-        {plan.fixedGrants.map(grant => <fieldset className="equipment__fixed-grant" key={grant.key}>
-          <legend>{grant.label}</legend>
-          {grant.items.map(({ itemId, quantity }) => {
-            const item = catalog!.items.find(candidate => candidate.id === itemId)
-            return <label className="equipment__fixed-item" key={itemId}>
-              <input checked disabled readOnly type="checkbox" />
-              <span><strong>{quantity > 1 ? `${quantity} × ` : ''}{item?.name ?? itemId}</strong></span>
-            </label>
-          })}
-          {grant.unlistedItems?.map(item => <label className="equipment__fixed-item" key={item.name}>
-            <input checked disabled readOnly type="checkbox" />
-            <span><strong>{item.quantity > 1 ? `${item.quantity} × ` : ''}{item.name}</strong></span>
-          </label>)}
-          {grant.currencyCp ? <label className="equipment__fixed-item">
-            <input checked disabled readOnly type="checkbox" />
-            <span><strong>{formatPrice(grant.currencyCp)} em moedas</strong></span>
-          </label> : null}
-        </fieldset>)}
-      </section>}
-      <div className="equipment__choices">{plan.choices.map(group => <fieldset className="equipment__choice-group" key={group.key}>
-        <div className="equipment__choice-options" role="group" aria-label={group.label}>
-          {group.options.map((option, index) => {
-            const selected = group.options.length === 1 || inventory.choices[group.key] === option.id
-            const describeItem = (line: { itemId: string; quantity: number | null }) => {
-              const item = catalog!.items.find(candidate => candidate.id === line.itemId)
-              const matchesTitle = option.items.length === 1 && normalizeEquipment(option.label) === normalizeEquipment(item?.name ?? '')
-              if (matchesTitle && item) return item.weapon || item.armor ? equipmentDetails(item) : item.description || item.subcategory
-              return `${line.quantity} × ${item?.name ?? line.itemId}`
-            }
-            return <Fragment key={option.id}>
-              {index > 0 && <span className="equipment__choice-or" aria-hidden="true">ou</span>}
-              <div className={`equipment__choice-option${selected ? ' equipment__choice-option--selected' : ''}`}>
-                {!selected && <Button className="equipment__choice-button" variant="ghost" type="button" onClick={() => chooseOption(group.key, option.id, option.picks)}>
-                  <span aria-hidden="true" className="equipment__choice-radio" />
-                  <span className="equipment__choice-label"><strong>{option.label}</strong>{!!option.items.length && <small>{option.items.map(describeItem).join(' · ')}</small>}</span>
-                </Button>}
-                {selected && option.picks.length === 0 && <div className="equipment__choice-fixed">
-                  <span aria-hidden="true" className="equipment__choice-radio equipment__choice-radio--checked" />
-                  <strong>{option.label}</strong>
-                  {!!option.items.length && <small>{option.items.map(describeItem).join(' · ')}</small>}
-                </div>}
-                {selected && option.picks.map(pick => {
-                  const selectedId = inventory.choices[`${group.key}/${option.id}/${pick.id}`]
-                  const selectedItem = catalog?.items.find(item => item.id === selectedId)
-                  const details = selectedItem && (selectedItem.weapon || selectedItem.armor
-                    ? equipmentDetails(selectedItem)
-                    : selectedItem.description || selectedItem.subcategory)
-                  const weaponProperties = selectedItem?.properties.join(', ')
-                  return selectedItem
-                    ? <div className="equipment__pick-summary" key={pick.id}>
-                      <span aria-hidden="true" className="equipment__choice-radio equipment__choice-radio--checked" />
-                      <span className="equipment__pick-summary-text"><strong>{selectedItem.name}</strong>{details && <small>{selectedItem.weapon
-                        ? <><strong>{selectedItem.weapon.damage} {selectedItem.weapon.damageType}</strong>{weaponProperties ? ` · ${weaponProperties}` : ''}</>
-                        : details}</small>}</span>
-                      <Button className="equipment__edit-button" variant="ghost" size="icon" type="button" aria-label={`Editar ${pick.label}: ${selectedItem.name}`} onClick={() => setDrawerPick({ groupKey: group.key, optionId: option.id, pickId: pick.id })}><span aria-hidden="true" className="material-symbols-rounded">edit</span></Button>
-                    </div>
-                    : <Button className="equipment__pick-button" variant="secondary" size="small" type="button" key={pick.id} onClick={() => setDrawerPick({ groupKey: group.key, optionId: option.id, pickId: pick.id })}>
-                      <span aria-hidden="true" className="equipment__choice-radio" />
-                      <span className="equipment__pick-label">Escolher {pick.label}</span>
-                      <span aria-hidden="true" className="material-symbols-rounded">chevron_right</span>
-                    </Button>
-                })}
-              </div>
-            </Fragment>
-          })}
-        </div>
-      </fieldset>)}</div>
+      {renderSourceSection('Concedidos pela classe', classGrants, classChoices)}
+      {renderSourceSection('Concedidos pelo antecedente', backgroundGrants, backgroundChoices)}
       {plan.missing.length > 0 && <p aria-live="polite">Faltam {plan.missing.length} escolhas para completar o equipamento inicial.</p>}
       {children}
-      <Button id="equipment-confirm-button" className="equipment__confirm-button" type="button" disabled={!initialEquipmentReady} onClick={() => change({ ...inventory, initialEquipmentConfirmed: true })}>Confirmar equipamento inicial</Button>
-      {startingEntries.length > 0 && <div className="equipment__starting-list">
-        <h3>Inventário</h3>
-        <div className="wizard__barbarian-table-wrap"><table className="wizard__barbarian-table equipment__table equipment__starting-table">
-          <thead><tr><th scope="col">Item</th><th scope="col">Quantidade</th></tr></thead>
-          <tbody>{startingEntries.map(entry => {
-            const item = catalog!.items.find(candidate => candidate.id === entry.itemId)
-            return <tr key={entry.id} onClick={toggleDisclosureRow}>
-              <th scope="row">{item?.components?.length
-                ? <EquipmentDisclosure name={<span className="equipment__inventory-item"><span aria-hidden="true" className="material-symbols-rounded equipment__item-icon">{categories.find(category => category.id === item.category)?.icon}</span>{entry.name}</span>} lines={item.components} catalog={catalog!} note="Componentes inclusos no kit; não somam peso novamente." />
-                : <span className="equipment__inventory-item">{item && <span aria-hidden="true" className="material-symbols-rounded equipment__item-icon">{categories.find(category => category.id === item.category)?.icon}</span>}{entry.name}</span>}</th><td>{entry.quantity}</td>
-            </tr>
-          })}</tbody>
-        </table></div>
-      </div>}
+      <Button id="equipment-confirm-button" className="equipment__confirm-button" type="button" disabled={!initialEquipmentReady} onClick={confirmInitialEquipment}>Confirmar equipamento inicial</Button>
     </>}
   </section>
 
@@ -431,7 +449,7 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
           const item = catalog.items.find(candidate => candidate.id === itemId)
           if (!item) return null
           const key = `${drawerPick.groupKey}/${drawerPick.optionId}/${drawerPick.pickId}`
-          const selected = inventory.choices[key] === itemId
+          const selected = (inventory.choices[key] ?? drawerLegacySelectedId) === itemId
           return <Button className="equipment__drawer-item" variant="ghost" type="button" key={itemId} aria-pressed={selected} onClick={() => {
             const choices = { ...inventory.choices }
             if (choices[drawerPick.groupKey] !== drawerPick.optionId) {
@@ -446,7 +464,7 @@ export function EquipmentEditor({ value, onChange, onRequestInitialEquipmentRese
             if (inventory.initialEquipmentConfirmed && onRequestInitialEquipmentReset) onRequestInitialEquipmentReset(applyChoice)
             else applyChoice()
           }}>
-            <span><strong>{item.name}</strong><small>{item.subcategory}{item.weapon ? <> · <strong>{item.weapon.damage} {item.weapon.damageType}</strong>{item.properties.length ? ` · ${item.properties.join(', ')}` : ''}</> : ''}</small></span>
+            <span><strong>{item.name}</strong><small>{drawerSelection.itemLabels?.[itemId] ?? item.subcategory}{item.weapon ? <> · <strong>{item.weapon.damage} {item.weapon.damageType}</strong>{item.properties.length ? ` · ${item.properties.join(', ')}` : ''}</> : ''}</small></span>
             <span aria-hidden="true" className="material-symbols-rounded">{selected ? 'check_circle' : 'chevron_right'}</span>
           </Button>
         })}</div>

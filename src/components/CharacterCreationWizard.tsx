@@ -16,10 +16,13 @@ import { equipmentGrantFingerprint, readInventory } from '../lib/equipment'
 import { useEquipmentCatalog } from '../lib/useEquipmentCatalog'
 import { classArmorProficiencies } from '../lib/classArmorProficiencies'
 import { startingEquipmentPlan, type EquipmentContext } from '../lib/startingEquipment'
-import { cantripsByClass, getSpellListForSelection, spellcastingAbilityByClass } from '../lib/spellCatalog'
+import { cantripsByClass, getAlwaysPreparedSpells, getGrantedClassCantrips, getRitualSpellOptions, getSpellListForSelection, spellcastingAbilityByClass } from '../lib/spellCatalog'
 import { getSpellDetails } from '../lib/spellDetails'
+import { ancientSecretsRitualChoiceKey, isValidAncientSecretsRitualSelection, isValidPactTomeCantripSelection, warlockPactChoiceKey, warlockTomeCantripChoiceKey } from '../lib/pactTome'
 import 'cropperjs/dist/cropper.css'
 import './CharacterCreationWizard.css'
+import { PactTomeCantripDrawer } from './PactTomeCantripDrawer'
+import { SpellSelectionDrawer } from './SpellSelectionDrawer'
 
 type ReferenceItem = {
   id: string
@@ -176,7 +179,7 @@ const barbarianPathFeatures: Record<Exclude<PrimalPath, ''>, {
 }
 
 const languageOptions = [
-  'Abissal', 'Anão', 'Celestial', 'Comum', 'Dialeto Subterrâneo', 'Dracônico', 'Élfico', 'Gigante',
+  'Abissal', 'Anão', 'Celestial', 'Comum', 'Dialeto Subterrâneo', 'Dracônico', 'Élfico', 'Fala Profunda', 'Gigante',
   'Gnômico', 'Goblin', 'Halfling', 'Infernal', 'Orc', 'Primordial', 'Silvestre', 'Subcomum',
 ]
 
@@ -208,15 +211,129 @@ const gamingSets = ['Jogo de dados', 'Jogo de cartas', 'Xadrez de dragão', 'Con
 
 type BackgroundRules = {
   skills: string[]
+  skillChoices?: string[]
+  skillChoiceCount?: number
   languageChoices?: number
+  requiredLanguageOptions?: string[]
   tools?: string[]
   toolChoice?: string[]
-  equipmentChoice?: { prompt: string; options: { id: string; label: string; item: string }[] }
+  equipmentChoice?: { prompt: string; options: { id: string; label: string; item: string }[]; sidePanelPickerLabel?: string }
   equipment: string[]
   merchantAlternative?: boolean
 }
 
 const backgroundRules: Record<string, BackgroundRules> = {
+  assombrado: {
+    skills: [], skillChoices: ['Arcanismo', 'Investigação', 'Religião', 'Sobrevivência'], skillChoiceCount: 2,
+    languageChoices: 2, requiredLanguageOptions: ['Abissal', 'Celestial', 'Fala Profunda', 'Dracônico', 'Infernal', 'Primordial', 'Silvestre', 'Subcomum'],
+    equipment: ['Pacote de Caçador de Monstro', 'Roupas comuns', 'Bolsa com 1 peça de prata'],
+    equipmentChoice: {
+      prompt: 'Escolha uma bugiganga da tabela de Bugigangas Assombradas.',
+      sidePanelPickerLabel: 'Bugiganga assombrada',
+      options: [
+        { id: 'haunted-trinket-01', label: '01 · Uma imagem que você desenhou quando criança do seu amigo imaginário', item: 'Bugiganga assombrada (01)' },
+        { id: 'haunted-trinket-02', label: '02 · Uma fechadura que se abre quando sangue pinga no buraco da chave', item: 'Bugiganga assombrada (02)' },
+        { id: 'haunted-trinket-03', label: '03 · Roupas roubadas de um espantalho', item: 'Bugiganga assombrada (03)' },
+        { id: 'haunted-trinket-04', label: '04 · Um pião esculpido com quatro rostos: feliz, triste, furioso e morto', item: 'Bugiganga assombrada (04)' },
+        { id: 'haunted-trinket-05', label: '05 · O colar de um irmão que morreu no dia em que você nasceu', item: 'Bugiganga assombrada (05)' },
+        { id: 'haunted-trinket-06', label: '06 · Uma peruca de alguém executado por decapitação', item: 'Bugiganga assombrada (06)' },
+        { id: 'haunted-trinket-07', label: '07 · Uma carta nunca aberta, escrita para você por seu pai moribundo', item: 'Bugiganga assombrada (07)' },
+        { id: 'haunted-trinket-08', label: '08 · Um relógio de bolso que anda para trás por uma hora à meia-noite', item: 'Bugiganga assombrada (08)' },
+        { id: 'haunted-trinket-09', label: '09 · Um casaco de inverno roubado de um soldado moribundo', item: 'Bugiganga assombrada (09)' },
+        { id: 'haunted-trinket-10', label: '10 · Um frasco de tinta invisível que só pode ser lida ao pôr do sol', item: 'Bugiganga assombrada (10)' },
+        { id: 'haunted-trinket-11', label: '11 · Um cantil que se enche quando enterrado com um morto por uma noite', item: 'Bugiganga assombrada (11)' },
+        { id: 'haunted-trinket-12', label: '12 · Um conjunto de talheres usado por um rei em sua última refeição', item: 'Bugiganga assombrada (12)' },
+        { id: 'haunted-trinket-13', label: '13 · Uma luneta que sempre mostra o mundo sob uma tempestade terrível', item: 'Bugiganga assombrada (13)' },
+        { id: 'haunted-trinket-14', label: '14 · Um camafeu com o rosto do retrato arranhado', item: 'Bugiganga assombrada (14)' },
+        { id: 'haunted-trinket-15', label: '15 · Uma lanterna com uma vela preta que nunca acaba e queima com chama verde', item: 'Bugiganga assombrada (15)' },
+        { id: 'haunted-trinket-16', label: '16 · Uma xícara de chá infantil manchada de sangue', item: 'Bugiganga assombrada (16)' },
+        { id: 'haunted-trinket-17', label: '17 · Um pequeno livro preto que registra apenas os seus sonhos quando você dorme', item: 'Bugiganga assombrada (17)' },
+        { id: 'haunted-trinket-18', label: '18 · Um colar formado por símbolos sagrados entrelaçados de uma dúzia de divindades', item: 'Bugiganga assombrada (18)' },
+        { id: 'haunted-trinket-19', label: '19 · Um laço que parece mais pesado do que deveria', item: 'Bugiganga assombrada (19)' },
+        { id: 'haunted-trinket-20', label: '20 · Uma gaiola para a qual pequenos pássaros voam, mas da qual nunca comem nem saem', item: 'Bugiganga assombrada (20)' },
+        { id: 'haunted-trinket-21', label: '21 · Uma caixa de lepidopterista cheia de mariposas mortas com padrões de caveira nas asas', item: 'Bugiganga assombrada (21)' },
+        { id: 'haunted-trinket-22', label: '22 · Uma jarra de línguas de carniçais em conserva', item: 'Bugiganga assombrada (22)' },
+        { id: 'haunted-trinket-23', label: '23 · A mão de madeira de um pirata notório', item: 'Bugiganga assombrada (23)' },
+        { id: 'haunted-trinket-24', label: '24 · Uma urna com as cinzas de um parente morto', item: 'Bugiganga assombrada (24)' },
+        { id: 'haunted-trinket-25', label: '25 · Um espelho de mão com um relevo de bronze de uma medusa no verso', item: 'Bugiganga assombrada (25)' },
+        { id: 'haunted-trinket-26', label: '26 · Luvas de couro pálido feitas com unhas de marfim', item: 'Bugiganga assombrada (26)' },
+        { id: 'haunted-trinket-27', label: '27 · Dados feitos dos nós dos dedos de um charlatão notório', item: 'Bugiganga assombrada (27)' },
+        { id: 'haunted-trinket-28', label: '28 · Um anel de chaves para fechaduras esquecidas', item: 'Bugiganga assombrada (28)' },
+        { id: 'haunted-trinket-29', label: '29 · Pregos do caixão de um assassino', item: 'Bugiganga assombrada (29)' },
+        { id: 'haunted-trinket-30', label: '30 · Uma chave da cripta da família', item: 'Bugiganga assombrada (30)' },
+        { id: 'haunted-trinket-31', label: '31 · Um buquê de flores funerárias que sempre parece e cheira fresco', item: 'Bugiganga assombrada (31)' },
+        { id: 'haunted-trinket-32', label: '32 · Uma vara usada para disciplinar você quando criança', item: 'Bugiganga assombrada (32)' },
+        { id: 'haunted-trinket-33', label: '33 · Uma caixa de música que toca sozinha quando alguém que a segura dança', item: 'Caixa de música' },
+        { id: 'haunted-trinket-34', label: '34 · Uma bengala com ponteira de ferro que produz faíscas ao bater em pedra', item: 'Bugiganga assombrada (34)' },
+        { id: 'haunted-trinket-35', label: '35 · Uma bandeira de um navio perdido no mar', item: 'Bugiganga assombrada (35)' },
+        { id: 'haunted-trinket-36', label: '36 · A cabeça de uma boneca de porcelana que parece sempre olhar para você', item: 'Bugiganga assombrada (36)' },
+        { id: 'haunted-trinket-37', label: '37 · Uma cabeça de lobo de prata que também é um apito', item: 'Bugiganga assombrada (37)' },
+        { id: 'haunted-trinket-38', label: '38 · Um pequeno espelho que mostra uma versão muito mais velha de quem olha', item: 'Bugiganga assombrada (38)' },
+        { id: 'haunted-trinket-39', label: '39 · Um pequeno e gasto livro de cantigas infantis', item: 'Bugiganga assombrada (39)' },
+        { id: 'haunted-trinket-40', label: '40 · Uma garra mumificada de corvo', item: 'Bugiganga assombrada (40)' },
+        { id: 'haunted-trinket-41', label: '41 · Um pingente quebrado de dragão de prata, sempre frio ao toque', item: 'Bugiganga assombrada (41)' },
+        { id: 'haunted-trinket-42', label: '42 · Uma pequena caixa trancada que cantarola à noite, mas cuja melodia você sempre esquece pela manhã', item: 'Bugiganga assombrada (42)' },
+        { id: 'haunted-trinket-43', label: '43 · Um tinteiro que deixa quem olha para ele um pouco nauseado', item: 'Bugiganga assombrada (43)' },
+        { id: 'haunted-trinket-44', label: '44 · Uma boneca antiga de madeira escura e densa, sem uma mão e um pé', item: 'Bugiganga assombrada (44)' },
+        { id: 'haunted-trinket-45', label: '45 · Um capuz negro de carrasco', item: 'Bugiganga assombrada (45)' },
+        { id: 'haunted-trinket-46', label: '46 · Uma bolsa feita de carne, com cordão de tendão', item: 'Bugiganga assombrada (46)' },
+        { id: 'haunted-trinket-47', label: '47 · Um pequeno carretel de linha preta que nunca acaba', item: 'Bugiganga assombrada (47)' },
+        { id: 'haunted-trinket-48', label: '48 · Uma pequena estatueta mecânica de bailarina, sem uma engrenagem e que não funciona', item: 'Bugiganga assombrada (48)' },
+        { id: 'haunted-trinket-49', label: '49 · Um cachimbo de madeira negra que cria baforadas de fumaça em forma de caveira', item: 'Bugiganga assombrada (49)' },
+        { id: 'haunted-trinket-50', label: '50 · Um frasco de perfume cujo aroma só certas criaturas podem detectar', item: 'Bugiganga assombrada (50)' },
+        { id: 'haunted-trinket-51', label: '51 · Uma pedra que emite um único suspiro interminável', item: 'Bugiganga assombrada (51)' },
+        { id: 'haunted-trinket-52', label: '52 · Uma boneca de pano com dois pontos vermelhos no pescoço', item: 'Bugiganga assombrada (52)' },
+        { id: 'haunted-trinket-53', label: '53 · Um brinquedo de mola com a manivela faltando', item: 'Brinquedo mecânico' },
+        { id: 'haunted-trinket-54', label: '54 · Um pote de conserva com uma gosma animada inofensiva, mas agitada', item: 'Bugiganga assombrada (54)' },
+        { id: 'haunted-trinket-55', label: '55 · Um dado de madeira preta com o número 1 em todas as faces', item: 'Bugiganga assombrada (55)' },
+        { id: 'haunted-trinket-56', label: '56 · Um retrato infantil com “nascido” no verso, junto com a data do próximo ano', item: 'Bugiganga assombrada (56)' },
+        { id: 'haunted-trinket-57', label: '57 · Um dente de tubarão do tamanho de uma adaga', item: 'Bugiganga assombrada (57)' },
+        { id: 'haunted-trinket-58', label: '58 · Um dedo que criou raízes em um pequeno vaso', item: 'Bugiganga assombrada (58)' },
+        { id: 'haunted-trinket-59', label: '59 · Uma caixa de ferramentas com os restos de um aracnídeo mecânico perigoso, mas quebrado', item: 'Bugiganga assombrada (59)' },
+        { id: 'haunted-trinket-60', label: '60 · Uma concha de caracol iridescente do tamanho de uma jarra que às vezes estremece ou tomba sem explicação', item: 'Bugiganga assombrada (60)' },
+        { id: 'haunted-trinket-61', label: '61 · O diário de bordo de um navio quebra-gelo chamado Haifisch', item: 'Bugiganga assombrada (61)' },
+        { id: 'haunted-trinket-62', label: '62 · Um pequeno retrato seu quando criança, ao lado do seu gêmeo vestido de modo idêntico', item: 'Bugiganga assombrada (62)' },
+        { id: 'haunted-trinket-63', label: '63 · Um relógio de bolso prateado com treze horas no mostrador', item: 'Bugiganga assombrada (63)' },
+        { id: 'haunted-trinket-64', label: '64 · Um entalhe em madeira de um lobo devorando a própria perna traseira', item: 'Bugiganga assombrada (64)' },
+        { id: 'haunted-trinket-65', label: '65 · Uma prancheta gravada com caveiras de corvos', item: 'Bugiganga assombrada (65)' },
+        { id: 'haunted-trinket-66', label: '66 · Uma estatueta úmida de coral de uma lampreia com braços, pernas e postura bípede', item: 'Bugiganga assombrada (66)' },
+        { id: 'haunted-trinket-67', label: '67 · Uma armadilha de dedo de bronze esculpida com tigres rugindo', item: 'Bugiganga assombrada (67)' },
+        { id: 'haunted-trinket-68', label: '68 · Um colar de pérolas que fica vermelho sob a lua cheia', item: 'Bugiganga assombrada (68)' },
+        { id: 'haunted-trinket-69', label: '69 · Um fóssil de peixe com traços humanoides', item: 'Bugiganga assombrada (69)' },
+        { id: 'haunted-trinket-70', label: '70 · Uma máscara de médico da peste', item: 'Bugiganga assombrada (70)' },
+        { id: 'haunted-trinket-71', label: '71 · Um talismã de papel com tinta borrada', item: 'Bugiganga assombrada (71)' },
+        { id: 'haunted-trinket-72', label: '72 · Um relicário com a imagem borrada de uma figura sem olhos', item: 'Bugiganga assombrada (72)' },
+        { id: 'haunted-trinket-73', label: '73 · Um vaso canópico com tampa esculpida como uma cabra', item: 'Bugiganga assombrada (73)' },
+        { id: 'haunted-trinket-74', label: '74 · Uma lanterna de abóbora feita de uma pequena cabaça pálida', item: 'Bugiganga assombrada (74)' },
+        { id: 'haunted-trinket-75', label: '75 · Um único sapato de ferro com salto alto', item: 'Bugiganga assombrada (75)' },
+        { id: 'haunted-trinket-76', label: '76 · Uma vela feita de uma mão decepada', item: 'Bugiganga assombrada (76)' },
+        { id: 'haunted-trinket-77', label: '77 · Um dispositivo mecânico que pulsa como um coração', item: 'Bugiganga assombrada (77)' },
+        { id: 'haunted-trinket-78', label: '78 · Uma máscara de baile sem rosto', item: 'Bugiganga assombrada (78)' },
+        { id: 'haunted-trinket-79', label: '79 · Um olho de vidro com um verme vivo dentro', item: 'Bugiganga assombrada (79)' },
+        { id: 'haunted-trinket-80', label: '80 · Um lençol com dois buracos para os olhos', item: 'Bugiganga assombrada (80)' },
+        { id: 'haunted-trinket-81', label: '81 · A escritura de um lugar chamado Solar Tergeron', item: 'Bugiganga assombrada (81)' },
+        { id: 'haunted-trinket-82', label: '82 · Um envelope carmesim ornamentado e selado com cera, resistente a qualquer tentativa de abertura', item: 'Bugiganga assombrada (82)' },
+        { id: 'haunted-trinket-83', label: '83 · Um véu de luto adornado com renda preta', item: 'Bugiganga assombrada (83)' },
+        { id: 'haunted-trinket-84', label: '84 · Uma camisa de força coberta de runas de carvão', item: 'Bugiganga assombrada (84)' },
+        { id: 'haunted-trinket-85', label: '85 · Uma máscara esfarrapada de estopa com um sorriso torto pintado', item: 'Bugiganga assombrada (85)' },
+        { id: 'haunted-trinket-86', label: '86 · Uma fita verde feita para ser usada como gargantilha', item: 'Bugiganga assombrada (86)' },
+        { id: 'haunted-trinket-87', label: '87 · Uma dentadura com dentes afiados e incompatíveis entre si', item: 'Bugiganga assombrada (87)' },
+        { id: 'haunted-trinket-88', label: '88 · Uma bolsa de ovos morna do tamanho de um punho', item: 'Bugiganga assombrada (88)' },
+        { id: 'haunted-trinket-89', label: '89 · Um anel de cobre com a palavra “meu” gravada por dentro', item: 'Bugiganga assombrada (89)' },
+        { id: 'haunted-trinket-90', label: '90 · Uma ampola de vidro com um líquido verde-neon', item: 'Bugiganga assombrada (90)' },
+        { id: 'haunted-trinket-91', label: '91 · Um tapa-olho bordado com um símbolo sagrado', item: 'Bugiganga assombrada (91)' },
+        { id: 'haunted-trinket-92', label: '92 · Um dedão do pé decepado cuja unha continua crescendo', item: 'Bugiganga assombrada (92)' },
+        { id: 'haunted-trinket-93', label: '93 · Um diário com muitas passagens censuradas', item: 'Bugiganga assombrada (93)' },
+        { id: 'haunted-trinket-94', label: '94 · Uma luva com um desenho semelhante a uma boca costurado na palma', item: 'Bugiganga assombrada (94)' },
+        { id: 'haunted-trinket-95', label: '95 · Um relicário ornamentado, porém vazio, feito de prata e vidro estilhaçado', item: 'Bugiganga assombrada (95)' },
+        { id: 'haunted-trinket-96', label: '96 · Uma figura de cerâmica de um gato com olhos demais', item: 'Bugiganga assombrada (96)' },
+        { id: 'haunted-trinket-97', label: '97 · Um ingresso de papel amassado com as palavras “não admita ninguém”', item: 'Bugiganga assombrada (97)' },
+        { id: 'haunted-trinket-98', label: '98 · Uma moeda de electrum com seu rosto em um dos lados', item: 'Bugiganga assombrada (98)' },
+        { id: 'haunted-trinket-99', label: '99 · Uma cabeça encolhida de gremishka que se contorce quando alguém conjura magia por perto', item: 'Bugiganga assombrada (99)' },
+        { id: 'haunted-trinket-100', label: '100 · Um amuleto em forma de sol com uma pedra vermelha no centro', item: 'Bugiganga assombrada (100)' },
+      ],
+    },
+  },
   acolito: {
     skills: ['Intuição', 'Religião'], languageChoices: 2,
     equipment: ['Símbolo sagrado', 'Livro de preces ou conta de orações', '5 varetas de incenso', 'Vestimentas', 'Roupas comuns', 'Bolsa com 15 po'],
@@ -737,6 +854,7 @@ const initialCharacter: CharacterDetails = {
   racialAbilityChoices: [],
   raceLanguageChoices: [],
   backgroundLanguageChoices: [],
+  backgroundSkillChoices: [],
   merchantAlternative: '',
   appliedRacialBonuses: {},
   skillProficiencies: [],
@@ -772,8 +890,11 @@ function readSelectedCantrips(value: string) {
   try {
     const parsed: unknown = JSON.parse(value)
     if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
-      const cantrips = (parsed as { cantrips?: unknown }).cantrips
-      return Array.isArray(cantrips) && cantrips.every((item) => typeof item === 'string') ? cantrips as string[] : []
+      const spellData = parsed as { cantrips?: unknown; bonusCantrips?: unknown }
+      const cantrips = [spellData.cantrips, spellData.bonusCantrips].flatMap((names) =>
+        Array.isArray(names) ? names.filter((item): item is string => typeof item === 'string') : [],
+      )
+      return [...new Set(cantrips)]
     }
     return Array.isArray(parsed) && parsed.every((item) => typeof item === 'string') ? parsed as string[] : []
   } catch {
@@ -961,6 +1082,7 @@ function CharacterCreationWizardContent({
       bardInstrumentChoices: draft.bardInstrumentChoices ?? [],
       raceLanguageChoices: draft.raceLanguageChoices ?? [],
       backgroundLanguageChoices: draft.backgroundLanguageChoices ?? [],
+      backgroundSkillChoices: draft.backgroundSkillChoices ?? [],
       toolProficiencyChoices: draft.toolProficiencyChoices ?? [],
       backgroundEquipmentChoice: draft.backgroundEquipmentChoice ?? '',
       merchantAlternative: draft.merchantAlternative ?? '',
@@ -978,12 +1100,15 @@ function CharacterCreationWizardContent({
   const [completing, setCompleting] = useState(false)
   const [showHigherClassLevels, setShowHigherClassLevels] = useState(false)
   const [cantripPanelOpen, setCantripPanelOpen] = useState(false)
+  const [tomeCantripDrawerOpen, setTomeCantripDrawerOpen] = useState(false)
+  const [ancientSecretsDrawerKey, setAncientSecretsDrawerKey] = useState<string | null>(null)
   const [featPanelOpen, setFeatPanelOpen] = useState(false)
   const [featPanelLevel, setFeatPanelLevel] = useState(0)
   const [featDraft, setFeatDraft] = useState('')
   const [selectionPanelLevel, setSelectionPanelLevel] = useState(0)
   const [selectionPanelSlot, setSelectionPanelSlot] = useState<number | null>(null)
   const [spellLevelFilter, setSpellLevelFilter] = useState<number | null>(null)
+  const [spellListSearch, setSpellListSearch] = useState('')
   const [cantripDraft, setCantripDraft] = useState<string[]>([])
   const [mobileStepsOpen, setMobileStepsOpen] = useState(false)
   const [equipmentResetAction, setEquipmentResetAction] = useState<(() => void) | null>(null)
@@ -1019,6 +1144,10 @@ function CharacterCreationWizardContent({
     ...(selectedFeats.includes('protecao-pesada') ? ['Armaduras pesadas'] : []),
   ]
   const savedCantrips = readSelectedCantrips(character.spells)
+  const knownPactTomeCantrips = [...new Set([
+    ...savedCantrips,
+    ...getGrantedClassCantrips(className, character.classSubclassId, character.level, character.classFeatureChoices[`${character.characterClassId}:${character.classSubclassId}:2:Truque Adicional:land-bonus-cantrip`]?.[0]),
+  ])]
   const selectedSpellsByLevel = readSelectedSpells(character.spells)
   const cantripProgression = className === 'guerreiro' && character.classSubclassId === 'cavaleiro-arcano' && character.level >= 3
     ? eldritchKnightSpellProgression[character.level - 3]?.[0] ?? 0
@@ -1048,6 +1177,7 @@ function CharacterCreationWizardContent({
     `${character.characterClassId}:circulo-da-terra:2:Terreno do Círculo:terra`
   ]?.[0]
   const availableLeveledSpells = getSpellListForSelection(spellCatalogClass, character.classSubclassId, circleTerrain)
+  const alwaysPreparedSpellNames = new Set(Object.values(getAlwaysPreparedSpells(className, character.classSubclassId, character.level, circleTerrain)).flat())
   const spellcastingProgression = (() : { slots: number[]; selectionLimit: number | null; selectionKind: 'known' | 'prepared' | 'spellbook'; pactSlotLevel: number } => {
     const levelIndex = character.level - 1
     const halfCasterIndex = character.level - 3
@@ -1130,7 +1260,7 @@ function CharacterCreationWizardContent({
   )
   const selectedLeveledSpellCount = hasLearnedSpellProgression
     ? selectedKnownSpellSlots.filter(Boolean).length
-    : Object.values(selectedSpellsByLevel).reduce((total, spells) => total + spells.length, 0)
+    : Object.values(selectedSpellsByLevel).flat().filter((name) => !alwaysPreparedSpellNames.has(name)).length
   const canSelectLeveledSpells = hasLearnedSpellProgression
     ? currentKnownSpellCount > 0
     : spellcastingProgression.selectionLimit !== null && spellcastingProgression.selectionLimit > 0 && maxSpellLevel > 0
@@ -1142,7 +1272,7 @@ function CharacterCreationWizardContent({
   const displayedStepIndex = activeVisibleStep >= 0 ? activeVisibleStep : visibleSteps.length - 1
   const isFinalStep = activeStep === (hasSpellcastingChoices ? 5 : 4)
   const selectedPreparedSpells = Object.entries(selectedSpellsByLevel)
-    .flatMap(([level, spells]) => spells.map((name) => ({ name, level: Number(level) })))
+    .flatMap(([level, spells]) => spells.filter((name) => !alwaysPreparedSpellNames.has(name)).map((name) => ({ name, level: Number(level) })))
   const hitDie = classHitDice[className]
   const classLanguages = className === 'druida' ? ['Druídico'] : className === 'feiticeiro' && character.classSubclassId === 'linhagem-draconica' ? ['Dracônico'] : []
   const raceName = normalizeTerm(races.find((item) => item.id === character.raceId)?.name ?? '')
@@ -1647,6 +1777,7 @@ function CharacterCreationWizardContent({
       ...current,
       backgroundId,
       backgroundLanguageChoices: [],
+      backgroundSkillChoices: [],
       merchantAlternative: '',
       toolProficiencyChoices: [],
       backgroundEquipmentChoice: '',
@@ -1668,6 +1799,19 @@ function CharacterCreationWizardContent({
         raceLanguageChoices: next.slice(0, raceCount),
         backgroundLanguageChoices: next.slice(raceCount),
       }
+    })
+  }
+
+  function toggleBackgroundSkillChoice(skill: string) {
+    setCharacter((current) => {
+      const rules = getBackgroundRulesFor(current)
+      const previous = current.backgroundSkillChoices ?? []
+      const next = previous.includes(skill)
+        ? previous.filter((selected) => selected !== skill)
+        : previous.length < (rules?.skillChoiceCount ?? 0) && rules?.skillChoices?.includes(skill)
+          ? [...previous, skill]
+          : previous
+      return { ...current, backgroundSkillChoices: next }
     })
   }
 
@@ -1821,6 +1965,7 @@ function CharacterCreationWizardContent({
   function backgroundSectionIsComplete() {
     const background = getBackgroundRulesFor()
     return hitPointsSectionIsComplete() && Boolean(background) &&
+      (character.backgroundSkillChoices?.length ?? 0) === (background?.skillChoiceCount ?? 0) &&
       (!background?.merchantAlternative || Boolean(character.merchantAlternative))
   }
 
@@ -1912,7 +2057,7 @@ function CharacterCreationWizardContent({
       const natureSkills = normalizedClassName === 'clerigo' && character.classSubclassId === 'dominio-da-natureza'
         ? clericChoices.filter(([key]) => key.endsWith(':nature-skill')).flatMap(([, choices]) => choices)
         : []
-      const grantedSkills = new Set([...(backgroundRulesForCharacter?.skills ?? []), ...raceSkills, ...loreSkills, ...knowledgeSkills, ...natureSkills])
+      const grantedSkills = new Set([...(backgroundRulesForCharacter?.skills ?? []), ...(character.backgroundSkillChoices ?? []), ...raceSkills, ...loreSkills, ...knowledgeSkills, ...natureSkills])
       if (!(proficiencies && character.skillProficiencies.length === proficiencies.skillCount &&
         new Set(character.skillProficiencies).size === character.skillProficiencies.length &&
         character.skillProficiencies.every((skill) => classSkills.has(skill) && !grantedSkills.has(skill)))) errors.skillProficiencies = `Escolha ${proficiencies?.skillCount ?? 'as'} perícias da classe, sem repetir as concedidas pela raça ou pelo antecedente.`
@@ -1923,7 +2068,13 @@ function CharacterCreationWizardContent({
         errors.bardInstrumentChoices = proficiencies.toolChoiceOptions ? 'Escolha um tipo de ferramenta de artesão ou um instrumento musical.' : `Escolha ${proficiencies.instrumentChoiceCount} instrumentos musicais diferentes.`
       }
       if (backgroundRulesForCharacter.toolChoice && (character.toolProficiencyChoices.length !== 1 || !backgroundRulesForCharacter.toolChoice.includes(character.toolProficiencyChoices[0]))) errors.toolProficiencyChoices = 'Escolha uma proficiência com ferramenta do antecedente.'
-      if (backgroundRulesForCharacter.equipmentChoice && !backgroundRulesForCharacter.equipmentChoice.options.some((option) => option.id === character.backgroundEquipmentChoice)) errors.backgroundEquipmentChoice = 'Escolha uma opção de equipamento do antecedente.'
+      if (backgroundRulesForCharacter.skillChoiceCount &&
+        (character.backgroundSkillChoices?.length !== backgroundRulesForCharacter.skillChoiceCount ||
+          new Set(character.backgroundSkillChoices).size !== character.backgroundSkillChoices.length ||
+          character.backgroundSkillChoices.some((skill) => !backgroundRulesForCharacter.skillChoices?.includes(skill)))) {
+        errors.backgroundSkillChoices = `Escolha ${backgroundRulesForCharacter.skillChoiceCount} perícias do antecedente.`
+      }
+      if (backgroundRulesForCharacter.requiredLanguageOptions && !backgroundRulesForCharacter.requiredLanguageOptions.some((language) => character.backgroundLanguageChoices.includes(language))) errors.languages = 'Escolha ao menos um dos idiomas permitidos pelo antecedente Assombrado.'
     }
     if (step === 3 && normalizeTerm(selectedName(classes, character.characterClassId)) === 'barbaro' && character.level >= 3 && !character.primalPath) {
       errors.primalPath = 'Escolha um Caminho Primitivo para o bárbaro a partir do nível 3.'
@@ -1976,9 +2127,28 @@ function CharacterCreationWizardContent({
             }
           }
         }
+        if (normalizeTerm(selectedName(classes, character.characterClassId)) === 'bruxo' && character.level >= 3) {
+          const pactKey = warlockPactChoiceKey(character.characterClassId, character.classSubclassId)
+          if (character.classFeatureChoices[pactKey]?.includes('pacto-do-tomo')) {
+            const tomeCantripKey = warlockTomeCantripChoiceKey(character.characterClassId, character.classSubclassId)
+            if (!isValidPactTomeCantripSelection(character.classFeatureChoices[tomeCantripKey] ?? [], knownPactTomeCantrips)) {
+              errors[`classFeatureChoices.${tomeCantripKey}`] = 'Escolha três truques diferentes para o Livro das Sombras.'
+            }
+          }
+        }
+        if (normalizeTerm(selectedName(classes, character.characterClassId)) === 'bruxo') {
+          for (const [invocationKey, invocationIds] of Object.entries(character.classFeatureChoices)) {
+            if (!invocationKey.endsWith(':mystic-invocations') || !invocationIds.includes('livro-de-segredos-antigos')) continue
+            const ritualKey = ancientSecretsRitualChoiceKey(invocationKey)
+            if (!isValidAncientSecretsRitualSelection(character.classFeatureChoices[ritualKey] ?? [])) {
+              errors[`classFeatureChoices.${ritualKey}`] = 'Escolha dois rituais diferentes de 1º nível para o Livro de Segredos Antigos.'
+            }
+          }
+        }
         if (normalizeTerm(selectedName(classes, character.characterClassId)) === 'bardo') {
           const bardBaseSkills = new Set([
             ...character.skillProficiencies,
+            ...(character.backgroundSkillChoices ?? []),
             ...raceSkills,
             ...(getBackgroundRulesFor()?.skills ?? []),
           ])
@@ -2176,8 +2346,10 @@ function CharacterCreationWizardContent({
     const selectedWarlockPact = pactFeature && pactChoice
       ? character.classFeatureChoices[choiceKey(pactFeature, pactChoice.id)]?.[0]
       : undefined
+    const tomeCantripKey = warlockTomeCantripChoiceKey(character.characterClassId, character.classSubclassId)
     const bardBaseSkillProficiencies = new Set([
       ...character.skillProficiencies,
+      ...(character.backgroundSkillChoices ?? []),
       ...raceSkills,
       ...(getBackgroundRulesFor()?.skills ?? []),
     ])
@@ -2188,6 +2360,7 @@ function CharacterCreationWizardContent({
     )
     const rogueSkillProficiencies = new Set([
       ...character.skillProficiencies,
+      ...(character.backgroundSkillChoices ?? []),
       ...raceSkills,
       ...(getBackgroundRulesFor()?.skills ?? []),
     ])
@@ -2516,6 +2689,9 @@ function CharacterCreationWizardContent({
                           && normalizeTerm(feature.name).startsWith('estilo de luta')
                           && choice.id === 'estilo-de-luta'
                         const isWarlockInvocation = isWarlock && choice.id === 'mystic-invocations'
+                        const isWarlockPactChoice = isWarlock && choice.id === 'dadiva-do-pacto'
+                        const ancientSecretsKey = ancientSecretsRitualChoiceKey(key)
+                        const ancientSecretsRituals = character.classFeatureChoices[ancientSecretsKey] ?? []
                         const selectedOption = availableOptions.find((option) => selected.includes(option.id))
                         return (
                           <fieldset {...fieldProps(`classFeatureChoices.${key}`)} aria-label={choice.name} aria-required={isUnlocked} className="wizard__class-path" disabled={!isUnlocked} key={choice.id}>
@@ -2568,7 +2744,8 @@ function CharacterCreationWizardContent({
                                   className={`wizard__class-path-option${choice.choose > 1 ? ' wizard__class-path-option--multi' : ''}`}
                                   disabled={isWarlockInvocation && !warlockInvocationIsAvailable(option, selectedWarlockPact) && !selected.includes(option.id)}
                                   key={option.id}
-                                  onClick={() => updateClassFeatureChoices((current) => {
+                                  onClick={() => {
+                                    updateClassFeatureChoices((current) => {
                                     const previous = current.classFeatureChoices[key] ?? []
                                     const next = choice.choose === 1
                                       ? isWarlockInvocation && previous.includes(option.id) ? [] : [option.id]
@@ -2576,7 +2753,10 @@ function CharacterCreationWizardContent({
                                         ? previous.filter((id) => id !== option.id)
                                         : previous.length < choice.choose ? [...previous, option.id] : previous
                                     return { ...current, classFeatureChoices: { ...current.classFeatureChoices, [key]: next } }
-                                  })}
+                                    })
+                                    if (isWarlockPactChoice && option.id === 'pacto-do-tomo') setTomeCantripDrawerOpen(true)
+                                    if (isWarlockInvocation && option.id === 'livro-de-segredos-antigos' && !selected.includes(option.id)) setAncientSecretsDrawerKey(ancientSecretsKey)
+                                  }}
                                   type="button"
                                 >
                                   <span aria-hidden="true" className={`wizard__method-radio${choice.choose > 1 ? ' wizard__method-radio--checkbox' : ''}`} />
@@ -2584,6 +2764,16 @@ function CharacterCreationWizardContent({
                                   <span>{option.description}</span>
                                 </button>
                               ))}
+                            </div>}
+                            {isWarlockPactChoice && selected.includes('pacto-do-tomo') && <div {...fieldProps(`classFeatureChoices.${tomeCantripKey}`)} className="wizard__class-feature-detail" tabIndex={-1}>
+                              <p>{character.classFeatureChoices[tomeCantripKey]?.length ?? 0} de 3 truques escolhidos para o Livro das Sombras.</p>
+                              <Button onClick={() => setTomeCantripDrawerOpen(true)} type="button" variant="secondary">{character.classFeatureChoices[tomeCantripKey]?.length === 3 ? 'Alterar truques' : 'Escolher truques'}</Button>
+                              {feedback(`classFeatureChoices.${tomeCantripKey}`)}
+                            </div>}
+                            {isWarlockInvocation && selected.includes('livro-de-segredos-antigos') && <div {...fieldProps(`classFeatureChoices.${ancientSecretsKey}`)} className="wizard__class-feature-detail" tabIndex={-1}>
+                              <p>{ancientSecretsRituals.length} de 2 rituais de 1º nível escolhidos para o Livro das Sombras.</p>
+                              <Button onClick={() => setAncientSecretsDrawerKey(ancientSecretsKey)} type="button" variant="secondary">{ancientSecretsRituals.length === 2 ? 'Alterar rituais' : 'Escolher rituais'}</Button>
+                              {feedback(`classFeatureChoices.${ancientSecretsKey}`)}
                             </div>}
                           </fieldset>
                         )
@@ -2625,6 +2815,39 @@ function CharacterCreationWizardContent({
             </footer>
           </div>
         </Modal>
+        {tomeCantripDrawerOpen && selectedWarlockPact === 'pacto-do-tomo' && <PactTomeCantripDrawer
+          open
+          selectedCantrips={character.classFeatureChoices[tomeCantripKey] ?? []}
+          knownCantrips={knownPactTomeCantrips}
+          theme={theme}
+          onClose={() => setTomeCantripDrawerOpen(false)}
+          onConfirm={(cantrips) => {
+            if (!isValidPactTomeCantripSelection(cantrips, knownPactTomeCantrips)) return
+            updateClassFeatureChoices((current) => ({
+              ...current,
+              classFeatureChoices: { ...current.classFeatureChoices, [tomeCantripKey]: cantrips },
+            }))
+            setTomeCantripDrawerOpen(false)
+          }}
+        />}
+        {ancientSecretsDrawerKey && <SpellSelectionDrawer
+          open
+          title="Escolher rituais para o Livro das Sombras"
+          description="Escolha duas magias rituais de 1º nível de quaisquer listas de classe."
+          options={getRitualSpellOptions(1)}
+          selectedSpells={character.classFeatureChoices[ancientSecretsDrawerKey] ?? []}
+          selectionCount={2}
+          theme={theme}
+          onClose={() => setAncientSecretsDrawerKey(null)}
+          onConfirm={(rituals) => {
+            if (!isValidAncientSecretsRitualSelection(rituals)) return
+            updateClassFeatureChoices((current) => ({
+              ...current,
+              classFeatureChoices: { ...current.classFeatureChoices, [ancientSecretsDrawerKey]: rituals },
+            }))
+            setAncientSecretsDrawerKey(null)
+          }}
+        />}
       </section>
     )
   }
@@ -2861,10 +3084,20 @@ function CharacterCreationWizardContent({
           <article className="wizard__racial-traits">
             <p className="wizard__paper-eyebrow">Características · {selectedName(backgrounds, character.backgroundId)}</p>
             <ul className="wizard__racial-details">
-              <li><strong>Proficiência em perícias.</strong> {background.skills.join(', ')}.</li>
+              <li><strong>Proficiência em perícias.</strong> {background.skillChoiceCount ? `Escolha ${background.skillChoiceCount} entre ${(background.skillChoices ?? []).join(', ')}.` : `${background.skills.join(', ')}.`}</li>
               <li><strong>Proficiência em ferramentas.</strong> {[...(background.tools ?? []), ...(background.merchantAlternative && character.merchantAlternative === 'navigator-tools' ? ['Ferramentas de navegador'] : [])].join(', ') || 'Nenhuma proficiência fixa.'} {background.toolChoice && `Escolha uma proficiência dentre ${background.toolChoice.length} opções.`} {background.merchantAlternative && 'O Mercador de Guilda pode escolher ferramentas de navegador ou um idioma adicional.'}</li>
-              <li><strong>Idiomas.</strong> {backgroundLanguageCount ? `${backgroundLanguageCount} à sua escolha${character.backgroundLanguageChoices.length ? ` (${character.backgroundLanguageChoices.join(', ')})` : ''}.` : 'Nenhum idioma adicional.'}</li>
+              <li><strong>Idiomas.</strong> {backgroundLanguageCount ? `${backgroundLanguageCount} à sua escolha${background.requiredLanguageOptions ? `, sendo ao menos um entre ${background.requiredLanguageOptions.join(', ')}` : ''}${character.backgroundLanguageChoices.length ? ` (${character.backgroundLanguageChoices.join(', ')})` : ''}.` : 'Nenhum idioma adicional.'}</li>
             </ul>
+            {background.skillChoiceCount ? <div>
+              <p>Escolha {background.skillChoiceCount} perícias do antecedente. ({character.backgroundSkillChoices?.length ?? 0} de {background.skillChoiceCount} selecionadas)</p>
+              {feedback('backgroundSkillChoices')}
+              <div {...fieldProps('backgroundSkillChoices')} tabIndex={-1} aria-label="Escolha as perícias do antecedente" className="wizard__skill-options" role="group">
+                {background.skillChoices?.map((skill) => {
+                  const selected = character.backgroundSkillChoices?.includes(skill) ?? false
+                  return <button aria-pressed={selected} className="wizard__skill-option" disabled={!selected && (character.backgroundSkillChoices?.length ?? 0) >= background.skillChoiceCount!} key={skill} onClick={() => toggleBackgroundSkillChoice(skill)} type="button"><span aria-hidden="true" className="wizard__selection-dot wizard__selection-dot--checkbox" />{skill}</button>
+                })}
+              </div>
+            </div> : null}
           </article>
         )}
       </section>
@@ -2898,7 +3131,7 @@ function CharacterCreationWizardContent({
       ? clericFeatureChoices.filter(([key]) => key.endsWith(':nature-skill')).flatMap(([, choices]) => choices)
       : []
     const background = getBackgroundRulesFor()
-    const backgroundSkills = new Set(background?.skills ?? [])
+    const backgroundSkills = new Set([...(background?.skills ?? []), ...(character.backgroundSkillChoices ?? [])])
     const grantedSkills = new Set([...backgroundSkills, ...raceSkills, ...collegeSkillChoices, ...knowledgeSkills, ...natureSkills])
     const raceLanguageRules = getRaceLanguageRulesFor()
     const raceLanguageChoiceCount = getRaceLanguageChoiceCount()
@@ -2921,6 +3154,7 @@ function CharacterCreationWizardContent({
     const remaining = proficiencies.skillCount - selectedSkills.size
     const languageChoices = [...character.raceLanguageChoices, ...character.backgroundLanguageChoices]
     const languageCount = raceLanguageChoiceCount + backgroundLanguageChoiceCount
+    const requiredBackgroundLanguages = new Set(background?.requiredLanguageOptions ?? [])
     const fixedLanguages = new Set([...raceLanguageRules.fixed, ...classLanguages])
     const skillOrder = (skill: string) => grantedSkills.has(skill) ? 1 : proficiencies.skills.includes(skill) ? 0 : 2
 
@@ -3042,24 +3276,11 @@ function CharacterCreationWizardContent({
             </div>
           </>}
         </section>}
-        {background && (background.equipment.length > 0 || background.equipmentChoice) && <section aria-labelledby="background-equipment-title" className="wizard__proficiency-section">
-          <h3 id="background-equipment-title">Equipamentos do antecedente</h3>
-          {background.equipment.length > 0 && <div className="wizard__proficiency-chips">{getEquipmentContext().backgroundEquipment.filter(item => !background.equipmentChoice?.options.some(option => option.item === item)).map((item, index) => <span className="wizard__proficiency-chip" key={`${item}-${index}`}>{item}</span>)}</div>}
-          {background.equipmentChoice && <div className="wizard__tool-choice">
-            <p>{background.equipmentChoice.prompt}</p>
-            {requiredMark}{feedback('backgroundEquipmentChoice')}
-            <div {...fieldProps('backgroundEquipmentChoice')} tabIndex={-1} aria-label="Escolha os equipamentos do antecedente" className="wizard__skill-options" role="group">
-              {background.equipmentChoice.options.map(option => {
-                const selected = character.backgroundEquipmentChoice === option.id
-                return <Button aria-pressed={selected} className="wizard__skill-option" key={option.id} onClick={() => updateCharacter('backgroundEquipmentChoice', selected ? '' : option.id)} variant={selected ? 'primary' : 'secondary'} size="small" type="button"><span aria-hidden="true" className="wizard__selection-dot" />{option.label}</Button>
-              })}
-            </div>
-          </div>}
-        </section>}
         </section>
         <section aria-labelledby="languages-title" className="wizard__section-card wizard__proficiency-section wizard__languages-section">
           <h2 id="languages-title">Idiomas {languageCount > 0 && requiredMark}</h2>
           {languageCount > 0 && <p>Escolha {languageCount} {languageCount === 1 ? 'idioma' : 'idiomas'}. ({languageCount > languageChoices.length ? `Faltam ${languageCount - languageChoices.length}` : 'Seleção completa'})</p>}
+          {requiredBackgroundLanguages.size > 0 && <p>Ao menos um idioma do antecedente deve ser: {[...requiredBackgroundLanguages].join(', ')}.</p>}
           {feedback('languages')}
           <div {...fieldProps('languages')} tabIndex={-1} aria-label="Idiomas do personagem" className="wizard__skill-options" role="group">
             {[...languageOptions, ...classLanguages].map((language) => {
@@ -3630,9 +3851,10 @@ function CharacterCreationWizardContent({
             .flatMap(([, spells]) => spells)
         const availablePanelSpellLevels = [...new Set(panelOptions.map((name) => spellLevelByName[name]).filter((level) => level !== undefined))]
           .sort((first, second) => first - second)
-        const filteredPanelOptions = spellLevelFilter === null
-          ? panelOptions
-          : panelOptions.filter((name) => spellLevelByName[name] === spellLevelFilter)
+        const normalizedSpellSearch = normalizeTerm(spellListSearch.trim())
+        const filteredPanelOptions = panelOptions.filter((name) =>
+          (spellLevelFilter === null || spellLevelByName[name] === spellLevelFilter)
+          && (!normalizedSpellSearch || normalizeTerm(name).includes(normalizedSpellSearch)))
         const panelCurrentSelection = selectionPanelLevel === 0
           ? selectionPanelSlot === null ? selectedCantrips : [selectedCantripSlots[selectionPanelSlot] ?? ''].filter(Boolean)
           : hasLearnedSpellProgression
@@ -3651,6 +3873,7 @@ function CharacterCreationWizardContent({
           setSelectionPanelLevel(level)
           setSelectionPanelSlot(slotIndex ?? null)
           setSpellLevelFilter(null)
+          setSpellListSearch('')
           setCantripDraft(level === 0
             ? slotIndex === undefined ? selectedCantrips : [selectedCantripSlots[slotIndex] ?? ''].filter(Boolean)
             : hasLearnedSpellProgression
@@ -3682,7 +3905,14 @@ function CharacterCreationWizardContent({
             if (selectionPanelSlot === null) return
             const nextKnownSpells = [...selectedKnownSpellSlots]
             nextKnownSpells[selectionPanelSlot] = cantripDraft[0] ?? ''
-            updateCharacter('spells', JSON.stringify({ cantrips: selectedCantripSlots, knownSpells: nextKnownSpells }))
+            const wizardPreparedSpells = className === 'mago'
+              ? nextKnownSpells.filter(Boolean).slice(0, Math.max(1, character.level + (getAbilityModifier('intelligence') ?? 0)))
+              : undefined
+            updateCharacter('spells', JSON.stringify({
+              cantrips: selectedCantripSlots,
+              knownSpells: nextKnownSpells,
+              ...(wizardPreparedSpells ? { preparedSpells: wizardPreparedSpells } : {}),
+            }))
           } else {
             const nextSpellsByLevel = groupSpellChoicesByLevel(cantripDraft, spellLevelByName)
             updateCharacter('spells', JSON.stringify({ cantrips: selectedCantripSlots, spells: nextSpellsByLevel }))
@@ -3805,12 +4035,18 @@ function CharacterCreationWizardContent({
                   type="button"
                 >{level}º nível</button>)}
               </div>}
+              <label className="wizard__spell-search">
+                <span aria-hidden="true" className="material-symbols-rounded">search</span>
+                <input aria-label="Pesquisar magias" onChange={(event) => setSpellListSearch(event.target.value)} placeholder="Pesquisar magias" type="search" value={spellListSearch} />
+              </label>
               <div
                 aria-label={selectionPanelLevel === 0 ? selectionPanelSlot === null ? 'Truques disponíveis' : 'Escolha um truque' : selectionPanelSlot === null ? 'Magias disponíveis' : 'Escolha uma magia'}
                 className="wizard__cantrip-drawer-options"
                 role={selectionPanelSlot !== null || panelSelectionLimit === 1 ? 'radiogroup' : 'group'}
               >
-                {filteredPanelOptions.map((name) => {
+                {filteredPanelOptions.length === 0
+                  ? <p className="wizard__spell-search-empty">Nenhuma magia encontrada.</p>
+                  : filteredPanelOptions.map((name) => {
                   const selected = cantripDraft.includes(name)
                   const spellDetails = getSpellDetails(name)
                   const singleSpellChoice = selectionPanelSlot !== null || panelSelectionLimit === 1
@@ -3906,7 +4142,7 @@ function CharacterCreationWizardContent({
           ...character.backgroundLanguageChoices,
           ...clericKnowledgeLanguages,
         ]
-        const reviewSkills = [...new Set([...(background?.skills ?? []), ...raceSkills, ...character.skillProficiencies, ...bardAdditionalSkills, ...clericKnowledgeSkills, ...clericNatureSkills])]
+        const reviewSkills = [...new Set([...(background?.skills ?? []), ...(character.backgroundSkillChoices ?? []), ...raceSkills, ...character.skillProficiencies, ...bardAdditionalSkills, ...clericKnowledgeSkills, ...clericNatureSkills])]
         const reviewInventory = readInventory(character.equipment, equipmentCatalog ?? undefined)
         const reviewTools = [
           ...(background?.tools ?? []),
@@ -4222,10 +4458,8 @@ function CharacterCreationWizardContent({
   function getEquipmentContext(): EquipmentContext {
     const background = getBackgroundRulesFor()
     const selectedToolChoice = character.toolProficiencyChoices[0]
-    const selectedEquipmentChoice = background?.equipmentChoice?.options.find((option) => option.id === character.backgroundEquipmentChoice)
     const equipment = [
       ...(background?.equipment ?? []),
-      ...(selectedEquipmentChoice ? [selectedEquipmentChoice.item] : []),
     ].map((item) => item
       .replace('Instrumento musical do tipo escolhido', selectedToolChoice ?? 'Instrumento musical escolhido')
       .replace('Ferramentas de artesão do tipo escolhido', selectedToolChoice ?? 'ferramentas de artesão escolhidas'))
@@ -4233,6 +4467,10 @@ function CharacterCreationWizardContent({
       className: classes.find(item => item.id === character.characterClassId)?.name ?? '',
       backgroundName: backgrounds.find(item => item.id === character.backgroundId)?.name ?? '',
       backgroundEquipment: equipment,
+      backgroundEquipmentChoice: background?.equipmentChoice ? {
+        ...background.equipmentChoice,
+        selectedOptionId: character.backgroundEquipmentChoice || undefined,
+      } : undefined,
       character,
       proficientWithWarhammer: raceName === 'anao' || ['dominio-da-tempestade', 'dominio-da-guerra'].includes(character.classSubclassId),
       proficientWithHeavyArmor: ['dominio-da-vida', 'dominio-da-natureza', 'dominio-da-tempestade', 'dominio-da-guerra'].includes(character.classSubclassId),

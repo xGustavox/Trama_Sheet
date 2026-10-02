@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import type { CharacterDetails, CharacterPlayState } from '../src/lib/characterData'
-import { adjustHitPoints, applyHitPointAdjustment, applyHitPointDamage, availableSpellSlotLevels, availableSpellSlots, getInitialCharacterPlayState, healHitPoints, recoverFromLongRest, recoverFromShortRest, setTemporaryHitPoints, spendHitDiceOnShortRest, toggleDeathSaveMark, toggleSpellSlot } from '../src/lib/characterPlay'
+import { getEffectiveAbilityScores, type CharacterDetails, type CharacterPlayState } from '../src/lib/characterData'
+import { adjustHitPoints, applyHitPointAdjustment, applyHitPointDamage, availableSpellSlotLevels, availableSpellSlots, getInitialCharacterPlayState, healHitPoints, recoverFromLongRest, recoverFromShortRest, setTemporaryHitPoints, spellLevelsToDisplay, spendHitDiceOnShortRest, toggleDeathSaveMark, toggleSpellSlot } from '../src/lib/characterPlay'
 
 const spentState: CharacterPlayState = {
   currentHp: 3,
@@ -10,6 +10,18 @@ const spentState: CharacterPlayState = {
   spentHitDice: 0,
 }
 
+test('ability score overrides affect only the selected score and ignore invalid persisted values', () => {
+  const character = {
+    abilities: { strength: '10', dexterity: '14', constitution: '12', intelligence: '8', wisdom: '16', charisma: '13' },
+    abilityScoreOverrides: { strength: 18, dexterity: 0, constitution: 30, intelligence: 31 },
+  } as CharacterDetails
+
+  assert.deepEqual(getEffectiveAbilityScores(character), {
+    strength: '18', dexterity: '14', constitution: '30', intelligence: '8', wisdom: '16', charisma: '13',
+  })
+  assert.equal(character.abilities.strength, '10')
+})
+
 test('initial play state preserves saved resources and defaults new characters to full hit points', () => {
   assert.deepEqual(getInitialCharacterPlayState({ maxHp: '15', playState: spentState } as CharacterDetails), spentState)
   assert.deepEqual(getInitialCharacterPlayState({ maxHp: '15' } as CharacterDetails), {
@@ -17,16 +29,18 @@ test('initial play state preserves saved resources and defaults new characters t
     temporaryHp: 0,
     spentSpellSlots: [],
     spentHitDice: 0,
+    usedInvocationSpellUses: [],
   })
 })
 
 test('long rest restores hit points and spell slots, clears temporary hit points, and recovers half the spent hit dice', () => {
-  assert.deepEqual(recoverFromLongRest({ ...spentState, spentHitDice: 4 }, 17, 6), {
+  assert.deepEqual(recoverFromLongRest({ ...spentState, spentHitDice: 4, usedInvocationSpellUses: ['encharcar-a-mente'] }, 17, 6), {
     ...spentState,
     currentHp: 17,
     temporaryHp: 0,
     spentSpellSlots: [],
     spentHitDice: 1,
+    usedInvocationSpellUses: [],
     deathSaveSuccesses: [],
     deathSaveFailures: [],
   })
@@ -144,4 +158,11 @@ test('casting offers only unspent slots at the spell level or higher', () => {
   assert.deepEqual(availableSpellSlotLevels([2, 2, 1], ['1:0', '2:1'], 2), [2, 3])
   assert.deepEqual(availableSpellSlotLevels([2, 2, 1], ['1:0', '2:1', '2:0', '3:0'], 2), [])
   assert.deepEqual(availableSpellSlots([2, 2, 1], ['1:0', '2:1', '2:0', '3:0'], 2), [])
+})
+
+test('known lower-level spells remain visible when a warlock only has higher-level pact slots', () => {
+  const pactSlots = [0, 2]
+  const knownSpells = { 1: ['Armadura de Agathys'], 2: ['Reflexos'] }
+  assert.deepEqual(spellLevelsToDisplay(pactSlots, knownSpells), [1, 2])
+  assert.deepEqual(availableSpellSlotLevels(pactSlots, [], 1), [2])
 })

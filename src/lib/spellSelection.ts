@@ -28,3 +28,8 @@ export function groupSpellChoicesByLevel(spellNames: string[], spellLevelByName:
   }
   return grouped
 }
+
+export function filterKnownSpellOptions<T extends { name: string }>(options: T[], knownSpellNames: string[]): T[] {
+  const known = new Set(knownSpellNames.map((name) => name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()))
+  return options.filter(({ name }) => !known.has(name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()))
+}

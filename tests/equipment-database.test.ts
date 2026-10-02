@@ -7,9 +7,9 @@ test('database migrations seed one normalized catalog, enforce references and ex
   try {
     const catalog = await loadEquipmentCatalogFixture()
     const rows = await db.query<{ id: string; data: Record<string, unknown> }>('select id, data from equipment_items order by id')
-    assert.equal(rows.rows.length, 508)
+    assert.equal(rows.rows.length, 608)
     assert.ok(rows.rows.every(row => row.data.id === row.id && !('components' in row.data)))
-    assert.equal(catalog.items.length, 508)
+    assert.equal(catalog.items.length, 608)
     const magicItems = catalog.items.filter(item => item.category === 'magic')
     assert.equal(magicItems.length, 253)
     assert.equal(magicItems.find(item => item.id === 'anel-de-estrelas-cadentes')?.attunement, 'ao ar livre durante a noite')
@@ -41,7 +41,15 @@ test('database migrations seed one normalized catalog, enforce references and ex
     for (const role of ['anon', 'authenticated']) {
       await db.exec(`set role ${role}`)
       assert.equal((await db.query('select * from equipment_items')).rows.length, catalog.items.length)
-      assert.equal((await db.query('select * from equipment_packs')).rows.length, 7)
+      assert.equal((await db.query('select * from equipment_packs')).rows.length, 8)
+      assert.equal((await db.query("select count(*)::int as count from equipment_items where subcategory = 'Bugiganga assombrada'")).rows[0].count, 98)
+      assert.equal((await db.query("select name from backgrounds where slug = 'assombrado'")).rows[0].name, 'Assombrado')
+      assert.deepEqual((await db.query("select item_id, quantity from equipment_pack_items where pack_id = 'monster-hunter' order by item_id")).rows, [
+        { item_id: 'agua-benta-frasco', quantity: 1 }, { item_id: 'algemas', quantity: 1 }, { item_id: 'bau', quantity: 1 },
+        { item_id: 'caixa-de-fogo', quantity: 1 }, { item_id: 'espelho-de-aco', quantity: 1 }, { item_id: 'estaca-de-madeira', quantity: 3 },
+        { item_id: 'martelo', quantity: 1 }, { item_id: 'oleo-frasco', quantity: 1 }, { item_id: 'pe-de-cabra', quantity: 1 },
+        { item_id: 'simbolo-sagrado', quantity: 1 }, { item_id: 'tocha', quantity: 3 },
+      ])
       assert.equal((await db.query('select * from equipment_item_components')).rows.length, catalog.items.reduce((count, item) => count + (item.components?.length ?? 0), 0))
       await assert.rejects(db.exec("delete from equipment_items where id = 'adaga'"), /permission denied/)
       await assert.rejects(db.exec("update equipment_pack_items set quantity = 99"), /permission denied/)

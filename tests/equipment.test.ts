@@ -56,9 +56,10 @@ test('currency conversion spends only complete source-coin groups and preserves 
   assert.equal(convertCurrency(balances, 'gp', 'gp', 1), null)
 })
 
-test('only catalog weapons and armor can be equipped', () => {
+test('only catalog weapons, armor, and the Pact of the Tome book can be equipped', () => {
   assert.equal(isEquippable(findEquipment(catalog, 'Cota de malha')), true)
   assert.equal(isEquippable(findEquipment(catalog, 'Adaga')), true)
+  assert.equal(isEquippable(findEquipment(catalog, 'Livro das Sombras')), true)
   assert.equal(isEquippable(findEquipment(catalog, 'Kit de primeiros-socorros')), false)
   assert.equal(isEquippable(findEquipment(catalog, 'Roupas comuns')), false)
   assert.equal(isEquippable(undefined), false)
@@ -145,7 +146,7 @@ test('catalog contains every concrete PDF table row and references real pack com
   assert.equal(catalog.items.filter(item => item.sourcePage === 149).length, 37)
   assert.equal(catalog.items.filter(item => item.sourcePage === 150).length, 99)
   assert.equal(catalog.items.filter(item => item.sourcePage === 154).length, 50)
-  assert.equal(catalog.packs.length, 7)
+  assert.equal(catalog.packs.length, 8)
   for (const pack of catalog.packs) for (const line of pack.items) {
     assert.ok(catalog.items.some(item => item.id === line.itemId), line.itemId)
     assert.ok(Number.isInteger(line.quantity) && line.quantity > 0)
@@ -362,6 +363,101 @@ test('every current background item and selected tool resolves, with explicit al
   for (const name of ['Ferramentas de calígrafo', 'Ferramentas de couro', 'Materiais de pintor', 'Suprimentos de oleiro', 'Saltério', 'Chifre', 'Charamela', 'Viola', 'Corda de seda (15 m)', 'Anel de sinete']) assert.ok(findEquipment(catalog, name), name)
   const merchant = startingEquipmentPlan(catalog, { ...context(), backgroundEquipment: ['Mula e carroça no lugar das ferramentas de artesão'] }, emptyInventory())
   assert.deepEqual(merchant.grants.find(grant => grant.key.startsWith('background:'))?.items, [{ itemId: 'mula', quantity: 1 }, { itemId: 'carroca', quantity: 1 }])
+})
+
+test('Assombrado offers all 100 supplied trinkets in the side panel and resolves each to one catalog item', () => {
+  const source = readFileSync(new URL('../src/components/CharacterCreationWizard.tsx', import.meta.url), 'utf8')
+  const options = [...source.matchAll(/id: 'haunted-trinket-(\d+)', label: '([^']+)', item: '([^']+)'/g)]
+  assert.equal(options.length, 100)
+  assert.deepEqual(options.map(([, id]) => Number(id)), Array.from({ length: 100 }, (_, index) => index + 1))
+  for (const [, , label, itemName] of options) {
+    assert.match(label, /^\d{2,3} · /)
+    assert.ok(findEquipment(catalog, itemName), itemName)
+  }
+  const plan = startingEquipmentPlan(catalog, {
+    ...context(''),
+    backgroundName: 'Assombrado',
+    backgroundEquipment: [],
+    backgroundEquipmentChoice: {
+      prompt: 'Escolha uma bugiganga da tabela de Bugigangas Assombradas.',
+      sidePanelPickerLabel: 'Bugiganga assombrada',
+      options: options.map(([, id, label, item]) => ({ id: `haunted-trinket-${id}`, label, item })),
+    },
+  }, emptyInventory())
+  const picker = plan.choices.find(group => group.key === 'background:assombrado:equipment')!.options[0].picks[0]
+  assert.equal(picker.itemIds.length, 100)
+  for (const [, , label, itemName] of options) {
+    const itemId = findEquipment(catalog, itemName)!.id
+    assert.ok(picker.itemIds.includes(itemId), itemName)
+    assert.equal(picker.itemLabels?.[itemId], label)
+  }
+  assert.equal(findEquipment(catalog, 'Caixa de música')?.id, 'caixa-de-musica')
+  assert.equal(findEquipment(catalog, 'Brinquedo mecânico')?.id, 'brinquedo-mecanico')
+})
+
+test('Assombrado grants the Monster Hunter pack as separate items, the chosen trinket and one silver', () => {
+  const ctx = {
+    ...context(''),
+    backgroundName: 'Assombrado',
+    backgroundEquipment: ['Pacote de Caçador de Monstro', 'Bugiganga assombrada (01)', 'Roupas comuns', 'Bolsa com 1 peça de prata'],
+  }
+  const plan = startingEquipmentPlan(catalog, ctx, emptyInventory())
+  assert.deepEqual(plan.missing, [])
+  const inventory = reconcileEquipment(emptyInventory(), plan.grants, catalog)
+  assert.equal(count(inventory, 'bau'), 1)
+  assert.equal(count(inventory, 'estaca-de-madeira'), 3)
+  assert.equal(count(inventory, 'tocha'), 3)
+  assert.equal(count(inventory, 'haunted-trinket-01'), 1)
+  assert.equal(count(inventory, 'roupas-comuns'), 1)
+  assert.equal(inventory.currencyCp, 10)
+  assert.deepEqual(inventory.currencyBalances, { cp: 0, sp: 1, ep: 0, gp: 0, pp: 0 })
+  assert.ok(inventory.entries.every((entry) => entry.sourceLabel === 'Antecedente: Assombrado'))
+})
+
+test('background equipment choices are planned with background grants and saved in the inventory choices', () => {
+  const ctx = {
+    ...context(''),
+    backgroundName: 'Assombrado',
+    backgroundEquipment: ['Pacote de Caçador de Monstro', 'Roupas comuns', 'Bolsa com 1 peça de prata'],
+    backgroundEquipmentChoice: {
+      prompt: 'Escolha uma bugiganga da tabela de Bugigangas Assombradas.',
+      sidePanelPickerLabel: 'Bugiganga assombrada',
+      options: [
+        { id: 'haunted-trinket-01', label: '01 · Imagem desenhada na infância', item: 'Bugiganga assombrada (01)' },
+        { id: 'haunted-trinket-33', label: '33 · Caixa de música', item: 'Caixa de música' },
+      ],
+      selectedOptionId: 'haunted-trinket-33',
+    },
+  }
+  const key = 'background:assombrado:equipment'
+  const legacySelection = startingEquipmentPlan(catalog, ctx, emptyInventory())
+  assert.deepEqual(legacySelection.grants.find(grant => grant.key === key)?.items, [{ itemId: 'caixa-de-musica', quantity: 1 }])
+  assert.ok(!legacySelection.fixedGrants.some(grant => grant.items.some(({ itemId }) => itemId === 'caixa-de-musica')))
+  const group = legacySelection.choices.find(group => group.key === key)!
+  assert.equal(group.options.length, 1)
+  assert.deepEqual(group.options[0].picks[0].itemIds, ['haunted-trinket-01', 'caixa-de-musica'])
+  assert.equal(group.options[0].picks[0].itemLabels?.['haunted-trinket-01'], '01 · Imagem desenhada na infância')
+
+  const inventory = emptyInventory()
+  inventory.choices[`${key}/selection/item`] = 'haunted-trinket-01'
+  const changedSelection = startingEquipmentPlan(catalog, ctx, inventory)
+  assert.deepEqual(changedSelection.grants.find(grant => grant.key === key)?.items, [{ itemId: 'haunted-trinket-01', quantity: 1 }])
+})
+
+test('background equipment choices can grant more than one item', () => {
+  const plan = startingEquipmentPlan(catalog, {
+    ...context(''),
+    backgroundName: 'Mercador de Guilda',
+    backgroundEquipment: [],
+    backgroundEquipmentChoice: {
+      prompt: 'Escolha as ferramentas ou a mula e carroça.',
+      options: [{ id: 'mule-cart', label: 'Mula e carroça', item: 'Mula e carroça no lugar das ferramentas de artesão' }],
+    },
+  }, emptyInventory())
+  assert.deepEqual(plan.grants.find(grant => grant.key === 'background:mercador de guilda:equipment')?.items, [
+    { itemId: 'mula', quantity: 1 }, { itemId: 'carroca', quantity: 1 },
+  ])
+  assert.deepEqual(plan.missing, [])
 })
 
 test('unlisted fixed background items enter inventory without becoming unresolved choices', () => {

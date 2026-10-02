@@ -23,7 +23,7 @@ export type EquipmentCatalog = { items: EquipmentItem[]; packs: EquipmentPack[] 
 export const normalizeEquipment = (value: string) => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim()
 export const findEquipment = (catalog: EquipmentCatalog, name: string) => catalog.items.find(item =>
   [item.id, item.name, ...item.aliases].some(alias => normalizeEquipment(alias) === normalizeEquipment(name)))
-export const isEquippable = (item: EquipmentItem | undefined) => Boolean(item?.armor || item?.weapon)
+export const isEquippable = (item: EquipmentItem | undefined) => Boolean(item?.armor || item?.weapon || item?.id === 'livro-das-sombras')
 
 export function getArmorClassBreakdown(armor: EquipmentItem | undefined, shield: EquipmentItem | undefined, dexterityModifier: number, unarmoredBonus = 0) {
   const hasArmor = Boolean(armor?.armor)

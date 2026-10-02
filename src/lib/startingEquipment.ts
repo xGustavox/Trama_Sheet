@@ -5,13 +5,19 @@ export type EquipmentContext = {
   className: string
   backgroundName: string
   backgroundEquipment: string[]
+  backgroundEquipmentChoice?: {
+    prompt: string
+    options: { id: string; label: string; item: string }[]
+    selectedOptionId?: string
+    sidePanelPickerLabel?: string
+  }
   character: Pick<CharacterDetails, 'characterClassId' | 'classSubclassId' | 'classFeatureChoices' | 'level' | 'primalPath' | 'primalTotemChoices' | 'raceId' | 'racialChoice'>
   proficientWithWarhammer: boolean
   proficientWithHeavyArmor: boolean
 }
-type ItemPick = { id: string; label: string; itemIds: string[] }
+type ItemPick = { id: string; label: string; itemIds: string[]; itemLabels?: Record<string, string> }
 type Option = { id: string; label: string; items: ItemQuantity[]; picks: ItemPick[] }
-export type EquipmentChoice = { key: string; label: string; options: Option[] }
+export type EquipmentChoice = { key: string; label: string; options: Option[]; selectedOptionId?: string; selectedItems?: Record<string, string> }
 export type StartingEquipmentPlan = { grants: EquipmentGrant[]; fixedGrants: EquipmentGrant[]; choices: EquipmentChoice[]; missing: string[] }
 
 // 2014 class alternatives, cross-checked against 5e-bits/5e-database src/2014/en/5e-SRD-Classes.json.
@@ -38,7 +44,11 @@ export function startingEquipmentPlan(catalog: EquipmentCatalog, context: Equipm
   const specific = (...ids: string[]) => ids.map(id => option(id, catalog.items.find(item => item.id === id)?.name ?? id, [item(id)]))
   const flexible = (id: string, label: string, filter: (item: EquipmentItem) => boolean, count = 1, extra: ItemQuantity[] = []) =>
     option(id, label, extra, Array.from({ length: count }, (_, i) => pick(String(i), `${label}${count > 1 ? ` (${i + 1})` : ''}`, filter)))
-  const choice = (id: string, label: string, options: Option[], source = `class:${klass}`) => choices.push({ key: `${source}:${id}`, label, options })
+  const choice = (id: string, label: string, options: Option[], source = `class:${klass}`, selectedOptionId?: string, selectedItems?: Record<string, string>) => choices.push({
+    key: `${source}:${id}`, label, options,
+    ...(selectedOptionId ? { selectedOptionId } : {}),
+    ...(selectedItems ? { selectedItems } : {}),
+  })
   const packs = (...ids: string[]) => choice('pack', 'Pacote inicial', ids.map(id => option(id, catalog.packs.find(pack => pack.id === id)?.name ?? id, pack(id))))
   const arcane = () => choice('focus', 'Componentes de conjuração', [
     ...specific('bolsa-de-componentes'), flexible('arcane-focus', 'Foco arcano', entry => entry.subcategory === 'Foco arcano'),
@@ -125,8 +135,15 @@ export function startingEquipmentPlan(catalog: EquipmentCatalog, context: Equipm
   for (const [index, text] of context.backgroundEquipment.entries()) {
     const key = `background:${background}:${index}`
     const label = `Antecedente: ${context.backgroundName}`
-    const purse = text.match(/^Bolsa com (\d+) po$/)
-    if (purse) { fixed(key, label, [item('algibeira')], Number(purse[1]) * 100, true); continue }
+    if (text === 'Pacote de Caçador de Monstro') {
+      fixed(key, label, pack('monster-hunter'), 0, true)
+      continue
+    }
+    const purse = text.match(/^Bolsa com (\d+) (po|peça de prata)$/)
+    if (purse) {
+      fixed(key, label, [item('algibeira')], Number(purse[1]) * (purse[2] === 'po' ? 100 : 10), true)
+      continue
+    }
     if (text === 'Mula e carroça no lugar das ferramentas de artesão') {
       fixed(key, label, [item('mula'), item('carroca')], 0, true)
       continue
@@ -166,6 +183,31 @@ export function startingEquipmentPlan(catalog: EquipmentCatalog, context: Equipm
     }
   }
 
+  if (context.backgroundEquipmentChoice) {
+    if (context.backgroundEquipmentChoice.sidePanelPickerLabel) {
+      const itemLabels: Record<string, string> = {}
+      const itemIds = context.backgroundEquipmentChoice.options.flatMap(({ label, item: name }) => {
+        const found = findEquipment(catalog, name)
+        if (found) itemLabels[found.id] = label
+        return found ? [found.id] : []
+      })
+      const legacyChoice = context.backgroundEquipmentChoice.options.find(option => option.id === context.backgroundEquipmentChoice?.selectedOptionId)
+      const legacyItem = legacyChoice ? findEquipment(catalog, legacyChoice.item) : undefined
+      choice('equipment', context.backgroundEquipmentChoice.prompt, [option('selection', context.backgroundEquipmentChoice.sidePanelPickerLabel, [], [
+        { id: 'item', label: context.backgroundEquipmentChoice.sidePanelPickerLabel, itemIds, itemLabels },
+      ])], `background:${background}`, undefined, legacyItem ? { item: legacyItem.id } : undefined)
+    } else {
+      const options = context.backgroundEquipmentChoice.options.map(({ id, label, item: name }) => {
+        const found = findEquipment(catalog, name)
+        const items = name === 'Mula e carroça no lugar das ferramentas de artesão'
+          ? [item('mula'), item('carroca')]
+          : found ? [item(found.id)] : []
+        return option(id, label, items)
+      })
+      choice('equipment', context.backgroundEquipmentChoice.prompt, options, `background:${background}`, context.backgroundEquipmentChoice.selectedOptionId)
+    }
+  }
+
   if (klass === 'bruxo' && context.character.level >= 3) {
     const key = `${context.character.characterClassId}:${context.character.classSubclassId}:3:Dádiva do Pacto:dadiva-do-pacto`
     if (context.character.classFeatureChoices[key]?.includes('pacto-do-tomo')) fixed('feature:book-of-shadows', 'Dádiva do Pacto: Pacto do Tomo', [item('livro-das-sombras')], 0, true)
@@ -175,12 +217,14 @@ export function startingEquipmentPlan(catalog: EquipmentCatalog, context: Equipm
   }
   // Proficiency and the ability to craft/conjure an item do not themselves grant ownership.
   for (const group of choices) {
-    const selected = group.options.length === 1 ? group.options[0] : group.options.find(option => option.id === inventory.choices[group.key])
+    const selected = group.options.length === 1
+      ? group.options[0]
+      : group.options.find(option => option.id === (inventory.choices[group.key] ?? group.selectedOptionId))
     if (!selected) { missing.push(group.label); continue }
     const items = [...selected.items]
     let complete = true
     for (const selection of selected.picks) {
-      const selectedId = inventory.choices[`${group.key}/${selected.id}/${selection.id}`]
+      const selectedId = inventory.choices[`${group.key}/${selected.id}/${selection.id}`] ?? group.selectedItems?.[selection.id]
       if (!selection.itemIds.includes(selectedId)) { missing.push(selection.label); complete = false }
       else items.push(item(selectedId))
     }

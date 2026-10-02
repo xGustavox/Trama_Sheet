@@ -1,4 +1,5 @@
 export type AbilityScoreMethod = 'manual-roll' | 'standard-array' | 'point-buy'
+export type AbilityKey = 'strength' | 'dexterity' | 'constitution' | 'intelligence' | 'wisdom' | 'charisma'
 export type PrimalPath = 'berserker' | 'totem-warrior' | ''
 export type PrimalTotem = 'eagle' | 'wolf' | 'bear' | ''
 export type PrimalTotemChoices = {
@@ -12,11 +13,20 @@ export type AbilityScoreIncreases = {
   selections: Record<string, string[]>
 }
 
+export type LevelUpHistoryEntry = {
+  hitPointGain?: number
+  hitPointMode?: 'average' | 'rolled'
+  hitPointRoll?: number
+  spellChanges?: { field: 'knownSpells' | 'bonusSpells' | 'bonusCantrips'; added: string; replaced?: string; source?: 'class-progression' }[]
+  invocationReplacements?: { sourceKey: string; oldId: string; newId: string }[]
+}
+
 export type CharacterPlayState = {
   currentHp: number
   temporaryHp: number
   spentSpellSlots: string[]
   spentHitDice: number
+  usedInvocationSpellUses?: string[]
   deathSaveSuccesses?: boolean[]
   deathSaveFailures?: boolean[]
 }
@@ -51,11 +61,14 @@ export type CharacterDetails = {
   notes?: string
   abilityScoreMethod: AbilityScoreMethod | ''
   abilities: Record<string, string>
+  abilityScoreOverrides?: Partial<Record<AbilityKey, number>>
   abilityScoreIncreases?: AbilityScoreIncreases
   featAbilityIncreases?: Record<string, { ability: string; amount: number }>
+  levelUpHistory?: Record<string, LevelUpHistoryEntry>
   racialAbilityChoices: string[]
   raceLanguageChoices: string[]
   backgroundLanguageChoices: string[]
+  backgroundSkillChoices?: string[]
   merchantAlternative: 'navigator-tools' | 'language' | ''
   appliedRacialBonuses: Record<string, number>
   skillProficiencies: string[]
@@ -65,12 +78,25 @@ export type CharacterDetails = {
   equipment: string
   spells: string
   feats: string
+  armorClassOverride?: number
+  movementSpeedOverride?: number
   playState?: CharacterPlayState
   activeConditions?: string[]
   frameColor?: string
   darkMode?: boolean
   sheetBackgroundPath?: string
   sheetBackgroundUrl?: string
+}
+
+const abilityKeys: AbilityKey[] = ['strength', 'dexterity', 'constitution', 'intelligence', 'wisdom', 'charisma']
+
+export function getEffectiveAbilityScores(character: Pick<CharacterDetails, 'abilities' | 'abilityScoreOverrides'>) {
+  const effective = { ...character.abilities }
+  for (const key of abilityKeys) {
+    const override = character.abilityScoreOverrides?.[key]
+    if (Number.isSafeInteger(override) && override! >= 1 && override! <= 30) effective[key] = String(override)
+  }
+  return effective
 }
 
 export type CharacterDraft = {

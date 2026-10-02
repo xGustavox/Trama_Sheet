@@ -4,12 +4,15 @@ import type { Swiper as SwiperInstance } from 'swiper/types'
 import { Swiper, SwiperSlide } from 'swiper/react'
 import 'swiper/css'
 import { classArmorProficiencies } from '../lib/classArmorProficiencies'
-import { classFeatures, classHitDice, getSpellSlotsAtClassLevel } from '../lib/classFeatures'
-import type { CharacterDetails, CharacterPlayState } from '../lib/characterData'
+import { arcaneTricksterSpellProgression, bardSpellProgression, clericSpellProgression, classFeatures, classHitDice, druidSpellProgression, eldritchKnightSpellProgression, getSpellSlotsAtClassLevel, monkProgression, paladinSpellProgression, rangerSpellProgression, rebaseClassFeatureChoicesForSubclass, rogueSneakAttackProgression, sorcererSpellProgression, warlockInvocationIsAvailable, warlockSpellProgression, wizardSpellProgression, type FeatureOption } from '../lib/classFeatures'
+import { getEffectiveAbilityScores, type AbilityKey, type CharacterDetails, type CharacterPlayState } from '../lib/characterData'
 import { addInventoryItem, calculateArmorClass, convertCurrency, currencyDenominations, equipOneInventoryUnit, equipmentDetails, formatPrice, getArmorClassBreakdown, getCurrencyBalances, getFinesseWeaponAttackModifiers, getWeaponAttackModifier, isEquippable, readInventory, type CurrencyBalances, type CurrencyCode, type EquipmentItem, type InventoryEntry } from '../lib/equipment'
 import { useEquipmentCatalog } from '../lib/useEquipmentCatalog'
-import { applyHitPointAdjustment, applyHitPointDamage, availableSpellSlotLevels, availableSpellSlots, getInitialCharacterPlayState, healHitPoints, recoverFromLongRest, recoverFromShortRest, setTemporaryHitPoints, spendHitDiceOnShortRest, toggleDeathSaveMark, toggleSpellSlot } from '../lib/characterPlay'
-import { levelForExperience } from '../lib/experience'
+import { applyHitPointAdjustment, applyHitPointDamage, availableSpellSlotLevels, availableSpellSlots, getInitialCharacterPlayState, healHitPoints, recoverFromLongRest, recoverFromShortRest, setTemporaryHitPoints, spellLevelsToDisplay, spendHitDiceOnShortRest, toggleDeathSaveMark, toggleSpellSlot } from '../lib/characterPlay'
+import { ancientSecretsRitualChoiceKey, getPactTomeCantrips, getWarlockInvocationSpellGrants, hasWarlockPact, isValidAncientSecretsRitualSelection, warlockPactChoiceKey, warlockTomeCantripChoiceKey } from '../lib/pactTome'
+import { hasConfirmedAbilityIncrease, hasLevelUpChoices, levelForExperience } from '../lib/experience'
+import { feats, getFeatAbilityBonus, getFeatPrerequisiteFailure } from '../lib/feats'
+import { rollbackCharacterLevels, rollbackPlayStateForLevel } from '../lib/levelRollback'
 import { getSpellDetails } from '../lib/spellDetails'
 import { groupSpellChoicesByLevel } from '../lib/spellSelection'
 import { getSpellPreparationLimit } from '../lib/spellPreparation'
@@ -19,16 +22,29 @@ import { CharacterAbout } from './CharacterAbout'
 import { Button } from './Button'
 import { Modal } from './Modal'
 import { useToast } from './ToastContext'
-import { getSpellListForSelection, leveledSpellsByClass, spellcastingAbilityByClass } from '../lib/spellCatalog'
+import { getAlwaysPreparedSpells, getGrantedClassCantrips, getRitualSpellOptions, getSpellLevel, getSpellListForSelection, isRitualSpell, spellcastingAbilityByClass } from '../lib/spellCatalog'
 import { FramedGlassPanel } from './FramedGlassPanel'
+import { SpellSelectionDrawer } from './SpellSelectionDrawer'
 import './CharacterPlaySheet.css'
 
 type SheetTab = 'Habilidades' | 'Características' | 'Inventário' | 'Magias' | 'Sobre'
+type StatDetailsDialog = 'armorClass' | 'initiative' | 'movement' | { ability: AbilityKey } | null
 type InventorySortKey = 'item' | 'attack' | 'weight'
 type InventorySort = { key: InventorySortKey; direction: 'asc' | 'desc' } | null
 type Skill = { name: string; ability: string }
-type SpellToCast = { name: string; level: number }
+type SpellToCast = { name: string; level: number; invocationId?: string }
 type QuantityDialogState = { entryId: string; name: string; quantity: number }
+type FeatureChoiceEdit = {
+  key: string
+  featureName: string
+  choiceName: string
+  selectionCount: number
+  options: FeatureOption[]
+  selected: string[]
+  disabledOptionIds: string[]
+  ritualChoiceKey?: string
+}
+type AbilityIncreaseEditDraft = { level: number; mode: 'ability' | 'feat'; abilities: string[]; featId: string; featAbility: string }
 type AttackDialogState = {
   itemName: string
   ability: 'strength' | 'dexterity'
@@ -162,6 +178,51 @@ function normalize(value: string) {
   return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 }
 
+function getDominantImageColor(source: string) {
+  return new Promise<string>((resolve, reject) => {
+    const image = new Image()
+    const imageUrl = new URL(source, window.location.href)
+    if (imageUrl.origin !== window.location.origin) image.crossOrigin = 'anonymous'
+    image.onload = () => {
+      try {
+        const canvas = document.createElement('canvas')
+        const scale = Math.min(1, 48 / Math.max(image.naturalWidth, image.naturalHeight))
+        canvas.width = Math.max(1, Math.round(image.naturalWidth * scale))
+        canvas.height = Math.max(1, Math.round(image.naturalHeight * scale))
+        const context = canvas.getContext('2d', { willReadFrequently: true })
+        if (!context) throw new Error('Não foi possível analisar a imagem.')
+        context.drawImage(image, 0, 0, canvas.width, canvas.height)
+        const { data } = context.getImageData(0, 0, canvas.width, canvas.height)
+        const buckets = new Map<number, { count: number; red: number; green: number; blue: number }>()
+        for (let index = 0; index < data.length; index += 4) {
+          if (data[index + 3] < 128) continue
+          const red = data[index]
+          const green = data[index + 1]
+          const blue = data[index + 2]
+          const key = (red >> 4) << 8 | (green >> 4) << 4 | (blue >> 4)
+          const bucket = buckets.get(key) ?? { count: 0, red: 0, green: 0, blue: 0 }
+          bucket.count += 1
+          bucket.red += red
+          bucket.green += green
+          bucket.blue += blue
+          buckets.set(key, bucket)
+        }
+        const rankedColors = [...buckets.values()].sort((left, right) => right.count - left.count)
+        const selectedColor = rankedColors[2] ?? rankedColors[0]
+        if (!selectedColor) throw new Error('A imagem não contém pixels visíveis para analisar.')
+        const hex = [selectedColor.red, selectedColor.green, selectedColor.blue]
+          .map((channel) => Math.round(channel / selectedColor.count).toString(16).padStart(2, '0'))
+          .join('')
+        resolve(`#${hex}`)
+      } catch {
+        reject(new Error('Não foi possível ler a imagem de fundo. Verifique se ela está acessível e tente novamente.'))
+      }
+    }
+    image.onerror = () => reject(new Error('Não foi possível carregar a imagem de fundo.'))
+    image.src = imageUrl.href
+  })
+}
+
 function FrameColorDialog({ frameColor, frameSvg, landscape, theme, onCancel, onConfirm }: {
   frameColor: string
   frameSvg: string | undefined
@@ -171,9 +232,23 @@ function FrameColorDialog({ frameColor, frameSvg, landscape, theme, onCancel, on
   onConfirm: (color: string) => void
 }) {
   const [draft, setDraft] = useState(frameColor)
+  const [extractingColor, setExtractingColor] = useState(false)
+  const [colorExtractionError, setColorExtractionError] = useState('')
   const previewFrameStyle = useMemo(() => ({
     backgroundImage: `url("${frameSvg ? tintSvgDataUri(frameSvg, draft) : frameSvgPaths.ability}")`,
   }), [draft, frameSvg])
+
+  async function matchBackgroundColor() {
+    setExtractingColor(true)
+    setColorExtractionError('')
+    try {
+      setDraft(await getDominantImageColor(landscape))
+    } catch (error) {
+      setColorExtractionError(error instanceof Error ? error.message : 'Não foi possível analisar a imagem de fundo.')
+    } finally {
+      setExtractingColor(false)
+    }
+  }
 
   return <Modal open title="Cor das molduras" theme={theme} onClose={onCancel} footer={<><Button onClick={onCancel} variant="secondary">Cancelar</Button><Button onClick={() => onConfirm(draft)}>Concluir</Button></>}>
     <div className="play-sheet__frame-color-modal">
@@ -193,7 +268,9 @@ function FrameColorDialog({ frameColor, frameSvg, landscape, theme, onCancel, on
           <input aria-label="Cor da moldura na prévia" id="sheet-frame-color" onChange={(event) => setDraft(event.target.value)} type="color" value={draft} />
           <output htmlFor="sheet-frame-color">{draft.toUpperCase()}</output>
           <Button onClick={() => setDraft(defaultFrameColor)} variant="secondary">Restaurar padrão</Button>
+          <Button disabled={extractingColor} onClick={() => void matchBackgroundColor()} variant="secondary">{extractingColor ? 'Analisando imagem…' : 'Combinar com a imagem'}</Button>
         </div>
+        {colorExtractionError && <p className="play-sheet__frame-color-error" role="alert">{colorExtractionError}</p>}
       </div>
     </div>
   </Modal>
@@ -211,25 +288,34 @@ function equipmentCategoryIcon(item: EquipmentItem | undefined, category = item?
 function selectedSpells(value: string, classId: string) {
   try {
     const parsed: unknown = JSON.parse(value)
-    if (Array.isArray(parsed)) return { cantrips: parsed.filter((name): name is string => typeof name === 'string'), levels: {} as Record<number, string[]> }
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { cantrips: [] as string[], levels: {} as Record<number, string[]> }
-    const record = parsed as { cantrips?: unknown; spells?: unknown; knownSpells?: unknown }
+    if (Array.isArray(parsed)) return { cantrips: parsed.filter((name): name is string => typeof name === 'string'), levels: {} as Record<number, string[]>, spellbook: [] as string[], hasPreparedSpellSelection: false }
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return { cantrips: [] as string[], levels: {} as Record<number, string[]>, spellbook: [] as string[], hasPreparedSpellSelection: false }
+    const record = parsed as { cantrips?: unknown; bonusCantrips?: unknown; spells?: unknown; knownSpells?: unknown; bonusSpells?: unknown; preparedSpells?: unknown }
     const storedLevels = record.spells && typeof record.spells === 'object' ? record.spells as Record<string, unknown> : {}
     const levels = Object.fromEntries(Object.entries(storedLevels).flatMap(([level, names]) =>
       Array.isArray(names) ? [[Number(level), names.filter((name): name is string => typeof name === 'string')]] : [],
     )) as Record<number, string[]>
     const knownNames = Array.isArray(record.knownSpells) ? record.knownSpells.filter((name): name is string => typeof name === 'string') : []
-    for (const name of knownNames) {
-      const spellLevel = Object.entries(leveledSpellsByClass[classId] ?? {}).find(([, names]) => names.some((candidate) => normalize(candidate) === normalize(name)))?.[0]
-      const level = Number(spellLevel) || 1
+    const bonusNames = Array.isArray(record.bonusSpells) ? record.bonusSpells.filter((name): name is string => typeof name === 'string') : []
+    const hasPreparedSpellSelection = Array.isArray(record.preparedSpells)
+    const selectedNames = classId === 'mago' && hasPreparedSpellSelection
+      ? (record.preparedSpells as unknown[]).filter((name): name is string => typeof name === 'string')
+      : [...knownNames, ...bonusNames]
+    for (const name of selectedNames) {
+      const level = getSpellLevel(name, classId) ?? 1
       levels[level] = [...(levels[level] ?? []), name]
     }
     return {
-      cantrips: Array.isArray(record.cantrips) ? record.cantrips.filter((name): name is string => typeof name === 'string') : [],
+      cantrips: [...new Set([
+        ...(Array.isArray(record.cantrips) ? record.cantrips.filter((name): name is string => typeof name === 'string') : []),
+        ...(Array.isArray(record.bonusCantrips) ? record.bonusCantrips.filter((name): name is string => typeof name === 'string') : []),
+      ])],
       levels,
+      spellbook: classId === 'mago' ? knownNames : [],
+      hasPreparedSpellSelection,
     }
   } catch {
-    return { cantrips: [] as string[], levels: {} as Record<number, string[]> }
+    return { cantrips: [] as string[], levels: {} as Record<number, string[]>, spellbook: [] as string[], hasPreparedSpellSelection: false }
   }
 }
 
@@ -391,6 +477,15 @@ export function CharacterPlaySheet({
   const [deathSaveDraft, setDeathSaveDraft] = useState({ successes: [false, false, false], failures: [false, false, false], currentHp: 0 })
   const [deathSaveHealAmount, setDeathSaveHealAmount] = useState('')
   const [deathSaveSaving, setDeathSaveSaving] = useState(false)
+  const [armorClassOverrideDraft, setArmorClassOverrideDraft] = useState('')
+  const [armorClassOverrideError, setArmorClassOverrideError] = useState('')
+  const [armorClassOverrideSaving, setArmorClassOverrideSaving] = useState(false)
+  const [movementSpeedOverrideDraft, setMovementSpeedOverrideDraft] = useState('')
+  const [movementSpeedOverrideError, setMovementSpeedOverrideError] = useState('')
+  const [movementSpeedOverrideSaving, setMovementSpeedOverrideSaving] = useState(false)
+  const [abilityScoreOverrideDraft, setAbilityScoreOverrideDraft] = useState('')
+  const [abilityScoreOverrideError, setAbilityScoreOverrideError] = useState('')
+  const [abilityScoreOverrideSaving, setAbilityScoreOverrideSaving] = useState(false)
   const [restDrawerOpen, setRestDrawerOpen] = useState(false)
   const [selectedRestType, setSelectedRestType] = useState<'short' | 'long' | null>(null)
   const [shortRestDiceCount, setShortRestDiceCount] = useState(0)
@@ -400,6 +495,7 @@ export function CharacterPlaySheet({
   const [spellPreparationDrawerOpen, setSpellPreparationDrawerOpen] = useState(false)
   const [spellPreparationDraft, setSpellPreparationDraft] = useState<string[]>([])
   const [spellPreparationLevelFilter, setSpellPreparationLevelFilter] = useState<number | null>(null)
+  const [spellPreparationSearch, setSpellPreparationSearch] = useState('')
   const [spellPreparationSaving, setSpellPreparationSaving] = useState(false)
   const [conditionsDialogOpen, setConditionsDialogOpen] = useState(false)
   const initialConditions = character.activeConditions ?? []
@@ -411,8 +507,13 @@ export function CharacterPlaySheet({
   const [conditionIconIndex, setConditionIconIndex] = useState(0)
   const [conditionSavePending, setConditionSavePending] = useState(false)
   const [levelUpTarget, setLevelUpTarget] = useState<{ experience: number; level: number } | null>(null)
+  const [levelUpStartLevel, setLevelUpStartLevel] = useState<number | null>(null)
+  const [levelUpStep, setLevelUpStep] = useState<number | null>(null)
+  const [levelUpWorkingCharacter, setLevelUpWorkingCharacter] = useState<CharacterDetails | null>(null)
+  const [levelUpReviewStep, setLevelUpReviewStep] = useState<number | null>(null)
+  const [levelUpStepRecords, setLevelUpStepRecords] = useState<Record<number, { before: CharacterDetails; saved: CharacterDetails }>>({})
   const [hpDialogOpen, setHpDialogOpen] = useState(false)
-  const [detailsDialog, setDetailsDialog] = useState<'armorClass' | 'initiative' | null>(null)
+  const [detailsDialog, setDetailsDialog] = useState<StatDetailsDialog>(null)
   const [hpAmount, setHpAmount] = useState('')
   const [hpDraft, setHpDraft] = useState<CharacterPlayState>(() => getInitialCharacterPlayState(character))
   const [hpAdjustment, setHpAdjustment] = useState(0)
@@ -424,9 +525,20 @@ export function CharacterPlaySheet({
   const [inventoryEntryToDelete, setInventoryEntryToDelete] = useState<InventoryEntry | null>(null)
   const [quantityDraft, setQuantityDraft] = useState(1)
   const [spellToCast, setSpellToCast] = useState<SpellToCast | null>(null)
+  const [spellRuleDialog, setSpellRuleDialog] = useState<'ritual' | 'cantrip' | null>(null)
+  const [wizardSpellbookDrawerOpen, setWizardSpellbookDrawerOpen] = useState(false)
   const [selectedSpellSlotLevel, setSelectedSpellSlotLevel] = useState<number | null>(null)
   const [pendingSpellSlots, setPendingSpellSlots] = useState<string[]>([])
   const [spellCastAnimation, setSpellCastAnimation] = useState<{ name: string; id: number } | null>(null)
+  const [ritualBookDrawerOpen, setRitualBookDrawerOpen] = useState(false)
+  const [featureChoiceEdit, setFeatureChoiceEdit] = useState<FeatureChoiceEdit | null>(null)
+  const [featureChoiceDraft, setFeatureChoiceDraft] = useState<string[]>([])
+  const [featureChoiceSearch, setFeatureChoiceSearch] = useState('')
+  const [featureChoiceSaving, setFeatureChoiceSaving] = useState(false)
+  const [subclassEditDraft, setSubclassEditDraft] = useState<string | null>(null)
+  const [subclassEditSaving, setSubclassEditSaving] = useState(false)
+  const [abilityIncreaseEditDraft, setAbilityIncreaseEditDraft] = useState<AbilityIncreaseEditDraft | null>(null)
+  const [abilityIncreaseSaving, setAbilityIncreaseSaving] = useState(false)
   const [storedSearchOpen, setStoredSearchOpen] = useState(false)
   const [storedSearch, setStoredSearch] = useState('')
   const [currencyDrawerOpen, setCurrencyDrawerOpen] = useState(false)
@@ -476,6 +588,11 @@ export function CharacterPlaySheet({
     setBackgroundPreview(landscape)
   }, [landscape])
   useEffect(() => {
+    if (activeTab !== 'Características') return
+    const frame = window.requestAnimationFrame(() => sheetSwiperRef.current?.updateAutoHeight(0))
+    return () => window.cancelAnimationFrame(frame)
+  }, [activeTab, showFutureClassLevels])
+  useEffect(() => {
     const previousTheme = document.body.dataset.playSheetToastTheme
     document.body.dataset.playSheetToastTheme = darkMode ? 'dark' : 'light'
     return () => {
@@ -500,8 +617,13 @@ export function CharacterPlaySheet({
     ? conditions.find(([name]) => name === activeConditionNames[conditionIconIndex % activeConditionNames.length])?.[1] ?? 'sick'
     : 'sick'
   const proficiencyBonus = Math.floor((character.level - 1) / 4) + 2
-  const strengthModifier = modifier(character.abilities.strength)
-  const dexterityModifier = modifier(character.abilities.dexterity)
+  const effectiveAbilities = getEffectiveAbilityScores(character)
+  const abilityScoreOverridden = (key: AbilityKey) => {
+    const value = character.abilityScoreOverrides?.[key]
+    return Number.isSafeInteger(value) && value! >= 1 && value! <= 30
+  }
+  const strengthModifier = modifier(effectiveAbilities.strength)
+  const dexterityModifier = modifier(effectiveAbilities.dexterity)
   const equipmentValue = optimisticEquipment?.base === character.equipment ? optimisticEquipment.value : character.equipment
   const inventory = useMemo(() => readInventory(equipmentValue, catalog ?? undefined), [equipmentValue, catalog])
   const currencyBalances = inventory.currencyBalances ?? getCurrencyBalances(inventory.currencyCp)
@@ -518,6 +640,14 @@ export function CharacterPlaySheet({
   const availableHitDice = Math.max(0, totalHitDice - playState.spentHitDice)
   const hitDieSize = classHitDice[classId] ?? 8
   const classData = classFeatures[classId]
+  const experienceLevel = levelForExperience(Number(character.experiencePoints) || 0)
+  const pendingLevelUpLevel = hasLevelUpChoices(character, classId, classData, experienceLevel) ? experienceLevel : null
+  const activeLevelUpStep = levelUpReviewStep ?? levelUpStep
+  const activeLevelUpRecord = activeLevelUpStep === null ? undefined : levelUpStepRecords[activeLevelUpStep]
+  const levelUpCharacterForStep = levelUpReviewStep !== null
+    ? activeLevelUpRecord?.before ?? levelUpWorkingCharacter ?? character
+    : levelUpWorkingCharacter ?? character
+  const levelUpSavedCharacterForStep = levelUpReviewStep !== null ? activeLevelUpRecord?.saved : undefined
   const subclass = classData?.subclasses.find((item) => item.id === character.classSubclassId)
   const featureChoices = [...(classData?.features ?? []), ...(subclass?.features ?? [])].flatMap((feature) => feature.choices ?? [])
   const expertiseIds = Object.entries(character.classFeatureChoices)
@@ -525,35 +655,107 @@ export function CharacterPlaySheet({
     .flatMap(([, choices]) => choices)
   const expertiseNames = expertiseIds.flatMap((id) => featureChoices.flatMap((choice) => choice.options).filter((option) => option.id === id).map((option) => option.name))
   const spellSlots = getSpellSlotsAtClassLevel(classId, character.classSubclassId, character.level)
-  const spellPreparationLimit = getSpellPreparationLimit(classId, character.level, modifier(character.abilities.wisdom), modifier(character.abilities.charisma))
+  const spellPreparationLimit = getSpellPreparationLimit(classId, character.level, modifier(effectiveAbilities.wisdom), modifier(effectiveAbilities.charisma), modifier(effectiveAbilities.intelligence))
   const canPrepareSpells = spellPreparationLimit !== null && spellSlots.some((count) => count > 0)
   const circleTerrain = character.classFeatureChoices[
     `${character.characterClassId}:circulo-da-terra:2:Terreno do Círculo:terra`
   ]?.[0]
   const spellPreparationOptionsByLevel = getSpellListForSelection(classId, character.classSubclassId, circleTerrain)
+  const savedSpells = selectedSpells(character.spells, classId)
   const spellPreparationOptions = Object.entries(spellPreparationOptionsByLevel)
     .filter(([level]) => Number(level) <= spellSlots.length)
     .flatMap(([level, names]) => names.map((name) => ({ name, level: Number(level) })))
+    .filter(({ name }) => classId !== 'mago' || savedSpells.spellbook.some((knownName) => normalize(knownName) === normalize(name)))
+  const filteredSpellPreparationOptions = spellPreparationOptions.filter(({ name, level }) =>
+    (spellPreparationLevelFilter === null || level === spellPreparationLevelFilter)
+    && normalize(name).includes(normalize(spellPreparationSearch.trim())))
+  const alwaysPreparedSpellsByLevel = getAlwaysPreparedSpells(classId, character.classSubclassId, character.level, circleTerrain)
+  const alwaysPreparedSpellNames = new Set(Object.values(alwaysPreparedSpellsByLevel).flat())
   const spellcastingAbilityName = classId === 'guerreiro' && character.classSubclassId === 'cavaleiro-arcano'
     || classId === 'ladino' && character.classSubclassId === 'trapaceiro-arcano'
     ? 'Inteligência'
     : spellcastingAbilityByClass[classId]
   const spellcastingAbility = abilities.find(([, name]) => name === spellcastingAbilityName)
-  const spellcastingModifier = spellcastingAbility ? modifier(character.abilities[spellcastingAbility[0]]) : null
+  const spellcastingModifier = spellcastingAbility ? modifier(effectiveAbilities[spellcastingAbility[0]]) : null
   const spellSaveDc = spellcastingModifier === null ? '—' : 8 + proficiencyBonus + spellcastingModifier
   const spellAttackBonus = spellcastingModifier === null ? '—' : signed(proficiencyBonus + spellcastingModifier)
   const spentSpellSlotsForCasting = [...playState.spentSpellSlots, ...pendingSpellSlots]
-  const knownSpells = selectedSpells(character.spells, classId)
-  const preparedSpellNames = Object.values(knownSpells.levels).flat()
+  const chainPactSelected = hasWarlockPact(classId, character.classSubclassId, character.classFeatureChoices, 'pacto-da-corrente', character.characterClassId)
+  const tomePactSelected = hasWarlockPact(classId, character.classSubclassId, character.classFeatureChoices, 'pacto-do-tomo', character.characterClassId)
+  const selectedWarlockPact = character.classFeatureChoices[warlockPactChoiceKey(character.characterClassId, character.classSubclassId)]?.[0]
+  const selectedInvocationIds = classId === 'bruxo'
+    ? Object.entries(character.classFeatureChoices).filter(([key]) => key.endsWith(':mystic-invocations')).flatMap(([, selected]) => selected)
+    : []
+  const eligibleInvocationIds = new Set((classFeatures.bruxo?.features ?? [])
+    .filter((feature) => feature.level <= character.level)
+    .flatMap((feature) => (feature.choices ?? []).filter((choice) => choice.id === 'mystic-invocations')
+      .flatMap((choice) => choice.options.filter((option) => (option.level === undefined || option.level <= character.level)
+        && warlockInvocationIsAvailable(option, selectedWarlockPact)).map((option) => option.id))))
+  const invocationSpellGrants = getWarlockInvocationSpellGrants(selectedInvocationIds.filter((id) => eligibleInvocationIds.has(id)))
+  const ancientSecretsInvocationKey = classId === 'bruxo'
+    ? Object.entries(character.classFeatureChoices).find(([key, selected]) => key.endsWith(':mystic-invocations') && selected.includes('livro-de-segredos-antigos'))?.[0]
+    : undefined
+  const ancientSecretsRitualKey = ancientSecretsInvocationKey ? ancientSecretsRitualChoiceKey(ancientSecretsInvocationKey) : undefined
+  const ancientSecretsRituals = ancientSecretsRitualKey ? character.classFeatureChoices[ancientSecretsRitualKey] ?? [] : []
+  const wizardSpellbookOptions = classId === 'mago'
+    ? Object.entries(getSpellListForSelection('mago', character.classSubclassId))
+      .filter(([level]) => Number(level) <= spellSlots.length)
+      .flatMap(([level, names]) => names.map((name) => ({ name, level: Number(level) })))
+      .filter(({ name }) => !savedSpells.spellbook.some((known) => normalize(known) === normalize(name)))
+    : []
+  const landCantripChoiceKey = `${character.characterClassId}:${character.classSubclassId}:2:Truque Adicional:land-bonus-cantrip`
+  const grantedCantrips = getGrantedClassCantrips(classId, character.classSubclassId, character.level, character.classFeatureChoices[landCantripChoiceKey]?.[0])
+  const selectedTomeCantrips = getPactTomeCantrips(classId, character.classSubclassId, character.classFeatureChoices, character.characterClassId)
+  const tomeBookEquipped = inventory.entries.some((entry) => entry.itemId === 'livro-das-sombras' && entry.equipped)
+  const wizardPreparedSpells = classId === 'mago'
+    ? savedSpells.hasPreparedSpellSelection
+      ? Object.values(savedSpells.levels).flat()
+      : savedSpells.spellbook.slice(0, spellPreparationLimit ?? 0)
+    : []
+  const knownSpellLevels = classId === 'mago'
+    ? Object.fromEntries(Object.entries(savedSpells.levels).map(([level, names]) => [Number(level), names.filter((name) => wizardPreparedSpells.some((prepared) => normalize(prepared) === normalize(name))) ]))
+    : { ...savedSpells.levels }
+  if (chainPactSelected) {
+    knownSpellLevels[1] = [...new Set([...(knownSpellLevels[1] ?? []), 'Convocar Familiar'])]
+  }
+  if (classId === 'mago') {
+    for (const name of savedSpells.spellbook.filter((spell) => isRitualSpell(spell) && !wizardPreparedSpells.some((prepared) => normalize(prepared) === normalize(spell)))) {
+      const level = getSpellLevel(name, classId) ?? 1
+      knownSpellLevels[level] = [...new Set([...(knownSpellLevels[level] ?? []), name])]
+    }
+  }
+  for (const name of ancientSecretsRituals) {
+    const level = getSpellLevel(name) ?? 1
+    knownSpellLevels[level] = [...new Set([...(knownSpellLevels[level] ?? []), name])]
+  }
+  for (const grant of invocationSpellGrants) {
+    knownSpellLevels[grant.level] = [...new Set([...(knownSpellLevels[grant.level] ?? []), grant.spellName])]
+  }
+  for (const [level, names] of Object.entries(alwaysPreparedSpellsByLevel)) {
+    const spellLevel = Number(level)
+    knownSpellLevels[spellLevel] = [...new Set([...(knownSpellLevels[spellLevel] ?? []), ...names])]
+  }
+  const knownSpells = {
+    ...savedSpells,
+    levels: knownSpellLevels,
+    cantrips: [...new Set([...savedSpells.cantrips, ...grantedCantrips, ...selectedTomeCantrips])],
+  }
+  const invocationGrantBySpell = new Map(invocationSpellGrants.map((grant) => [normalize(grant.spellName), grant]))
+  const preparedSpellNames = (classId === 'mago' ? wizardPreparedSpells : Object.values(savedSpells.levels).flat())
+    .filter((name) => !alwaysPreparedSpellNames.has(name))
   const initiative = dexterityModifier
   const baseSpeed = /anao|halfling|gnomo/.test(normalize(race)) ? 7.5 : 9
   const unarmoredMovement = !equippedArmor && !equippedShield
     ? classId === 'monge' && character.level >= 2 ? 3 + Math.floor(Math.max(0, character.level - 2) / 4) * 1.5
       : classId === 'barbaro' && character.level >= 5 ? 3 : 0
     : 0
-  const walkingSpeed = baseSpeed + unarmoredMovement
-  const unarmoredBonus = classId === 'barbaro' ? modifier(character.abilities.constitution) : classId === 'monge' && !equippedShield ? modifier(character.abilities.wisdom) : 0
-  const armorClass = calculateArmorClass(equippedArmor, equippedShield, dexterityModifier, unarmoredBonus)
+  const calculatedWalkingSpeed = baseSpeed + unarmoredMovement
+  const movementSpeedOverridden = Number.isFinite(character.movementSpeedOverride) && (character.movementSpeedOverride ?? -1) >= 0
+  const walkingSpeed = movementSpeedOverridden ? character.movementSpeedOverride! : calculatedWalkingSpeed
+  const unarmoredBonus = classId === 'barbaro' ? modifier(effectiveAbilities.constitution) : classId === 'monge' && !equippedShield ? modifier(effectiveAbilities.wisdom) : 0
+  const calculatedArmorClass = calculateArmorClass(equippedArmor, equippedShield, dexterityModifier, unarmoredBonus)
+  const armorClassOverridden = Number.isSafeInteger(character.armorClassOverride) && (character.armorClassOverride ?? 0) > 0
+  const armorClass = armorClassOverridden ? character.armorClassOverride! : calculatedArmorClass
   const armorClassBreakdown = getArmorClassBreakdown(equippedArmor, equippedShield, dexterityModifier, unarmoredBonus)
 
   useEffect(() => {
@@ -663,6 +865,289 @@ export function CharacterPlaySheet({
     }
   }
 
+  function openFeatureChoiceEditor(edit: FeatureChoiceEdit) {
+    setFeatureChoiceEdit(edit)
+    setFeatureChoiceDraft(edit.selected)
+    setFeatureChoiceSearch('')
+  }
+
+  async function confirmFeatureChoiceEdit() {
+    if (!featureChoiceEdit || featureChoiceSaving || featureChoiceDraft.length !== featureChoiceEdit.selectionCount) return
+    setFeatureChoiceSaving(true)
+    const classFeatureChoices = { ...character.classFeatureChoices, [featureChoiceEdit.key]: featureChoiceDraft }
+    if (featureChoiceEdit.ritualChoiceKey && !featureChoiceDraft.includes('livro-de-segredos-antigos')) {
+      delete classFeatureChoices[featureChoiceEdit.ritualChoiceKey]
+    }
+    const saved = await save({ ...character, classFeatureChoices }, playState, {
+      success: `${featureChoiceEdit.choiceName} atualizado.`,
+      error: `Não foi possível atualizar ${featureChoiceEdit.choiceName.toLocaleLowerCase('pt-BR')}.`,
+    })
+    setFeatureChoiceSaving(false)
+    if (saved) setFeatureChoiceEdit(null)
+  }
+
+  function getAbilityIncreaseKey(level: number) {
+    return `ability-score-increase:${character.characterClassId}:${level}`
+  }
+
+  function abilityScoresBeforeIncrease(level: number) {
+    const key = getAbilityIncreaseKey(level)
+    const featKey = `${key}:feat`
+    const nextAbilities = { ...character.abilities }
+    const mode = character.classFeatureChoices[`${key}:mode`]?.[0]
+    if (mode === 'feat') {
+      const bonus = character.featAbilityIncreases?.[featKey]
+      if (bonus) nextAbilities[bonus.ability] = String(Number(nextAbilities[bonus.ability]) - bonus.amount)
+    } else {
+      const selected = character.abilityScoreIncreases?.classId === character.characterClassId
+        ? character.abilityScoreIncreases.selections[key] ?? character.classFeatureChoices[key] ?? []
+        : character.classFeatureChoices[key] ?? []
+      const amount = selected.length === 1 ? 2 : 1
+      for (const ability of selected) nextAbilities[ability] = String(Number(nextAbilities[ability]) - amount)
+    }
+    return nextAbilities
+  }
+
+  function featFailureForAbilityIncrease(featId: string, level: number) {
+    const feat = feats.find((candidate) => candidate.id === featId)
+    if (!feat) return 'Escolha um talento.'
+    const key = getAbilityIncreaseKey(level)
+    const duplicate = Object.entries(character.classFeatureChoices)
+      .filter(([choiceKey]) => choiceKey.startsWith('ability-score-increase:') && choiceKey.endsWith(':feat') && choiceKey !== `${key}:feat`)
+      .some(([, selected]) => selected.includes(feat.id))
+    if (duplicate && !feat.repeatable) return 'Este talento só pode ser escolhido uma vez.'
+
+    const otherFeatIds = Object.entries(character.classFeatureChoices)
+      .filter(([choiceKey]) => choiceKey.startsWith('ability-score-increase:') && choiceKey.endsWith(':feat') && choiceKey !== `${key}:feat`)
+      .flatMap(([, selected]) => selected)
+    const canCastSpells = otherFeatIds.includes('iniciado-em-magia')
+      || (['bardo', 'bruxo', 'clerigo', 'druida', 'feiticeiro', 'mago'].includes(classId) && character.level >= 1)
+      || (['paladino', 'patrulheiro'].includes(classId) && character.level >= 2)
+      || (classId === 'guerreiro' && character.classSubclassId === 'cavaleiro-arcano' && character.level >= 3)
+      || (classId === 'ladino' && character.classSubclassId === 'trapaceiro-arcano' && character.level >= 3)
+    const armorProficiencies = [
+      ...(classArmorProficiencies[classId] ?? []),
+      ...(classId === 'bardo' && character.classSubclassId === 'colegio-da-bravura' ? ['Armaduras médias'] : []),
+      ...(classData?.subclasses.find(({ id }) => id === character.classSubclassId)?.features.some((feature) => feature.level <= character.level && normalize(feature.description).includes('armaduras pesadas')) ? ['Armaduras pesadas'] : []),
+      ...(normalize(race).includes('anao') ? ['Armaduras leves', 'Armaduras médias'] : []),
+      ...otherFeatIds.flatMap((id) => id === 'protecao-leve' ? ['Armaduras leves'] : id === 'protecao-moderada' ? ['Armaduras médias'] : id === 'protecao-pesada' ? ['Armaduras pesadas'] : []),
+    ]
+    const abilitiesBeforeIncrease = getEffectiveAbilityScores({ ...character, abilities: abilityScoresBeforeIncrease(level) })
+    return getFeatPrerequisiteFailure(feat, abilitiesBeforeIncrease, canCastSpells, armorProficiencies)
+  }
+
+  function openAbilityIncreaseEditor(level: number) {
+    const key = getAbilityIncreaseKey(level)
+    const featKey = `${key}:feat`
+    const mode = character.classFeatureChoices[`${key}:mode`]?.[0] === 'feat' ? 'feat' : 'ability'
+    setAbilityIncreaseEditDraft({
+      level,
+      mode,
+      abilities: character.abilityScoreIncreases?.classId === character.characterClassId
+        ? character.abilityScoreIncreases.selections[key] ?? character.classFeatureChoices[key] ?? []
+        : character.classFeatureChoices[key] ?? [],
+      featId: character.classFeatureChoices[featKey]?.[0] ?? '',
+      featAbility: character.featAbilityIncreases?.[featKey]?.ability ?? '',
+    })
+  }
+
+  async function confirmAbilityIncreaseEdit() {
+    const draft = abilityIncreaseEditDraft
+    if (!draft || abilityIncreaseSaving) return
+    const key = getAbilityIncreaseKey(draft.level)
+    const featKey = `${key}:feat`
+    const modeKey = `${key}:mode`
+    const nextAbilities = abilityScoresBeforeIncrease(draft.level)
+    const nextClassFeatureChoices = { ...character.classFeatureChoices }
+    const nextIncreases = character.abilityScoreIncreases?.classId === character.characterClassId
+      ? { ...character.abilityScoreIncreases.selections }
+      : {}
+    const nextFeatAbilityIncreases = { ...(character.featAbilityIncreases ?? {}) }
+    delete nextIncreases[key]
+    delete nextClassFeatureChoices[key]
+    delete nextClassFeatureChoices[featKey]
+    delete nextFeatAbilityIncreases[featKey]
+
+    if (draft.mode === 'ability') {
+      const effective = getEffectiveAbilityScores({ ...character, abilities: nextAbilities })
+      const amount = draft.abilities.length === 1 ? 2 : 1
+      const valid = (draft.abilities.length === 1 || draft.abilities.length === 2)
+        && new Set(draft.abilities).size === draft.abilities.length
+        && draft.abilities.every((ability) => Number(effective[ability]) + amount <= 20)
+      if (!valid) return
+      for (const ability of draft.abilities) nextAbilities[ability] = String(Number(nextAbilities[ability]) + amount)
+      nextIncreases[key] = draft.abilities
+      nextClassFeatureChoices[key] = draft.abilities
+      nextClassFeatureChoices[modeKey] = ['ability']
+    } else {
+      const feat = feats.find((candidate) => candidate.id === draft.featId)
+      if (!feat || featFailureForAbilityIncrease(feat.id, draft.level)) return
+      const effective = getEffectiveAbilityScores({ ...character, abilities: nextAbilities })
+      const bonus = feat.abilityBonus ? getFeatAbilityBonus(feat, effective, draft.featAbility) : null
+      if (feat.abilityBonus && !bonus) return
+      if (bonus?.amount) nextAbilities[bonus.ability] = String(Number(nextAbilities[bonus.ability]) + bonus.amount)
+      if (bonus) nextFeatAbilityIncreases[featKey] = bonus
+      nextClassFeatureChoices[modeKey] = ['feat']
+      nextClassFeatureChoices[featKey] = [feat.id]
+    }
+
+    setAbilityIncreaseSaving(true)
+    const saved = await save({
+      ...character,
+      abilities: nextAbilities,
+      classFeatureChoices: nextClassFeatureChoices,
+      abilityScoreIncreases: { classId: character.characterClassId, selections: nextIncreases },
+      featAbilityIncreases: nextFeatAbilityIncreases,
+    }, playState, { success: 'Incremento no valor de habilidade atualizado.', error: 'Não foi possível atualizar o incremento no valor de habilidade.' })
+    setAbilityIncreaseSaving(false)
+    if (saved) setAbilityIncreaseEditDraft(null)
+  }
+
+  function toggleFeatureChoice(optionId: string, selectionCount: number) {
+    setFeatureChoiceDraft((selected) => {
+      if (selectionCount === 1) return [optionId]
+      if (selected.includes(optionId)) return selected.filter((id) => id !== optionId)
+      if (selected.length >= selectionCount) return selected
+      return [...selected, optionId]
+    })
+  }
+
+  async function confirmSubclassEdit() {
+    const nextSubclassId = subclassEditDraft
+    const previousSubclassId = character.classSubclassId
+    if (!nextSubclassId || !previousSubclassId || nextSubclassId === previousSubclassId || subclassEditSaving || !classData) return
+
+    const nextChoices = rebaseClassFeatureChoicesForSubclass(
+      character.classFeatureChoices,
+      character.characterClassId,
+      previousSubclassId,
+      nextSubclassId,
+      classData.features,
+    )
+    const previousInvocationKey = Object.entries(character.classFeatureChoices).find(([key, selected]) =>
+      key.startsWith(`${character.characterClassId}:${previousSubclassId}:`)
+      && key.endsWith(':mystic-invocations')
+      && selected.includes('livro-de-segredos-antigos'),
+    )?.[0]
+    const nextInvocationKey = Object.entries(nextChoices).find(([key, selected]) =>
+      key.startsWith(`${character.characterClassId}:${nextSubclassId}:`)
+      && key.endsWith(':mystic-invocations')
+      && selected.includes('livro-de-segredos-antigos'),
+    )?.[0]
+    if (previousInvocationKey && nextInvocationKey) {
+      const ritualSelection = character.classFeatureChoices[ancientSecretsRitualChoiceKey(previousInvocationKey)]
+      if (ritualSelection?.length) nextChoices[ancientSecretsRitualChoiceKey(nextInvocationKey)] = ritualSelection
+    }
+
+    const previousTomeCantripKey = warlockTomeCantripChoiceKey(character.characterClassId, previousSubclassId)
+    const nextTomeCantripKey = warlockTomeCantripChoiceKey(character.characterClassId, nextSubclassId)
+    const tomeCantrips = character.classFeatureChoices[previousTomeCantripKey]
+    const pactChoice = nextChoices[warlockPactChoiceKey(character.characterClassId, nextSubclassId)] ?? []
+    if (tomeCantrips?.length && pactChoice.includes('pacto-do-tomo')) nextChoices[nextTomeCantripKey] = tomeCantrips
+
+    setSubclassEditSaving(true)
+    try {
+      const saved = await save({ ...character, classSubclassId: nextSubclassId, classFeatureChoices: nextChoices }, playState, {
+        success: 'Subclasse atualizada.',
+        error: 'Não foi possível atualizar a subclasse. Tente novamente.',
+      })
+      if (saved) setSubclassEditDraft(null)
+    } finally {
+      setSubclassEditSaving(false)
+    }
+  }
+
+  function openArmorClassDialog() {
+    setArmorClassOverrideDraft(armorClassOverridden ? String(character.armorClassOverride) : '')
+    setArmorClassOverrideError('')
+    setDetailsDialog('armorClass')
+  }
+
+  async function saveArmorClassOverride() {
+    if (armorClassOverrideSaving) return
+    const value = armorClassOverrideDraft.trim() === '' ? undefined : Number(armorClassOverrideDraft)
+    if (value !== undefined && (!Number.isSafeInteger(value) || value < 1)) {
+      setArmorClassOverrideError('Informe um valor inteiro de CA maior que zero, ou deixe o campo vazio para usar o cálculo automático.')
+      return
+    }
+
+    setArmorClassOverrideError('')
+    setArmorClassOverrideSaving(true)
+    try {
+      const saved = await save({ ...character, armorClassOverride: value }, playState, {
+        success: value === undefined
+          ? `Sobrescrita removida. CA automática: ${calculatedArmorClass}.`
+          : `Classe de Armadura sobrescrita para ${value}.`,
+        error: 'Não foi possível salvar a Classe de Armadura. Tente novamente.',
+      })
+      if (saved) setDetailsDialog(null)
+    } finally {
+      setArmorClassOverrideSaving(false)
+    }
+  }
+
+  function openMovementDialog() {
+    setMovementSpeedOverrideDraft(movementSpeedOverridden ? String(character.movementSpeedOverride) : '')
+    setMovementSpeedOverrideError('')
+    setDetailsDialog('movement')
+  }
+
+  async function saveMovementSpeedOverride() {
+    if (movementSpeedOverrideSaving) return
+    const value = movementSpeedOverrideDraft.trim() === '' ? undefined : Number(movementSpeedOverrideDraft)
+    if (value !== undefined && (!Number.isFinite(value) || value < 0)) {
+      setMovementSpeedOverrideError('Informe um deslocamento igual ou maior que zero, ou deixe o campo vazio para usar o cálculo automático.')
+      return
+    }
+
+    setMovementSpeedOverrideError('')
+    setMovementSpeedOverrideSaving(true)
+    try {
+      const saved = await save({ ...character, movementSpeedOverride: value }, playState, {
+        success: value === undefined
+          ? `Sobrescrita removida. Deslocamento automático: ${calculatedWalkingSpeed} m.`
+          : `Deslocamento sobrescrito para ${value} m.`,
+        error: 'Não foi possível salvar o deslocamento. Tente novamente.',
+      })
+      if (saved) setDetailsDialog(null)
+    } finally {
+      setMovementSpeedOverrideSaving(false)
+    }
+  }
+
+  function openAbilityScoreDialog(key: AbilityKey) {
+    setAbilityScoreOverrideDraft(abilityScoreOverridden(key) ? String(character.abilityScoreOverrides?.[key]) : '')
+    setAbilityScoreOverrideError('')
+    setDetailsDialog({ ability: key })
+  }
+
+  async function saveAbilityScoreOverride() {
+    if (abilityScoreOverrideSaving || !detailsDialog || typeof detailsDialog !== 'object') return
+    const { ability } = detailsDialog
+    const value = abilityScoreOverrideDraft.trim() === '' ? undefined : Number(abilityScoreOverrideDraft)
+    if (value !== undefined && (!Number.isSafeInteger(value) || value < 1 || value > 30)) {
+      setAbilityScoreOverrideError('Informe um valor inteiro entre 1 e 30, ou deixe o campo vazio para usar o valor original.')
+      return
+    }
+
+    const overrides = { ...character.abilityScoreOverrides }
+    if (value === undefined) delete overrides[ability]
+    else overrides[ability] = value
+    setAbilityScoreOverrideError('')
+    setAbilityScoreOverrideSaving(true)
+    try {
+      const saved = await save({ ...character, abilityScoreOverrides: Object.keys(overrides).length ? overrides : undefined }, playState, {
+        success: value === undefined
+          ? `Sobrescrita de ${abilities.find(([key]) => key === ability)?.[1] ?? ability} removida.`
+          : `${abilities.find(([key]) => key === ability)?.[1] ?? ability} sobrescrita para ${value}.`,
+        error: 'Não foi possível salvar o valor da habilidade. Tente novamente.',
+      })
+      if (saved) setDetailsDialog(null)
+    } finally {
+      setAbilityScoreOverrideSaving(false)
+    }
+  }
+
   useEffect(() => {
     const savedConditions = character.activeConditions ?? []
     if (playState.currentHp !== 0 || savedConditions.includes('Inconsciente')) return
@@ -678,16 +1163,83 @@ export function CharacterPlaySheet({
   async function saveExperience(experience: number) {
     const targetLevel = levelForExperience(experience)
     const levelGained = targetLevel > character.level
+    const levelLost = targetLevel < character.level
     const levelMessage = levelGained ? ` O personagem alcançou o nível ${targetLevel}.` : ''
+    const rolledBackCharacter = levelLost ? rollbackCharacterLevels(character, targetLevel, classId) : character
+    const nextPlayState = levelLost
+      ? rollbackPlayStateForLevel(playState, targetLevel, Number(rolledBackCharacter.maxHp) || 1) ?? playState
+      : playState
     const saved = await save({
-      ...character,
+      ...rolledBackCharacter,
       experiencePoints: String(experience),
       ...(!levelGained ? { level: targetLevel } : {}),
-    }, playState, {
+    }, nextPlayState, {
       success: `Pontos de XP atualizados para ${experience.toLocaleString('pt-BR')}.${levelMessage}`,
       error: 'Não foi possível atualizar os pontos de XP. Tente novamente.',
     })
-    if (saved && levelGained) setLevelUpTarget({ experience, level: targetLevel })
+    if (saved && levelGained) {
+      setLevelUpTarget({ experience, level: targetLevel })
+      setLevelUpStartLevel(character.level)
+      setLevelUpStep(character.level + 1)
+      setLevelUpWorkingCharacter({ ...character, experiencePoints: String(experience) })
+      setLevelUpReviewStep(null)
+      setLevelUpStepRecords({})
+    }
+    return saved
+  }
+
+  function closeLevelUp() {
+    setLevelUpTarget(null)
+    setLevelUpStartLevel(null)
+    setLevelUpStep(null)
+    setLevelUpWorkingCharacter(null)
+    setLevelUpReviewStep(null)
+    setLevelUpStepRecords({})
+  }
+
+  function cancelOrReturnLevelUp() {
+    const activeStep = levelUpReviewStep ?? levelUpStep
+    if (activeStep !== null && levelUpStartLevel !== null && activeStep > levelUpStartLevel + 1) {
+      const previousStep = activeStep - 1
+      setLevelUpStep(previousStep)
+      setLevelUpReviewStep(previousStep)
+      return
+    }
+    closeLevelUp()
+  }
+
+  function completeLevelUpStep() {
+    const activeStep = levelUpReviewStep ?? levelUpStep
+    if (activeStep === null || !levelUpTarget) return
+    if (activeStep < levelUpTarget.level) {
+      setLevelUpStep(activeStep + 1)
+      setLevelUpReviewStep(null)
+      return
+    }
+    closeLevelUp()
+  }
+
+  async function confirmLevelUp(next: CharacterDetails, _hitPointIncrease: number) {
+    const activeStep = levelUpReviewStep ?? levelUpStep
+    if (activeStep === null) return false
+    const record = levelUpStepRecords[activeStep]
+    const stepBase = levelUpReviewStep === activeStep ? record?.before : levelUpWorkingCharacter
+    const current = stepBase ?? character
+    const previousPact = current.classFeatureChoices[warlockPactChoiceKey(current.characterClassId, current.classSubclassId)] ?? []
+    const nextPact = next.classFeatureChoices[warlockPactChoiceKey(next.characterClassId, next.classSubclassId)] ?? []
+    const grantsTome = !previousPact.includes('pacto-do-tomo') && nextPact.includes('pacto-do-tomo')
+    const tomeBook = catalog?.items.find((item) => item.id === 'livro-das-sombras')
+    const currentInventory = readInventory(current.equipment, catalog ?? undefined)
+    if (grantsTome && tomeBook && !currentInventory.entries.some((entry) => entry.itemId === tomeBook.id)) {
+      const nextInventory = addInventoryItem(currentInventory, tomeBook, 1, 'feature:livro-das-sombras', 'Pacto do Tomo')
+      next.equipment = JSON.stringify(nextInventory)
+      setOptimisticEquipment({ base: current.equipment, value: next.equipment })
+    }
+    const saved = await save(next, { ...playState })
+    if (saved) {
+      setLevelUpStepRecords((records) => ({ ...records, [activeStep]: { before: current, saved: next } }))
+      setLevelUpWorkingCharacter(next)
+    }
     return saved
   }
 
@@ -851,10 +1403,14 @@ export function CharacterPlaySheet({
     setSpellCastAnimation((current) => current?.id === id ? null : current)
   }
 
-  function castUsingSlot(slotId: string, spellName: string) {
+  function castUsingSlot(slotId: string, spellName: string, invocationId?: string) {
     if (spentSpellSlotsForCasting.includes(slotId)) return
+    if (invocationId && playState.usedInvocationSpellUses?.includes(invocationId)) return
     setPendingSpellSlots((current) => current.includes(slotId) ? current : [...current, slotId])
-    const nextState = toggleSpellSlot(playState, slotId)
+    const toggledState = toggleSpellSlot(playState, slotId)
+    const nextState = invocationId
+      ? { ...toggledState, usedInvocationSpellUses: [...new Set([...(playState.usedInvocationSpellUses ?? []), invocationId])] }
+      : toggledState
     void save(character, nextState, { error: `Não foi possível conjurar ${spellName}. Tente novamente.` }).then((saved) => {
       if (saved) showSpellCastAnimation(spellName)
     }).finally(() => {
@@ -1025,6 +1581,7 @@ export function CharacterPlaySheet({
   function openSpellPreparationDrawer() {
     setSpellPreparationDraft(preparedSpellNames)
     setSpellPreparationLevelFilter(null)
+    setSpellPreparationSearch('')
     setSpellPreparationPromptOpen(false)
     setSpellPreparationDrawerOpen(true)
   }
@@ -1038,10 +1595,9 @@ export function CharacterPlaySheet({
   async function confirmSpellPreparation() {
     if (spellPreparationSaving) return
     const spellLevelByName = Object.fromEntries(spellPreparationOptions.map(({ name, level }) => [name, level]))
-    const spells = JSON.stringify({
-      cantrips: knownSpells.cantrips,
-      spells: groupSpellChoicesByLevel(spellPreparationDraft, spellLevelByName),
-    })
+    const spells = JSON.stringify(classId === 'mago'
+      ? { cantrips: knownSpells.cantrips, knownSpells: savedSpells.spellbook, preparedSpells: spellPreparationDraft }
+      : { cantrips: knownSpells.cantrips, spells: groupSpellChoicesByLevel(spellPreparationDraft, spellLevelByName) })
     setSpellPreparationSaving(true)
     try {
       const saved = await save({ ...character, spells }, playState, {
@@ -1092,16 +1648,16 @@ export function CharacterPlaySheet({
     setConditionSavePending(false)
   }
 
-  function openCastDialog(name: string, level: number) {
+  function openCastDialog(name: string, level: number, invocationId?: string) {
     const availableLevels = availableSpellSlotLevels(spellSlots, spentSpellSlotsForCasting, level)
     if (level > 0 && availableLevels.length === 0) return
     if (level > 0 && availableLevels.length === 1) {
       const firstSlot = availableSpellSlots(spellSlots, spentSpellSlotsForCasting, level)
         .find((slotId) => Number(slotId.split(':')[0]) === availableLevels[0])
-      if (firstSlot) castUsingSlot(firstSlot, name)
+      if (firstSlot) castUsingSlot(firstSlot, name, invocationId)
       return
     }
-    setSpellToCast({ name, level })
+    setSpellToCast({ name, level, invocationId })
     setSelectedSpellSlotLevel(availableLevels[0] ?? null)
   }
 
@@ -1112,7 +1668,7 @@ export function CharacterPlaySheet({
       const slotId = availableSpellSlots(spellSlots, spentSpellSlotsForCasting, spellToCast.level)
         .find((availableId) => Number(availableId.split(':')[0]) === selectedSpellSlotLevel)
       if (!slotId) return
-      castUsingSlot(slotId, spellToCast.name)
+      castUsingSlot(slotId, spellToCast.name, spellToCast.invocationId)
     } else {
       showSpellCastAnimation(spellToCast.name)
     }
@@ -1122,9 +1678,9 @@ export function CharacterPlaySheet({
   function renderAbilityScores() {
     return <section aria-label="Valores de habilidade" className="play-sheet__scores">
       {abilities.map(([key, , short]) => {
-        const score = character.abilities[key] || '—'
+        const score = effectiveAbilities[key] || '—'
         const value = modifier(score)
-        return <article className="play-sheet__score" key={key}>
+        return <article aria-haspopup="dialog" aria-label={`${abilities.find(([id]) => id === key)?.[1] ?? key}: ${score}, modificador ${signed(value)}. Abrir detalhes para sobrescrever.`} className={`play-sheet__score${abilityScoreOverridden(key) ? ' play-sheet__score--overridden' : ''}`} key={key} onClick={() => openAbilityScoreDialog(key)} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openAbilityScoreDialog(key) } }} role="button" tabIndex={0}>
           <div className="play-sheet__score-wrap"><div aria-hidden="true" className="play-sheet__score-glass" /><div aria-hidden="true" className="play-sheet__score-frame" style={frameStyle('ability', frameSvgPaths.ability)} /><span className="play-sheet__score-label">{short}</span><strong>{signed(value)}</strong><small>{score}</small></div>
         </article>
       })}
@@ -1134,13 +1690,15 @@ export function CharacterPlaySheet({
   function renderAbilities() {
     const proficientSaves = savingThrowsByClass[classId] ?? []
     const passiveSkills = ['Percepção', 'Investigação', 'Intuição']
+    const abilityDialog = typeof detailsDialog === 'object' ? detailsDialog : null
+    const abilityDialogLabel = abilityDialog ? abilities.find(([key]) => key === abilityDialog.ability)?.[1] ?? abilityDialog.ability : ''
     return <>
       <div className="play-sheet__abilities">
       <div className="play-sheet__overview">
         {renderAbilityScores()}
         <div className="play-sheet__vitals">
-          <div aria-haspopup="dialog" aria-label={`Iniciativa ${signed(initiative)}, abrir explicação`} className="play-sheet__vital--default play-sheet__vital--interactive" onClick={() => setDetailsDialog('initiative')} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setDetailsDialog('initiative') } }} role="button" tabIndex={0}><div aria-hidden="true" className="play-sheet__vital-glass" /><div aria-hidden="true" className="play-sheet__vital-frame" style={frameStyle('defaultStat', frameSvgPaths.defaultStat)} /><strong>{signed(initiative)}</strong><span>Iniciativa</span></div><div className="play-sheet__vital--default"><div aria-hidden="true" className="play-sheet__vital-glass" /><div aria-hidden="true" className="play-sheet__vital-frame" style={frameStyle('defaultStat', frameSvgPaths.defaultStat)} /><strong>{walkingSpeed}m</strong><span>DSL</span></div>
-          <div aria-haspopup="dialog" aria-label={`Classe de armadura ${armorClass}, abrir detalhes`} className="play-sheet__vital--armor play-sheet__vital--interactive" onClick={() => setDetailsDialog('armorClass')} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setDetailsDialog('armorClass') } }} role="button" tabIndex={0}><div aria-hidden="true" className="play-sheet__vital-glass" /><div aria-hidden="true" className="play-sheet__vital-frame" style={frameStyle('armorClass', frameSvgPaths.armorClass)} /><strong>{armorClass}</strong><span>CA</span></div>
+          <div aria-haspopup="dialog" aria-label={`Iniciativa ${signed(initiative)}, abrir explicação`} className="play-sheet__vital--default play-sheet__vital--interactive" onClick={() => setDetailsDialog('initiative')} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); setDetailsDialog('initiative') } }} role="button" tabIndex={0}><div aria-hidden="true" className="play-sheet__vital-glass" /><div aria-hidden="true" className="play-sheet__vital-frame" style={frameStyle('defaultStat', frameSvgPaths.defaultStat)} /><strong>{signed(initiative)}</strong><span>Iniciativa</span></div><div aria-haspopup="dialog" aria-label={`Deslocamento ${walkingSpeed} metros, abrir detalhes`} className={`play-sheet__vital--default play-sheet__vital--interactive${movementSpeedOverridden ? ' play-sheet__vital--movement-overridden' : ''}`} onClick={openMovementDialog} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openMovementDialog() } }} role="button" tabIndex={0}><div aria-hidden="true" className="play-sheet__vital-glass" /><div aria-hidden="true" className="play-sheet__vital-frame" style={frameStyle('defaultStat', frameSvgPaths.defaultStat)} /><strong>{walkingSpeed}m</strong><span>DSL</span></div>
+          <div aria-haspopup="dialog" aria-label={`Classe de armadura ${armorClass}, abrir detalhes`} className={`play-sheet__vital--armor play-sheet__vital--interactive${armorClassOverridden ? ' play-sheet__vital--armor-overridden' : ''}`} onClick={openArmorClassDialog} onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); openArmorClassDialog() } }} role="button" tabIndex={0}><div aria-hidden="true" className="play-sheet__vital-glass" /><div aria-hidden="true" className="play-sheet__vital-frame" style={frameStyle('armorClass', frameSvgPaths.armorClass)} /><strong>{armorClass}</strong><span>CA</span></div>
         </div>
       </div>
       <section className="play-sheet__panel play-sheet__checks">
@@ -1148,7 +1706,7 @@ export function CharacterPlaySheet({
           <h2>Salvaguardas</h2>
             {abilities.map(([key, label]) => {
               const proficient = proficientSaves.includes(key)
-              const saveModifier = modifier(character.abilities[key]) + (proficient ? proficiencyBonus : 0)
+              const saveModifier = modifier(effectiveAbilities[key]) + (proficient ? proficiencyBonus : 0)
               return <div className="play-sheet__check" key={key} style={{ borderColor: frameColor }}>
                 <div aria-hidden="true" className="play-sheet__check-frame">
                   <span className="play-sheet__check-frame-layer" style={frameStyle('savingThrow', frameSvgPaths.savingThrow)} />
@@ -1163,10 +1721,10 @@ export function CharacterPlaySheet({
           {passiveSkills.map((name) => {
             const skill = skills.find((item) => item.name === name)!
             const expertise = expertiseNames.some((expertiseName) => normalize(expertiseName) === normalize(name))
-            const proficient = character.skillProficiencies.includes(name) || expertise
+            const proficient = character.skillProficiencies.includes(name) || character.backgroundSkillChoices?.includes(name) || expertise
             const jackOfAllTrades = classId === 'bardo' && character.level >= 2 && !proficient ? Math.floor(proficiencyBonus / 2) : 0
             const bonus = proficient ? proficiencyBonus * (expertise ? 2 : 1) : jackOfAllTrades
-            return <div className="play-sheet__passive" key={name}><span className="play-sheet__passive-value" style={frameStyle('passiveCircle', frameSvgPaths.passiveCircle)}>{10 + modifier(character.abilities[skill.ability]) + bonus}</span>{name} passiva</div>
+            return <div className="play-sheet__passive" key={name}><span className="play-sheet__passive-value" style={frameStyle('passiveCircle', frameSvgPaths.passiveCircle)}>{10 + modifier(effectiveAbilities[skill.ability]) + bonus}</span>{name} passiva</div>
           })}
         </FramedGlassPanel>
       </section>
@@ -1175,25 +1733,70 @@ export function CharacterPlaySheet({
         {[skills.slice(0, Math.ceil(skills.length / 2)), skills.slice(Math.ceil(skills.length / 2))].map((skillColumn, columnIndex) => <div className="play-sheet__skill-column" key={columnIndex}>
         {skillColumn.map(({ name, ability }) => {
           const expertise = expertiseNames.some((expertiseName) => normalize(expertiseName) === normalize(name))
-          const proficient = character.skillProficiencies.includes(name) || expertise
+          const proficient = character.skillProficiencies.includes(name) || character.backgroundSkillChoices?.includes(name) || expertise
           const jackOfAllTrades = classId === 'bardo' && character.level >= 2 && !proficient ? Math.floor(proficiencyBonus / 2) : 0
           const bonus = proficient ? proficiencyBonus * (expertise ? 2 : 1) : jackOfAllTrades
-          return <div className="play-sheet__skill" key={name}><span className={proficient ? 'play-sheet__proficient' : ''} aria-label={proficient ? (expertise ? 'Especialização' : 'Proficiente') : 'Sem proficiência'} />{name} <small>({abilities.find(([key]) => key === ability)?.[2]})</small><b>{signed(modifier(character.abilities[ability]) + bonus)}</b></div>
+          return <div className="play-sheet__skill" key={name}><span className={proficient ? 'play-sheet__proficient' : ''} aria-label={proficient ? (expertise ? 'Especialização' : 'Proficiente') : 'Sem proficiência'} />{name} <small>({abilities.find(([key]) => key === ability)?.[2]})</small><b>{signed(modifier(effectiveAbilities[ability]) + bonus)}</b></div>
         })}
         </div>)}
         </FramedGlassPanel>
       </section>
       </div>
-      {detailsDialog && <Modal open title={detailsDialog === 'initiative' ? 'Iniciativa' : 'Classe de Armadura'} theme={darkMode ? 'dark' : 'light'} onClose={() => setDetailsDialog(null)} footer={<Button onClick={() => setDetailsDialog(null)} variant="secondary">Fechar</Button>}>
-        {detailsDialog === 'initiative'
+      {detailsDialog && <Modal open title={abilityDialog ? abilityDialogLabel : detailsDialog === 'initiative' ? 'Iniciativa' : detailsDialog === 'armorClass' ? 'Classe de Armadura' : 'Deslocamento'} theme={darkMode ? 'dark' : 'light'} onClose={() => { if (!armorClassOverrideSaving && !movementSpeedOverrideSaving && !abilityScoreOverrideSaving) setDetailsDialog(null) }} footer={abilityDialog
+        ? <Button disabled={abilityScoreOverrideSaving} onClick={() => void saveAbilityScoreOverride()}>{abilityScoreOverrideSaving ? 'Salvando…' : 'Concluir'}</Button>
+        : detailsDialog === 'initiative'
+          ? <Button onClick={() => setDetailsDialog(null)} variant="secondary">Fechar</Button>
+          : detailsDialog === 'armorClass'
+            ? <Button disabled={armorClassOverrideSaving} onClick={() => void saveArmorClassOverride()}>{armorClassOverrideSaving ? 'Salvando…' : 'Concluir'}</Button>
+            : <Button disabled={movementSpeedOverrideSaving} onClick={() => void saveMovementSpeedOverride()}>{movementSpeedOverrideSaving ? 'Salvando…' : 'Concluir'}</Button>}>
+        {abilityDialog
+          ? <div className="play-sheet__stat-details">
+            <p className="play-sheet__armor-class-total">Valor atual <strong>{effectiveAbilities[abilityDialog.ability]}</strong></p>
+            <div className="play-sheet__armor-class-breakdown">
+              <div className="play-sheet__stat-detail-row"><span>Valor original da ficha</span><strong>{character.abilities[abilityDialog.ability] || '—'}</strong></div>
+              <div className="play-sheet__stat-detail-row"><span>Modificador atual</span><strong>{signed(modifier(effectiveAbilities[abilityDialog.ability]))}</strong></div>
+            </div>
+            <div className="play-sheet__armor-class-override">
+              <div><label htmlFor="ability-score-override">Sobrescrever {abilityDialogLabel}</label><p>O modificador e os cálculos que dependem dele acompanharão o valor. A sobrescrita não altera o valor original.</p></div>
+              <div className="play-sheet__armor-class-override-field">
+                <input aria-describedby={abilityScoreOverrideError ? 'ability-score-override-error' : undefined} aria-invalid={Boolean(abilityScoreOverrideError)} disabled={abilityScoreOverrideSaving} id="ability-score-override" inputMode="numeric" max="30" min="1" onChange={(event) => { setAbilityScoreOverrideDraft(event.target.value); setAbilityScoreOverrideError('') }} placeholder="—" step="1" type="number" value={abilityScoreOverrideDraft} />
+                <button aria-label={`Limpar sobrescrita de ${abilityDialogLabel}`} disabled={abilityScoreOverrideSaving || abilityScoreOverrideDraft === ''} onClick={() => { setAbilityScoreOverrideDraft(''); setAbilityScoreOverrideError('') }} title="Limpar campo" type="button"><span aria-hidden="true" className="material-symbols-rounded">close</span></button>
+              </div>
+              {abilityScoreOverrideError && <p className="play-sheet__armor-class-override-error" id="ability-score-override-error" role="alert">{abilityScoreOverrideError}</p>}
+            </div>
+          </div>
+          : detailsDialog === 'initiative'
           ? <div className="play-sheet__stat-details">
             <p className="play-sheet__initiative-explanation">No início de todos os combates, você joga sua iniciativa realizando um teste de Destreza. A iniciativa determina a ordem dos turnos das criaturas envolvidas no combate, como descrito no capítulo 9.</p>
             <div className="play-sheet__stat-detail-row"><span>Modificador de Destreza</span><strong>{signed(initiative)}</strong></div>
           </div>
-          : <div className="play-sheet__stat-details">
+          : detailsDialog === 'armorClass' ? <div className="play-sheet__stat-details">
             <p className="play-sheet__armor-class-total">Classe de Armadura atual <strong>{armorClass}</strong></p>
             <div className="play-sheet__armor-class-breakdown">{armorClassBreakdown.map(({ key, label, value }) => <div className="play-sheet__stat-detail-row" key={key}><span>{label}</span><strong>{key === 'base' ? value : signed(value)}</strong></div>)}</div>
             {equippedArmor?.armor && <p className="play-sheet__armor-class-note">{equippedArmor.armor.strength ? `Requisito de Força ${equippedArmor.armor.strength}. ` : ''}{equippedArmor.armor.stealthDisadvantage ? 'Esta armadura impõe desvantagem em Furtividade.' : ''}</p>}
+            <div className="play-sheet__armor-class-override">
+              <div><label htmlFor="armor-class-override">Sobrescrever CA</label><p>CA automática: {calculatedArmorClass}. Um valor preenchido substitui esse cálculo.</p></div>
+              <div className="play-sheet__armor-class-override-field">
+                <input aria-describedby={armorClassOverrideError ? 'armor-class-override-error' : undefined} aria-invalid={Boolean(armorClassOverrideError)} disabled={armorClassOverrideSaving} id="armor-class-override" inputMode="numeric" min="1" onChange={(event) => { setArmorClassOverrideDraft(event.target.value); setArmorClassOverrideError('') }} placeholder="—" step="1" type="number" value={armorClassOverrideDraft} />
+                <button aria-label="Limpar sobrescrita da CA" disabled={armorClassOverrideSaving || armorClassOverrideDraft === ''} onClick={() => { setArmorClassOverrideDraft(''); setArmorClassOverrideError('') }} title="Limpar campo" type="button"><span aria-hidden="true" className="material-symbols-rounded">close</span></button>
+              </div>
+              {armorClassOverrideError && <p className="play-sheet__armor-class-override-error" id="armor-class-override-error" role="alert">{armorClassOverrideError}</p>}
+            </div>
+          </div> : <div className="play-sheet__stat-details">
+            <p className="play-sheet__armor-class-total">Deslocamento atual <strong>{walkingSpeed} m</strong></p>
+            <div className="play-sheet__armor-class-breakdown">
+              <div className="play-sheet__stat-detail-row"><span>Deslocamento base da raça</span><strong>{baseSpeed} m</strong></div>
+              {unarmoredMovement > 0 && <div className="play-sheet__stat-detail-row"><span>{classId === 'monge' ? 'Movimento sem Armadura (Monge)' : 'Movimento Rápido (Bárbaro)'}</span><strong>+{unarmoredMovement} m</strong></div>}
+            </div>
+            {((classId === 'monge' && character.level >= 2) || (classId === 'barbaro' && character.level >= 5)) && (equippedArmor || equippedShield) && <p className="play-sheet__armor-class-note">O bônus de deslocamento da classe não se aplica enquanto estiver usando armadura ou escudo.</p>}
+            <div className="play-sheet__armor-class-override">
+              <div><label htmlFor="movement-speed-override">Sobrescrever deslocamento</label><p>Deslocamento automático: {calculatedWalkingSpeed} m. Um valor preenchido substitui esse cálculo.</p></div>
+              <div className="play-sheet__armor-class-override-field">
+                <input aria-describedby={movementSpeedOverrideError ? 'movement-speed-override-error' : undefined} aria-invalid={Boolean(movementSpeedOverrideError)} disabled={movementSpeedOverrideSaving} id="movement-speed-override" inputMode="decimal" min="0" onChange={(event) => { setMovementSpeedOverrideDraft(event.target.value); setMovementSpeedOverrideError('') }} placeholder="—" step="0.1" type="number" value={movementSpeedOverrideDraft} />
+                <button aria-label="Limpar sobrescrita do deslocamento" disabled={movementSpeedOverrideSaving || movementSpeedOverrideDraft === ''} onClick={() => { setMovementSpeedOverrideDraft(''); setMovementSpeedOverrideError('') }} title="Limpar campo" type="button"><span aria-hidden="true" className="material-symbols-rounded">close</span></button>
+              </div>
+              {movementSpeedOverrideError && <p className="play-sheet__armor-class-override-error" id="movement-speed-override-error" role="alert">{movementSpeedOverrideError}</p>}
+            </div>
           </div>}
       </Modal>}
       {attackDialog && <Modal open title={`Ataque: ${attackDialog.itemName}`} theme={darkMode ? 'dark' : 'light'} onClose={() => setAttackDialog(null)} footer={<Button onClick={() => setAttackDialog(null)} variant="secondary">Fechar</Button>}>
@@ -1223,8 +1826,9 @@ export function CharacterPlaySheet({
 
   function renderFeatures() {
     const visibleLevelCount = showFutureClassLevels ? 20 : character.level
-    const features = (classData?.features ?? []).filter((feature) => feature.level <= visibleLevelCount)
-    const subclassFeatures = (subclass?.features ?? []).filter((feature) => feature.level <= visibleLevelCount)
+    const visibleFeatureLevelCount = Math.max(visibleLevelCount, pendingLevelUpLevel ?? character.level)
+    const features = (classData?.features ?? []).filter((feature) => feature.level <= visibleFeatureLevelCount)
+    const subclassFeatures = (subclass?.features ?? []).filter((feature) => feature.level <= visibleFeatureLevelCount)
     const featureEntries = [
       ...features.map((feature) => ({ ...feature, group: characterClass })),
       ...subclassFeatures.map((feature) => ({ ...feature, group: subclass?.name ?? '' })),
@@ -1235,13 +1839,132 @@ export function CharacterPlaySheet({
     }
     const proficiencyBonusAtLevel = (level: number) => `+${2 + Math.floor((level - 1) / 4)}`
     const featureLabel = (feature: typeof featureEntries[number]) => feature.group === characterClass ? feature.name : `${feature.name} — ${feature.group}`
+    const hasKnownInvocations = Object.entries(character.classFeatureChoices).some(([key, selected]) => key.endsWith(':mystic-invocations') && selected.length > 0)
+    const featureNeedsChoice = (feature: typeof featureEntries[number]) => {
+      if (!pendingLevelUpLevel) return false
+      const abilityIncreasePending = feature.level > character.level && feature.level <= pendingLevelUpLevel
+        && feature.name.toLocaleLowerCase('pt-BR').includes('incremento no valor de habilidade')
+        && !hasConfirmedAbilityIncrease(character, feature.level)
+      const unselectedChoicePending = (feature.choices ?? []).some((choice) => {
+        if (classId === 'bruxo' && choice.id === 'mystic-invocations') return hasKnownInvocations
+        if (feature.level <= character.level || feature.level > pendingLevelUpLevel) return false
+        const key = `${character.characterClassId}:${character.classSubclassId}:${feature.level}:${feature.name}:${choice.id}`
+        return (character.classFeatureChoices[key]?.length ?? 0) < choice.choose
+      })
+      return abilityIncreasePending || unselectedChoicePending
+    }
+    const editFeatureChoice = (feature: typeof featureEntries[number], choice: NonNullable<typeof feature.choices>[number], key: string, selected: string[]) => {
+      const availableOptions = choice.options.filter((option) =>
+        (option.level === undefined || option.level <= character.level)
+        && (choice.id !== 'mystic-invocations' || warlockInvocationIsAvailable(option, selectedWarlockPact)),
+      )
+      const options = choice.id === 'mystic-invocations'
+        ? [...new Map([...availableOptions, ...choice.options.filter((option) => selected.includes(option.id))].map((option) => [option.id, option])).values()]
+        : availableOptions
+      const chosenElsewhere = choice.id === 'mystic-invocations'
+        ? Object.entries(character.classFeatureChoices)
+          .filter(([otherKey]) => otherKey.endsWith(':mystic-invocations') && otherKey !== key)
+          .flatMap(([, ids]) => ids)
+        : []
+      openFeatureChoiceEditor({
+        key,
+        featureName: feature.name,
+        choiceName: choice.name,
+        selectionCount: choice.choose,
+        options,
+        selected,
+        disabledOptionIds: chosenElsewhere,
+        ...(choice.id === 'mystic-invocations' ? { ritualChoiceKey: ancientSecretsRitualChoiceKey(key) } : {}),
+      })
+    }
+    const subclassSelectionLevel = classData?.subclasses[0]?.selectionLevel
+    const subclassSelectionPending = Boolean(subclassSelectionLevel && !character.classSubclassId
+      && character.level < subclassSelectionLevel && pendingLevelUpLevel !== null && pendingLevelUpLevel >= subclassSelectionLevel)
+    const pendingSpecialChoiceLevels = new Set<number>()
+    if (classId === 'barbaro' && pendingLevelUpLevel !== null) {
+      if (!character.primalPath && character.level < 3 && pendingLevelUpLevel >= 3) pendingSpecialChoiceLevels.add(3)
+      if (character.primalPath === 'totem-warrior') {
+        if (!character.primalTotemChoices.spiritualTotem && character.level < 3 && pendingLevelUpLevel >= 3) pendingSpecialChoiceLevels.add(3)
+        if (!character.primalTotemChoices.beastAspect && character.level < 6 && pendingLevelUpLevel >= 6) pendingSpecialChoiceLevels.add(6)
+        if (!character.primalTotemChoices.totemicAttunement && character.level < 14 && pendingLevelUpLevel >= 14) pendingSpecialChoiceLevels.add(14)
+      }
+    }
+    const isRogue = classId === 'ladino'
+    const isBarbarian = classId === 'barbaro'
+    const isMonk = classId === 'monge'
+    const isPaladin = classId === 'paladino'
+    const isRanger = classId === 'patrulheiro'
+    const isBard = classId === 'bardo'
+    const isWarlock = classId === 'bruxo'
+    const isCleric = classId === 'clerigo'
+    const isDruid = classId === 'druida'
+    const isSorcerer = classId === 'feiticeiro'
+    const isArcaneKnight = classId === 'guerreiro' && character.classSubclassId === 'cavaleiro-arcano'
+    const isArcaneTrickster = isRogue && character.classSubclassId === 'trapaceiro-arcano'
+    const isWizard = classId === 'mago'
+    const progressionColumns = [
+      ...(isBarbarian ? ['Fúrias', 'Dano de Fúria'] : []),
+      ...(isRogue ? ['Ataque Furtivo'] : []),
+      ...(isMonk ? ['Artes marciais', 'Pontos de chi', 'Deslocamento sem armadura'] : []),
+      ...(isPaladin ? Array.from({ length: 5 }, (_, index) => `Espaços ${index + 1}º`) : []),
+      ...(isRanger ? ['Magias conhecidas', ...Array.from({ length: 5 }, (_, index) => `Espaços ${index + 1}º`)] : []),
+      ...(isBard ? ['Truques', 'Magias conhecidas', ...Array.from({ length: 9 }, (_, index) => `Espaços ${index + 1}º`)] : []),
+      ...(isWarlock ? ['Truques', 'Magias conhecidas', 'Espaços de pacto', 'Nível do espaço', 'Invocações'] : []),
+      ...(isCleric || isDruid ? ['Truques', 'Magias preparadas', ...Array.from({ length: 9 }, (_, index) => `Espaços ${index + 1}º`)] : []),
+      ...(isSorcerer ? ['Truques', 'Magias conhecidas', 'Pontos de feitiçaria', ...Array.from({ length: 9 }, (_, index) => `Espaços ${index + 1}º`)] : []),
+      ...(isArcaneKnight || isArcaneTrickster ? ['Truques', 'Magias conhecidas', ...Array.from({ length: 4 }, (_, index) => `Espaços ${index + 1}º`)] : []),
+      ...(isWizard ? ['Truques', 'Magias preparadas', ...Array.from({ length: 9 }, (_, index) => `Espaços ${index + 1}º`)] : []),
+    ]
+    const progressionValues = (level: number): string[] => {
+      const slotValues = (slots: number[] | undefined, count: number) => Array.from({ length: count }, (_, index) => slots?.[index] === undefined ? '—' : String(slots[index]))
+      const values: string[] = []
+      if (isBarbarian) {
+        const rageCount = level === 20 ? 'Ilimitado' : String([2, 2, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6, 6, 6][level - 1])
+        values.push(rageCount, `+${level >= 16 ? 4 : level >= 9 ? 3 : 2}`)
+      }
+      if (isRogue) values.push(`${rogueSneakAttackProgression[level - 1]}d6`)
+      if (isMonk) {
+        const [die, ki, speed] = monkProgression[level - 1]
+        values.push(die, ki === null ? '—' : String(ki), speed ?? '—')
+      }
+      if (isPaladin) values.push(...slotValues(paladinSpellProgression[level - 1], 5))
+      if (isRanger) {
+        const progress = rangerSpellProgression[level - 1]
+        values.push(progress?.[0] ? String(progress[0]) : '—', ...slotValues(progress?.[1], 5))
+      }
+      if (isBard) {
+        const [cantrips, known, slots] = bardSpellProgression[level - 1]
+        values.push(String(cantrips), String(known), ...slotValues(slots, 9))
+      }
+      if (isWarlock) {
+        const [cantrips, known, pactSlots, slotLevel, invocations] = warlockSpellProgression[level - 1]
+        values.push(String(cantrips), String(known), String(pactSlots), `${slotLevel}º`, invocations ? String(invocations) : '—')
+      }
+      if (isCleric || isDruid) {
+        const [cantrips, slots] = (isCleric ? clericSpellProgression : druidSpellProgression)[level - 1]
+        values.push(String(cantrips), String(Math.max(1, level + modifier(effectiveAbilities.wisdom))), ...slotValues(slots, 9))
+      }
+      if (isSorcerer) {
+        const [cantrips, known, slots] = sorcererSpellProgression[level - 1]
+        values.push(String(cantrips), String(known), level === 1 ? '—' : String(level), ...slotValues(slots, 9))
+      }
+      if (isArcaneKnight || isArcaneTrickster) {
+        const progress = level < 3 ? undefined : (isArcaneKnight ? eldritchKnightSpellProgression : arcaneTricksterSpellProgression)[level - 3]
+        values.push(String(progress?.[0] ?? '—'), String(progress?.[1] ?? '—'), ...slotValues(progress?.[2], 4))
+      }
+      if (isWizard) {
+        const [cantrips, slots] = wizardSpellProgression[level - 1]
+        values.push(String(cantrips), String(Math.max(1, level + modifier(effectiveAbilities.intelligence))), ...slotValues(slots, 9))
+      }
+      return values
+    }
 
     return <div className="play-sheet__feature-list">
       <FramedGlassPanel className="play-sheet__class-progression" contentClassName="play-sheet__class-progression-content" cornerSvg={frameSvgs.corner ?? ''} frameColor={frameColor}>
         <h2>Progressão de {characterClass}</h2>
         <div className="play-sheet__class-progression-table-wrap" role="region" aria-label={`Tabela de progressão de ${characterClass}`} tabIndex={0}>
           <table className="play-sheet__class-progression-table">
-            <thead><tr><th scope="col">Nível</th><th scope="col">Bônus de proficiência</th><th scope="col">Características</th></tr></thead>
+            <thead><tr><th scope="col">Nível</th><th scope="col">Bônus de proficiência</th><th scope="col">Características</th>{progressionColumns.map((column) => <th scope="col" key={column}>{column}</th>)}</tr></thead>
             <tbody>{Array.from({ length: visibleLevelCount }, (_, index) => index + 1).map((level) => {
               const levelFeatures = featureGroups.get(level) ?? []
               const unavailable = level > character.level
@@ -1251,28 +1974,42 @@ export function CharacterPlaySheet({
                 <td>{levelFeatures.length > 0 ? levelFeatures.map((feature, index) => <span key={`${feature.group}-${feature.name}-${index}`}>
                   {index > 0 && ', '}
                   <button className="play-sheet__class-progression-feature-link" onClick={() => document.getElementById(`play-class-level-${level}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' })} type="button">{featureLabel(feature)}</button>
-                </span>) : '—'}</td>
+                </span>) : '—'}</td>{progressionValues(level).map((value, index) => <td key={`${progressionColumns[index]}-${index}`}>{value}</td>)}
               </tr>
             })}</tbody>
           </table>
         </div>
       </FramedGlassPanel>
       {character.level < 20 && <Button aria-expanded={showFutureClassLevels} className="play-sheet__future-levels-toggle" onClick={() => setShowFutureClassLevels((shown) => !shown)} type="button" variant="secondary">{showFutureClassLevels ? 'Ocultar níveis futuros' : `Ver níveis acima do nível ${character.level}`}</Button>}
-      {[...Array.from({ length: visibleLevelCount }, (_, index) => index + 1)].map((level) => {
+      {[...Array.from({ length: visibleFeatureLevelCount }, (_, index) => index + 1)].map((level) => {
         const levelFeatures = featureGroups.get(level) ?? []
         const unavailable = level > character.level
-        return <FramedGlassPanel aria-disabled={unavailable || undefined} className={`play-sheet__feature-level${unavailable ? ' play-sheet__feature-level--unavailable' : ''}`} contentClassName="play-sheet__feature-level-content" cornerSvg={frameSvgs.corner ?? ''} frameColor={frameColor} key={level}>
-          <h2 id={`play-class-level-${level}`}>Nível {level}{unavailable && <span className="play-sheet__feature-availability">Ainda não disponível</span>}</h2>
-          {levelFeatures.map((feature, index) => <article className="play-sheet__feature" key={`${feature.group}-${feature.name}-${index}`}>
-            <header><h3>{feature.name}</h3><span>{feature.group}</span></header>
+        const levelHasPendingChoice = levelFeatures.some(featureNeedsChoice) || pendingSpecialChoiceLevels.has(level)
+          || (subclassSelectionPending && level === subclassSelectionLevel)
+          || (classId === 'bruxo' && hasKnownInvocations && level === pendingLevelUpLevel)
+        return <FramedGlassPanel aria-disabled={unavailable || undefined} className={`play-sheet__feature-level${unavailable ? ' play-sheet__feature-level--unavailable' : ''}${levelHasPendingChoice ? ' play-sheet__feature-level--pending' : ''}`} contentClassName="play-sheet__feature-level-content" cornerSvg={frameSvgs.corner ?? ''} frameColor={frameColor} key={level}>
+          <h2 id={`play-class-level-${level}`}>Nível {level}{unavailable && <span className="play-sheet__feature-availability">Ainda não disponível</span>}{levelHasPendingChoice && <span aria-label="Escolhas deste nível pendentes" className="play-sheet__pending-choice-dot" role="img" />}</h2>
+          {levelFeatures.map((feature, index) => {
+            const featurePending = featureNeedsChoice(feature)
+            return <article className={`play-sheet__feature${featurePending ? ' play-sheet__feature--pending' : ''}`} key={`${feature.group}-${feature.name}-${index}`}>
+            <header><div className="play-sheet__feature-heading"><h3>{feature.name}{featurePending && <span aria-label="Escolha pendente" className="play-sheet__pending-choice-dot" role="img" />}</h3>{classId === 'bruxo' && normalize(feature.name) === normalize('Patrono Transcendental') && character.classSubclassId && <button aria-label="Editar Patrono Transcendental" className="play-sheet__feature-edit" onClick={() => setSubclassEditDraft(character.classSubclassId!)} title="Editar Patrono Transcendental" type="button"><span aria-hidden="true" className="material-symbols-rounded">edit</span></button>}{feature.choices?.map((choice) => {
+              const choiceKey = `${character.characterClassId}:${character.classSubclassId}:${feature.level}:${feature.name}:${choice.id}`
+              const selected = character.classFeatureChoices[choiceKey] ?? []
+              return selected.length > 0 && <button aria-label={`Editar ${feature.name}: ${choice.name}`} className="play-sheet__feature-edit" key={choice.id} onClick={() => editFeatureChoice(feature, choice, choiceKey, selected)} title={`Editar ${choice.name}`} type="button"><span aria-hidden="true" className="material-symbols-rounded">edit</span></button>
+            })}{normalize(feature.name).includes('incremento no valor de habilidade') && hasConfirmedAbilityIncrease(character, feature.level) && <button aria-label={`Editar ${feature.name}`} className="play-sheet__feature-edit" onClick={() => openAbilityIncreaseEditor(feature.level)} title="Editar incremento no valor de habilidade" type="button"><span aria-hidden="true" className="material-symbols-rounded">edit</span></button>}</div><span>{feature.group}</span></header>
             <p>{feature.description}</p>
             {feature.choices?.map((choice) => {
               const key = `${character.characterClassId}:${character.classSubclassId}:${feature.level}:${feature.name}:${choice.id}`
               const selected = character.classFeatureChoices[key] ?? []
-              const selectedNames = selected.map((id) => choice.options.find((option) => option.id === id)?.name ?? id)
-              return selectedNames.length > 0 ? <p className="play-sheet__feature-choice" key={choice.id}>{choice.name}: {selectedNames.join(', ')}</p> : null
+              const selectedOptions = selected.map((id) => choice.options.find((option) => option.id === id))
+              const selectedNames = selected.map((id, index) => selectedOptions[index]?.name ?? id)
+              return selectedNames.length > 0 ? <div className="play-sheet__feature-choice" key={choice.id}>
+                <p>{choice.name}: {selectedNames.join(', ')}</p>
+                {choice.id === 'mystic-invocations' && selectedOptions.map((option) => option?.description && <small className="play-sheet__feature-choice-description" key={option.id}>{option.description}</small>)}
+              </div> : null
             })}
-          </article>)}
+          </article>
+          })}
           {levelFeatures.length === 0 && <p>Nenhuma característica nova neste nível.</p>}
         </FramedGlassPanel>
       })}
@@ -1392,7 +2129,9 @@ export function CharacterPlaySheet({
           finesseModifiers: attackOptions,
           customBonus: entry.attackBonus,
         })} title="Ver como o bônus de ataque foi calculado" type="button">{entry.attackBonus !== undefined ? signed(entry.attackBonus) : attackOptions ? `${signed(attackOptions.strength)}/${signed(attackOptions.dexterity)}` : signed(attack.modifier)}</button> : <span className="play-sheet__inventory-attack">—</span>}
-        <button aria-label={`Alterar quantidade de ${entry.name}: ${entry.quantity}`} className="play-sheet__inventory-quantity" onClick={() => openQuantityDialog(entry)} type="button">{entry.quantity}</button>
+        {equipped
+          ? <span aria-label={`Quantidade de ${entry.name}: ${entry.quantity}`} className="play-sheet__inventory-quantity play-sheet__inventory-quantity--fixed">{entry.quantity}</span>
+          : <button aria-label={`Alterar quantidade de ${entry.name}: ${entry.quantity}`} className="play-sheet__inventory-quantity" onClick={() => openQuantityDialog(entry)} type="button">{entry.quantity}</button>}
         <span>{weight}</span>
         <span className="play-sheet__inventory-actions">
           {equipped
@@ -1423,7 +2162,7 @@ export function CharacterPlaySheet({
         <button aria-label="Adicionar equipamento" onClick={() => { setStoredSearch(''); setEquipmentSearch(''); setEquipmentFilter('all'); setEquipmentItemToAdd(null); setEquipmentDrawerOpen(true) }} type="button"><span aria-hidden="true" className="material-symbols-rounded">add</span></button>
         <button aria-label={`Gerenciar dinheiro: ${currencySummary}`} className="play-sheet__currency-balance" onClick={() => setCurrencyDrawerOpen(true)} type="button">
            <span aria-hidden="true" className="play-sheet__currency-balance-items">
-             {displayedCurrencies.length ? displayedCurrencies.map(({ code }) => <span className="play-sheet__currency-balance-item" key={code}><img alt="" src={`/images/coins/${code}.png`} />{formatCurrencyAmount(currencyBalances[code])} {code}</span>) : '0 moedas'}
+             {displayedCurrencies.length ? displayedCurrencies.map(({ code }) => <span className="play-sheet__currency-balance-item" key={code}><img alt="" src={`/images/coins/${code}.png`} />{formatCurrencyAmount(currencyBalances[code])}</span>) : '0 moedas'}
            </span>
          </button>
       </div></header>
@@ -1461,9 +2200,30 @@ export function CharacterPlaySheet({
   }
 
   function renderSpells() {
-    const hasSpells = knownSpells.cantrips.length > 0 || Object.values(knownSpells.levels).some((names) => names.length > 0)
-    const spellItem = (name: string, level: string, spellLevel: number) => {
+    const classCantripsForSheet = [...new Map([...savedSpells.cantrips, ...grantedCantrips]
+      .map((name) => [normalize(name), name])).values()]
+    const classCantripNames = new Set(classCantripsForSheet.map(normalize))
+    const tomeCantripsForSheet = (tomeBookEquipped ? selectedTomeCantrips : [])
+      .filter((name) => !classCantripNames.has(normalize(name)))
+    const cantripsForSheet: { name: string; source?: string }[] = [
+      ...classCantripsForSheet.map((name) => ({ name })),
+      ...tomeCantripsForSheet.map((name) => ({ name, source: 'Pacto do Tomo' })),
+    ]
+    const hasSpells = tomePactSelected || Boolean(ancientSecretsInvocationKey) || invocationSpellGrants.length > 0 || classId === 'mago' && savedSpells.spellbook.length > 0 || cantripsForSheet.length > 0 || Object.values(knownSpells.levels).some((names) => names.length > 0)
+    const spellItem = (name: string, level: string, spellLevel: number, source?: string) => {
       const details = getSpellDetails(name)
+      const tomeCantripOnly = tomePactSelected && selectedTomeCantrips.includes(name)
+        && !savedSpells.cantrips.includes(name) && !grantedCantrips.includes(name)
+      const tomeCantripUnavailable = tomeCantripOnly && !tomeBookEquipped
+      const invocationGrant = invocationGrantBySpell.get(normalize(name))
+      const invocationUseSpent = invocationGrant?.casting === 'pact-slot-once-per-long-rest'
+        && (playState.usedInvocationSpellUses ?? []).includes(invocationGrant.invocationId)
+      const ritualOnly = (chainPactSelected && name === 'Convocar Familiar')
+        || (classId === 'mago' && isRitualSpell(name) && !wizardPreparedSpells.some((prepared) => normalize(prepared) === normalize(name)))
+        || ancientSecretsRituals.includes(name)
+      const ritualAvailable = ritualOnly
+        || isRitualSpell(name) && (['bardo', 'clerigo', 'druida'].includes(classId)
+          || classId === 'mago' && savedSpells.spellbook.some((spell) => normalize(spell) === normalize(name)))
       const canCast = spellLevel === 0 || availableSpellSlotLevels(spellSlots, spentSpellSlotsForCasting, spellLevel).length > 0
       return <li key={name}>
         <div className="play-sheet__spell-detail">
@@ -1471,7 +2231,13 @@ export function CharacterPlaySheet({
           {details && <small>Conjuração: {details.castingTime} · Alcance: {details.range}</small>}
           {details && <small>Componentes: {details.components} · Duração: {details.duration}</small>}
         </div>
-        <div className="play-sheet__spell-actions"><span>{level}</span><button className="play-sheet__spell-cast-button" disabled={!canCast} onClick={() => openCastDialog(name, spellLevel)} title={canCast ? 'Conjurar magia' : 'Sem espaços disponíveis deste nível ou superiores'} type="button">Conjurar{spellCastAnimation?.name === name && <SpellCastAnimation key={spellCastAnimation.id} onComplete={() => finishSpellCastAnimation(spellCastAnimation.id)} />}</button></div>
+        <div className="play-sheet__spell-actions"><span>{invocationGrant ? 'Invocação Mística' : source ?? level}</span>{spellLevel === 0
+          ? <button className="play-sheet__spell-at-will" disabled={tomeCantripUnavailable} onClick={() => setSpellRuleDialog('cantrip')} title={tomeCantripUnavailable ? 'Equipe o Livro das Sombras para usar este truque do Pacto do Tomo.' : undefined} type="button">À vontade</button>
+          : <>
+            {!ritualOnly && invocationGrant?.casting === 'at-will' && <button className="play-sheet__spell-at-will" onClick={() => showSpellCastAnimation(name)} title="Concedida por uma invocação mística" type="button">À vontade{spellCastAnimation?.name === name && <SpellCastAnimation key={spellCastAnimation.id} onComplete={() => finishSpellCastAnimation(spellCastAnimation.id)} />}</button>}
+            {!ritualOnly && invocationGrant?.casting !== 'at-will' && <button className="play-sheet__spell-cast-button" disabled={!canCast || invocationUseSpent} onClick={() => openCastDialog(name, spellLevel, invocationGrant?.invocationId)} title={invocationUseSpent ? 'Uso da invocação já gasto até o próximo descanso longo' : canCast ? 'Conjurar magia' : 'Sem espaços disponíveis deste nível ou superiores'} type="button">Conjurar{spellCastAnimation?.name === name && <SpellCastAnimation key={spellCastAnimation.id} onComplete={() => finishSpellCastAnimation(spellCastAnimation.id)} />}</button>}
+            {ritualAvailable && <button className="play-sheet__spell-cast-button" onClick={() => setSpellRuleDialog('ritual')} type="button">Ritual</button>}
+          </>}</div>
       </li>
     }
     return <div className="play-sheet__spell-list">
@@ -1492,17 +2258,62 @@ export function CharacterPlaySheet({
           <span className="play-sheet__spell-stat-label">ATK</span><strong>{spellAttackBonus}</strong>
         </div>
       </section>
-      {knownSpells.cantrips.length > 0 && <FramedGlassPanel className="play-sheet__spell-frame" contentClassName="play-sheet__spell-panel" cornerSvg={frameSvgs.corner ?? ''} frameColor={frameColor}><h2>Truques</h2><ul>{knownSpells.cantrips.map((name) => spellItem(name, 'Truque', 0))}</ul></FramedGlassPanel>}
-      {spellSlots.map((count, index) => count > 0 && <FramedGlassPanel className="play-sheet__spell-frame play-sheet__spell-level" contentClassName="play-sheet__spell-panel" cornerSvg={frameSvgs.corner ?? ''} frameColor={frameColor} key={index}>
-        <header><h2>Magias de nível {index + 1}</h2><span>{count} espaços</span><div className="play-sheet__spell-slots" aria-label={`${count} espaços de magia de nível ${index + 1}`}>
-          {Array.from({ length: count }, (_, slotIndex) => {
-            const slotId = `${index + 1}:${slotIndex}`
-            const spent = spentSpellSlotsForCasting.includes(slotId)
-            return <button aria-label={`Espaço ${slotIndex + 1}, nível ${index + 1}, ${spent ? 'gasto' : 'disponível'}`} aria-pressed={spent} className={spent ? 'play-sheet__slot play-sheet__slot--spent' : 'play-sheet__slot'} disabled={pendingSpellSlots.length > 0} key={slotId} onClick={() => updatePlayState((current) => toggleSpellSlot(current, slotId))} title={spent ? 'Marcar espaço disponível' : 'Marcar espaço gasto'} type="button" />
-          })}
-        </div></header>
-        <ul>{(knownSpells.levels[index + 1] ?? []).map((name) => spellItem(name, `Nível ${index + 1}`, index + 1))}</ul>
-      </FramedGlassPanel>)}
+      {classId === 'mago' && <div className="play-sheet__tome-cantrips"><p>Grimório: {savedSpells.spellbook.length} magias registradas. Prepare até {spellPreparationLimit ?? 0} após um descanso longo.</p><Button onClick={() => setWizardSpellbookDrawerOpen(true)} type="button" variant="secondary">Registrar magia encontrada</Button></div>}
+      {ancientSecretsInvocationKey && <div className="play-sheet__tome-cantrips"><p>Livro de Segredos Antigos: {ancientSecretsRituals.length} rituais registrados.</p><Button onClick={() => setRitualBookDrawerOpen(true)} type="button" variant="secondary">{ancientSecretsRituals.length ? 'Adicionar ritual encontrado' : 'Escolher rituais'}</Button></div>}
+      {cantripsForSheet.length > 0 && <FramedGlassPanel className="play-sheet__spell-frame" contentClassName="play-sheet__spell-panel" cornerSvg={frameSvgs.corner ?? ''} frameColor={frameColor}>
+        <h2>Truques</h2>
+        <ul>{cantripsForSheet.map(({ name, source }) => spellItem(name, 'Truque', 0, source))}</ul>
+      </FramedGlassPanel>}
+      {spellLevelsToDisplay(spellSlots, knownSpells.levels).map((level) => {
+        const count = spellSlots[level - 1] ?? 0
+        const higherSlotLevels = spellSlots.flatMap((slotCount, index) => slotCount > 0 && index + 1 > level ? [index + 1] : [])
+        return <FramedGlassPanel className="play-sheet__spell-frame play-sheet__spell-level" contentClassName="play-sheet__spell-panel" cornerSvg={frameSvgs.corner ?? ''} frameColor={frameColor} key={level}>
+          <header><h2>Magias de nível {level}</h2><span>{count > 0 ? `${count} espaços` : higherSlotLevels.length ? `Pode usar espaços de nível ${higherSlotLevels.join(' ou ')}` : 'Sem espaços deste nível'}</span>{count > 0 && <div className="play-sheet__spell-slots" aria-label={`${count} espaços de magia de nível ${level}`}>
+            {Array.from({ length: count }, (_, slotIndex) => {
+              const slotId = `${level}:${slotIndex}`
+              const spent = spentSpellSlotsForCasting.includes(slotId)
+              return <button aria-label={`Espaço ${slotIndex + 1}, nível ${level}, ${spent ? 'gasto' : 'disponível'}`} aria-pressed={spent} className={spent ? 'play-sheet__slot play-sheet__slot--spent' : 'play-sheet__slot'} disabled={pendingSpellSlots.length > 0} key={slotId} onClick={() => updatePlayState((current) => toggleSpellSlot(current, slotId))} title={spent ? 'Marcar espaço disponível' : 'Marcar espaço gasto'} type="button" />
+            })}
+          </div>}</header>
+          {(knownSpells.levels[level] ?? []).length > 0
+            ? <ul>{knownSpells.levels[level].map((name) => spellItem(name, `Nível ${level}`, level))}</ul>
+            : <p className="play-sheet__spell-empty">Você não conhece magias de nível {level}.</p>}
+        </FramedGlassPanel>
+      })}
+      {wizardSpellbookDrawerOpen && <SpellSelectionDrawer
+        open
+        title="Registrar magia no grimório"
+        description="Registre uma magia de mago que seu personagem encontrou e copiou para o grimório."
+        options={wizardSpellbookOptions}
+        selectedSpells={[]}
+        selectionCount={1}
+        theme={darkMode ? 'dark' : 'light'}
+        onClose={() => setWizardSpellbookDrawerOpen(false)}
+        onConfirm={(selected) => {
+          const spells = JSON.stringify({ cantrips: savedSpells.cantrips, knownSpells: [...savedSpells.spellbook, ...selected], preparedSpells: wizardPreparedSpells })
+          void save({ ...character, spells }, { ...playState }, { success: 'Magia registrada no grimório.', error: 'Não foi possível atualizar o grimório.' }).then((saved) => {
+            if (saved) setWizardSpellbookDrawerOpen(false)
+          })
+        }}
+      />}
+      {ritualBookDrawerOpen && ancientSecretsRitualKey && <SpellSelectionDrawer
+        open
+        title="Livro de Segredos Antigos"
+        description={ancientSecretsRituals.length === 0
+          ? 'Escolha duas magias rituais de 1º nível de quaisquer listas para inscrever no livro.'
+          : `Escolha um ritual de nível até ${Math.ceil(character.level / 2)} que seu personagem encontrou para acrescentar ao livro.`}
+        options={getRitualSpellOptions(ancientSecretsRituals.length === 0 ? 1 : Math.ceil(character.level / 2))}
+        selectedSpells={ancientSecretsRituals}
+        selectionCount={ancientSecretsRituals.length === 0 ? 2 : ancientSecretsRituals.length + 1}
+        theme={darkMode ? 'dark' : 'light'}
+        onClose={() => setRitualBookDrawerOpen(false)}
+        onConfirm={(rituals) => {
+          if (ancientSecretsRituals.length === 0 && !isValidAncientSecretsRitualSelection(rituals)) return
+          void save({ ...character, classFeatureChoices: { ...character.classFeatureChoices, [ancientSecretsRitualKey]: rituals } }, { ...playState }, { success: 'Rituais registrados no Livro das Sombras.', error: 'Não foi possível atualizar o Livro das Sombras.' }).then((saved) => {
+            if (saved) setRitualBookDrawerOpen(false)
+          })
+        }}
+      />}
       {!hasSpells && <FramedGlassPanel className="play-sheet__spell-frame" contentClassName="play-sheet__spell-panel" cornerSvg={frameSvgs.corner ?? ''} frameColor={frameColor}><h2>Magias</h2><p>Este personagem não tem magias conhecidas registradas.</p></FramedGlassPanel>}
     </div>
   }
@@ -1522,7 +2333,7 @@ export function CharacterPlaySheet({
           <span className="play-sheet__portrait">{portrait ? <img alt={`Retrato de ${character.name}`} src={portrait} /> : <span aria-hidden="true" className="play-sheet__portrait-placeholder">✦</span>}</span>
           <div><h1>{character.name}</h1><p>{race} · {background} · {characterClass}</p></div>
         </div>
-        <ExperienceBar experiencePoints={Number(character.experiencePoints) || 0} level={character.level} onClick={() => setExperienceDialogOpen(true)} />
+        <ExperienceBar experiencePoints={Number(character.experiencePoints) || 0} hasPendingChoices={pendingLevelUpLevel !== null} level={character.level} onClick={() => setExperienceDialogOpen(true)} />
         <div className="play-sheet__hp-controls">
           <Button aria-label="Opções de descanso" className="play-sheet__rest-trigger play-sheet__nav-action" onClick={openRestDrawer} size="icon" title="Descansar" variant="secondary"><span aria-hidden="true" className="material-symbols-rounded">hotel</span></Button>
           <Button aria-label={activeConditionNames.length ? `Condições marcadas: ${activeConditionNames.join(', ')}` : 'Condições'} className={`play-sheet__conditions-trigger play-sheet__nav-action${activeConditionNames.length ? ' play-sheet__conditions-trigger--active' : ''}`} data-tooltip={activeConditionNames.length ? activeConditionNames.join(', ') : undefined} disabled={conditionSavePending} onClick={openConditionsDialog} size="icon" variant="secondary">
@@ -1548,7 +2359,10 @@ export function CharacterPlaySheet({
     <div className="play-sheet__paper">
       <nav aria-label="Seções da ficha" className="play-sheet__tabs" role="tablist">
         <div className="play-sheet__tabs-inner">
-          {tabs.map((tab, index) => <button aria-selected={activeTab === tab} className={activeTab === tab ? 'play-sheet__tab play-sheet__tab--active' : 'play-sheet__tab'} key={tab} onClick={() => sheetSwiperRef.current?.slideTo(index)} role="tab" type="button"><span aria-hidden="true" className="material-symbols-rounded">{tabIcons[tab]}</span>{tab}</button>)}
+          {tabs.map((tab, index) => {
+            const hasPendingTabChoices = tab === 'Características' && pendingLevelUpLevel !== null
+            return <button aria-label={hasPendingTabChoices ? `${tab}: escolhas de nível pendentes` : tab} aria-selected={activeTab === tab} className={`${activeTab === tab ? 'play-sheet__tab play-sheet__tab--active' : 'play-sheet__tab'}${hasPendingTabChoices ? ' play-sheet__tab--pending' : ''}`} key={tab} onClick={() => sheetSwiperRef.current?.slideTo(index)} role="tab" type="button"><span aria-hidden="true" className="material-symbols-rounded">{tabIcons[tab]}</span>{tab}{hasPendingTabChoices && <span aria-hidden="true" className="play-sheet__pending-choice-dot" />}</button>
+          })}
         </div>
       </nav>
       <Swiper
@@ -1572,7 +2386,22 @@ export function CharacterPlaySheet({
       </Swiper>
     </div>
     {experienceDialogOpen && <ExperienceDialog experiencePoints={Number(character.experiencePoints) || 0} theme={darkMode ? 'dark' : 'light'} onCancel={() => setExperienceDialogOpen(false)} onConfirm={saveExperience} />}
-    {levelUpTarget && <LevelUpDrawer character={character} classData={classData} classId={classId} race={race} targetExperience={levelUpTarget.experience} targetLevel={levelUpTarget.level} theme={darkMode ? 'dark' : 'light'} onCancel={() => setLevelUpTarget(null)} onComplete={() => setLevelUpTarget(null)} onConfirm={(next) => save(next, { ...playState })} />}
+    {levelUpTarget && activeLevelUpStep !== null && <LevelUpDrawer
+      canGoBack={activeLevelUpStep > (levelUpStartLevel ?? activeLevelUpStep) + 1}
+      character={levelUpCharacterForStep}
+      classData={classData}
+      classId={classId}
+      key={`level-up-${activeLevelUpStep}-${levelUpReviewStep === activeLevelUpStep ? 'review' : 'draft'}`}
+      nextLevel={activeLevelUpStep < levelUpTarget.level ? activeLevelUpStep + 1 : undefined}
+      race={race}
+      savedCharacter={levelUpSavedCharacterForStep}
+      targetExperience={levelUpTarget.experience}
+      targetLevel={activeLevelUpStep}
+      theme={darkMode ? 'dark' : 'light'}
+      onCancel={cancelOrReturnLevelUp}
+      onComplete={completeLevelUpStep}
+      onConfirm={confirmLevelUp}
+    />}
     {restDrawerOpen && <Modal open title="Descansos" theme={darkMode ? 'dark' : 'light'} onClose={closeRestDrawer} variant="drawer" footer={<>
       <Button disabled={restSaving} onClick={closeRestDrawer} variant="secondary">Cancelar</Button>
       <Button disabled={restSaving || selectedRestType === null} onClick={() => void confirmRest()}>{restSaving ? 'Descansando…' : 'Descansar'}</Button>
@@ -1616,22 +2445,28 @@ export function CharacterPlaySheet({
     {spellPreparationDrawerOpen && <Modal open title="Preparar magias" theme={darkMode ? 'dark' : 'light'} onClose={() => { if (!spellPreparationSaving) setSpellPreparationDrawerOpen(false) }} variant="drawer" showHeader={false}>
       <div className="play-sheet__spell-preparation-drawer">
         <header>
-          <div><h2>Preparar magias</h2><p>Escolha até {spellPreparationLimit ?? 0} magias. Selecionadas: {spellPreparationDraft.length}/{spellPreparationLimit ?? 0}.</p></div>
+          <div><h2>Preparar magias</h2><p>Escolha até {spellPreparationLimit ?? 0} magias. Selecionadas: {spellPreparationDraft.length}/{spellPreparationLimit ?? 0}.{alwaysPreparedSpellNames.size > 0 && ' Magias de domínio, juramento ou terreno ficam sempre preparadas e não contam no limite.'}</p></div>
           <button aria-label="Fechar painel de preparação" disabled={spellPreparationSaving} onClick={() => setSpellPreparationDrawerOpen(false)} type="button"><span aria-hidden="true" className="material-symbols-rounded">close</span></button>
         </header>
         <div aria-label="Filtrar magias por nível" className="play-sheet__spell-preparation-filters" role="group">
           <button aria-pressed={spellPreparationLevelFilter === null} className={spellPreparationLevelFilter === null ? 'play-sheet__spell-preparation-filter play-sheet__spell-preparation-filter--active' : 'play-sheet__spell-preparation-filter'} onClick={() => setSpellPreparationLevelFilter(null)} type="button">Todos</button>
           {spellSlots.map((count, index) => count > 0 && <button aria-pressed={spellPreparationLevelFilter === index + 1} className={spellPreparationLevelFilter === index + 1 ? 'play-sheet__spell-preparation-filter play-sheet__spell-preparation-filter--active' : 'play-sheet__spell-preparation-filter'} key={index} onClick={() => setSpellPreparationLevelFilter(index + 1)} type="button">{index + 1}º nível</button>)}
         </div>
+        <label className="play-sheet__spell-preparation-search">
+          <span aria-hidden="true" className="material-symbols-rounded">search</span>
+          <input aria-label="Pesquisar magias" onChange={(event) => setSpellPreparationSearch(event.target.value)} placeholder="Pesquisar magias" type="search" value={spellPreparationSearch} />
+        </label>
         <div aria-label="Magias disponíveis" className="play-sheet__spell-preparation-options">
-          {spellPreparationOptions.filter(({ level }) => spellPreparationLevelFilter === null || level === spellPreparationLevelFilter).map(({ name, level }) => {
+          {filteredSpellPreparationOptions.map(({ name, level }) => {
             const details = getSpellDetails(name)
-            const checked = spellPreparationDraft.includes(name)
+            const isAlwaysPrepared = alwaysPreparedSpellNames.has(name)
+            const checked = isAlwaysPrepared || spellPreparationDraft.includes(name)
             return <label className="play-sheet__spell-preparation-option" key={`${level}-${name}`}>
-              <input checked={checked} disabled={spellPreparationSaving || (!checked && spellPreparationDraft.length >= (spellPreparationLimit ?? 0))} onChange={() => togglePreparedSpell(name)} type="checkbox" />
-              <span><strong>{name} · {level}º nível</strong>{details && <><small>Conjuração: {details.castingTime} · Alcance: {details.range}</small><small>Componentes: {details.components} · Duração: {details.duration}</small></>}</span>
+              <input checked={checked} disabled={spellPreparationSaving || isAlwaysPrepared || (!checked && spellPreparationDraft.length >= (spellPreparationLimit ?? 0))} onChange={() => togglePreparedSpell(name)} type="checkbox" />
+              <span><strong>{name} · {level}º nível</strong>{isAlwaysPrepared && <small>Sempre preparada · não conta no limite</small>}{details && <><small>Conjuração: {details.castingTime} · Alcance: {details.range}</small><small>Componentes: {details.components} · Duração: {details.duration}</small></>}</span>
             </label>
           })}
+          {filteredSpellPreparationOptions.length === 0 && <p className="play-sheet__spell-preparation-empty">Nenhuma magia encontrada.</p>}
         </div>
         <footer><Button disabled={spellPreparationSaving} onClick={() => setSpellPreparationDrawerOpen(false)} variant="secondary">Cancelar</Button><Button disabled={!spellPreparationDraft.length || spellPreparationSaving} onClick={() => void confirmSpellPreparation()}>{spellPreparationSaving ? 'Salvando…' : 'Confirmar seleção'}</Button></footer>
       </div>
@@ -1706,6 +2541,105 @@ export function CharacterPlaySheet({
         </aside>
       </div>
     </Modal>}
+    {featureChoiceEdit && <Modal open title={`Editar ${featureChoiceEdit.featureName}`} theme={darkMode ? 'dark' : 'light'} onClose={() => { if (!featureChoiceSaving) setFeatureChoiceEdit(null) }} variant="drawer" footer={<><Button disabled={featureChoiceSaving} onClick={() => setFeatureChoiceEdit(null)} variant="secondary">Cancelar</Button><Button disabled={featureChoiceSaving || featureChoiceDraft.length !== featureChoiceEdit.selectionCount} onClick={() => void confirmFeatureChoiceEdit()}>{featureChoiceSaving ? 'Salvando…' : 'Salvar alterações'}</Button></>}>
+      <div className="play-sheet__feature-choice-drawer">
+        <p>{featureChoiceEdit.choiceName} · {featureChoiceDraft.length} de {featureChoiceEdit.selectionCount} selecionada(s)</p>
+        <label className="play-sheet__feature-choice-search"><span aria-hidden="true" className="material-symbols-rounded">search</span><input aria-label={`Pesquisar opções de ${featureChoiceEdit.choiceName}`} onChange={(event) => setFeatureChoiceSearch(event.target.value)} placeholder="Pesquisar opções" type="search" value={featureChoiceSearch} /></label>
+        <div aria-label={`Opções de ${featureChoiceEdit.choiceName}`} className="play-sheet__feature-choice-options">
+          {featureChoiceEdit.options.filter((option) => normalize(`${option.name} ${option.description}`).includes(normalize(featureChoiceSearch.trim()))).map((option) => {
+            const checked = featureChoiceDraft.includes(option.id)
+            const disabled = featureChoiceSaving || featureChoiceEdit.disabledOptionIds.includes(option.id) || (featureChoiceEdit.selectionCount > 1 && !checked && featureChoiceDraft.length >= featureChoiceEdit.selectionCount)
+            return <label className="play-sheet__feature-choice-option" key={option.id}>
+              <input checked={checked} disabled={disabled} onChange={() => toggleFeatureChoice(option.id, featureChoiceEdit.selectionCount)} type={featureChoiceEdit.selectionCount === 1 ? 'radio' : 'checkbox'} name="feature-choice-edit" />
+              <span><strong>{option.name}</strong><small>{featureChoiceEdit.disabledOptionIds.includes(option.id) ? 'Já selecionada em outra característica.' : option.description}</small></span>
+            </label>
+          })}
+          {featureChoiceEdit.options.filter((option) => normalize(`${option.name} ${option.description}`).includes(normalize(featureChoiceSearch.trim()))).length === 0 && <p className="play-sheet__feature-choice-empty">Nenhuma opção encontrada.</p>}
+        </div>
+      </div>
+    </Modal>}
+    {subclassEditDraft !== null && <Modal open title="Editar Patrono Transcendental" theme={darkMode ? 'dark' : 'light'} onClose={() => { if (!subclassEditSaving) setSubclassEditDraft(null) }} variant="drawer" footer={<><Button disabled={subclassEditSaving} onClick={() => setSubclassEditDraft(null)} variant="secondary">Cancelar</Button><Button disabled={subclassEditSaving || subclassEditDraft === character.classSubclassId} onClick={() => void confirmSubclassEdit()}>{subclassEditSaving ? 'Salvando…' : 'Salvar alterações'}</Button></>}>
+      <div className="play-sheet__feature-choice-drawer">
+        <div aria-label="Opções de Patrono Transcendental" className="play-sheet__feature-choice-options">
+          {classData?.subclasses.map((option) => {
+            const subclassFeature = option.features.find((feature) => feature.level === option.selectionLevel)
+            return <label className="play-sheet__feature-choice-option" key={option.id}>
+              <input checked={subclassEditDraft === option.id} disabled={subclassEditSaving} name="warlock-patron-edit" onChange={() => setSubclassEditDraft(option.id)} type="radio" />
+              <span><strong>{option.name}</strong>{subclassFeature && <small>{subclassFeature.description}</small>}</span>
+            </label>
+          })}
+        </div>
+      </div>
+    </Modal>}
+    {abilityIncreaseEditDraft && (() => {
+      const draft = abilityIncreaseEditDraft
+      const baseAbilities = getEffectiveAbilityScores({ ...character, abilities: abilityScoresBeforeIncrease(draft.level) })
+      const selectedFeat = feats.find((feat) => feat.id === draft.featId)
+      const featAbilityOptions = selectedFeat?.abilityBonus && 'chooseFrom' in selectedFeat.abilityBonus ? selectedFeat.abilityBonus.chooseFrom : []
+      const fixedFeatAbility = selectedFeat?.abilityBonus && 'ability' in selectedFeat.abilityBonus ? selectedFeat.abilityBonus.ability : undefined
+      const featBonus = selectedFeat?.abilityBonus ? getFeatAbilityBonus(selectedFeat, baseAbilities, draft.featAbility) : null
+      const featFailure = selectedFeat ? featFailureForAbilityIncrease(selectedFeat.id, draft.level) : 'Escolha um talento.'
+      const abilitySelectionValid = draft.abilities.length === 1
+        ? Number(baseAbilities[draft.abilities[0]]) <= 18
+        : draft.abilities.length === 2 && new Set(draft.abilities).size === 2 && draft.abilities.every((ability) => Number(baseAbilities[ability]) < 20)
+      const selectionValid = draft.mode === 'ability'
+        ? abilitySelectionValid
+        : Boolean(selectedFeat && !featFailure && (!selectedFeat.abilityBonus || featBonus))
+      return <Modal open title="Editar Incremento no Valor de Habilidade" theme={darkMode ? 'dark' : 'light'} onClose={() => { if (!abilityIncreaseSaving) setAbilityIncreaseEditDraft(null) }} variant="drawer" footer={<><Button disabled={abilityIncreaseSaving} onClick={() => setAbilityIncreaseEditDraft(null)} variant="secondary">Cancelar</Button><Button disabled={abilityIncreaseSaving || !selectionValid} onClick={() => void confirmAbilityIncreaseEdit()}>{abilityIncreaseSaving ? 'Salvando…' : 'Salvar alterações'}</Button></>}>
+        <div className="play-sheet__feature-choice-drawer">
+          <p>Nível {draft.level} · Escolha como usar este incremento.</p>
+          <div className="play-sheet__feature-choice-options">
+            <label className="play-sheet__feature-choice-option"><input checked={draft.mode === 'ability'} name="ability-increase-mode-edit" onChange={() => setAbilityIncreaseEditDraft({ ...draft, mode: 'ability' })} type="radio" /><span><strong>Aumento no valor de habilidade</strong><small>+2 em uma habilidade ou +1 em duas.</small></span></label>
+            <label className="play-sheet__feature-choice-option"><input checked={draft.mode === 'feat'} name="ability-increase-mode-edit" onChange={() => setAbilityIncreaseEditDraft({ ...draft, mode: 'feat' })} type="radio" /><span><strong>Escolher um talento</strong><small>Os pré-requisitos são verificados antes de salvar.</small></span></label>
+          </div>
+          {draft.mode === 'ability' && <>
+            <p>{draft.abilities.length} de até 2 habilidades selecionadas.</p>
+            <div className="play-sheet__feature-choice-options">
+              {abilities.map(([ability, label]) => {
+                const checked = draft.abilities.includes(ability)
+                const amount = draft.abilities.length === 1 ? 1 : 2
+                const score = Number(baseAbilities[ability])
+                const disabled = !checked && (draft.abilities.length >= 2 || !score || score + amount > 20)
+                const resultingScore = checked
+                  ? score + (draft.abilities.length === 1 ? 2 : 1)
+                  : score + amount
+                return <label className="play-sheet__feature-choice-option" key={ability}>
+                  <input checked={checked} disabled={disabled} onChange={() => setAbilityIncreaseEditDraft({ ...draft, abilities: checked ? draft.abilities.filter((selected) => selected !== ability) : [...draft.abilities, ability] })} type="checkbox" />
+                  <span><strong>{label}</strong><small>{score} → {resultingScore}</small></span>
+                </label>
+              })}
+            </div>
+          </>}
+          {draft.mode === 'feat' && <>
+            <p>Escolha um talento disponível:</p>
+            <div className="play-sheet__feature-choice-options">
+              {feats.map((feat) => {
+                const failure = featFailureForAbilityIncrease(feat.id, draft.level)
+                const selected = draft.featId === feat.id
+                return <label className="play-sheet__feature-choice-option" key={feat.id}>
+                  <input checked={selected} disabled={Boolean(failure) && !selected} name={`ability-increase-feat-${draft.level}`} onChange={() => setAbilityIncreaseEditDraft({ ...draft, featId: feat.id, featAbility: '' })} type="radio" />
+                  <span><strong>{feat.name}{feat.repeatable ? ' · Repetível' : ''}</strong><small>{failure ? `Indisponível: ${failure}` : `Pré-requisito: ${feat.prerequisite}.`} {feat.description}</small></span>
+                </label>
+              })}
+            </div>
+            {selectedFeat?.abilityBonus && 'chooseFrom' in selectedFeat.abilityBonus && <>
+              <p>{selectedFeat.name}: escolha uma habilidade para receber +1.</p>
+              <div className="play-sheet__feature-choice-options">
+                {featAbilityOptions.map((ability) => {
+                  const label = abilities.find(([key]) => key === ability)?.[1] ?? ability
+                  const bonus = getFeatAbilityBonus(selectedFeat, baseAbilities, ability)
+                  return <label className="play-sheet__feature-choice-option" key={ability}>
+                    <input checked={draft.featAbility === ability} disabled={!bonus} name={`ability-increase-feat-ability-${draft.level}`} onChange={() => setAbilityIncreaseEditDraft({ ...draft, featAbility: ability })} type="radio" />
+                    <span><strong>{label}</strong><small>{baseAbilities[ability]}{bonus?.amount ? ` → ${Number(baseAbilities[ability]) + bonus.amount}` : ' (máximo 20)'}</small></span>
+                  </label>
+                })}
+              </div>
+            </>}
+            {fixedFeatAbility && <p>{abilities.find(([ability]) => ability === fixedFeatAbility)?.[1] ?? 'Habilidade'} recebe +1, respeitando o máximo de 20.</p>}
+          </>}
+        </div>
+      </Modal>
+    })()}
     {frameColorDialogOpen && <FrameColorDialog frameColor={frameColor} frameSvg={frameSvgs.ability} landscape={backgroundPreview} theme={darkMode ? 'dark' : 'light'} onCancel={() => setFrameColorDialogOpen(false)} onConfirm={(color) => { updateFrameColor(color); setFrameColorDialogOpen(false) }} />}
     {spellToCast && <div className="play-sheet__cast-backdrop" onClick={() => setSpellToCast(null)} role="presentation">
       <section aria-labelledby="cast-spell-title" aria-modal="true" className="play-sheet__cast-dialog" onClick={(event) => event.stopPropagation()} ref={castDialogRef} role="dialog" tabIndex={-1}>
@@ -1723,6 +2657,15 @@ export function CharacterPlaySheet({
             </div>
           </>}
         <footer><button className="play-sheet__cast-cancel" onClick={() => setSpellToCast(null)} type="button">Cancelar</button><button disabled={spellToCast.level > 0 && (selectedSpellSlotLevel === null || !availableSpellSlotLevels(spellSlots, spentSpellSlotsForCasting, spellToCast.level).includes(selectedSpellSlotLevel))} onClick={confirmCast} type="button">{spellToCast.level === 0 ? 'Conjurar truque' : 'Conjurar magia'}</button></footer>
+      </section>
+    </div>}
+    {spellRuleDialog && <div className="play-sheet__cast-backdrop" onClick={() => setSpellRuleDialog(null)} role="presentation">
+      <section aria-labelledby="spell-rule-title" aria-modal="true" className="play-sheet__cast-dialog" onClick={(event) => event.stopPropagation()} role="dialog" tabIndex={-1}>
+        <h2 id="spell-rule-title">{spellRuleDialog === 'ritual' ? 'Conjuração como ritual' : 'Truques à vontade'}</h2>
+        <p>{spellRuleDialog === 'ritual'
+          ? 'Certas magias têm uma marcação especial: ritual. A magia pode ser conjurada seguindo as regras normais ou como um ritual. A versão em ritual leva 10 minutos a mais para ser conjurada e não gasta espaço de magia, portanto não pode ser conjurada em nível superior. Para conjurá-la como ritual, é preciso ter uma característica que permita isso e ter a magia preparada ou na lista de magias conhecidas, a menos que essa característica especifique o contrário.'
+          : 'Um truque é uma magia que pode ser conjurada sem limite, sem gastar espaço de magia e sem precisar ser preparada. A prática repetida fixou a magia na mente de quem pode conjurá-lo e infundiu a magia necessária para produzir seu efeito repetidas vezes. O nível de magia de um truque é 0.'}</p>
+        <footer><button onClick={() => setSpellRuleDialog(null)} type="button">Fechar</button></footer>
       </section>
     </div>}
   </main>

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { getKnownSpellCountAtClassLevel, getMaximumSpellCountAtOrAboveLevel, getSpellLearningThreshold, getSpellSlotsAtClassLevel } from '../src/lib/classFeatures'
-import { canSelectSpellAtSlot, groupSpellChoicesByLevel } from '../src/lib/spellSelection'
+import { getKnownSpellCountAtClassLevel, getMaximumSpellCountAtOrAboveLevel, getNewlyKnownSpellCountAtClassLevel, getSpellLearningThreshold, getSpellSlotsAtClassLevel } from '../src/lib/classFeatures'
+import { canSelectSpellAtSlot, filterKnownSpellOptions, groupSpellChoicesByLevel } from '../src/lib/spellSelection'
 import { getSpellPreparationLimit } from '../src/lib/spellPreparation'
 
 test('prepared spell limits follow class ability modifiers and paladin half-level rounding', () => {
@@ -14,7 +14,8 @@ test('prepared spell limits follow class ability modifiers and paladin half-leve
 test('only prepared casters with a spellcasting level can prepare spells after a long rest', () => {
   assert.equal(getSpellPreparationLimit('paladino', 1, 4, 4), null)
   assert.equal(getSpellPreparationLimit('bardo', 5, 4, 4), null)
-  assert.equal(getSpellPreparationLimit('mago', 5, 4, 4), null)
+  assert.equal(getSpellPreparationLimit('mago', 5, 4, 4, 2), 7)
+  assert.equal(getSpellPreparationLimit('mago', 1, 4, 4, -2), 1)
   assert.equal(getSpellPreparationLimit('clerigo', 21, 4, 4), null)
 })
 
@@ -28,6 +29,15 @@ test('known-spell area capacity follows class-level progression, independently f
   assert.equal(getKnownSpellCountAtClassLevel('guerreiro', 'cavaleiro-arcano', 2), null)
   assert.equal(getKnownSpellCountAtClassLevel('guerreiro', 'cavaleiro-arcano', 3), 3)
   assert.equal(getKnownSpellCountAtClassLevel('ladino', 'trapaceiro-arcano', 3), 3)
+})
+
+test('new known-spell choices equal each level increase, including when spellcasting first unlocks', () => {
+  assert.deepEqual([2, 3, 4].map((level) => getNewlyKnownSpellCountAtClassLevel('bardo', '', level)), [1, 1, 1])
+  assert.deepEqual([2, 3, 4].map((level) => getNewlyKnownSpellCountAtClassLevel('bruxo', '', level)), [1, 1, 1])
+  assert.deepEqual([1, 2, 3].map((level) => getNewlyKnownSpellCountAtClassLevel('patrulheiro', '', level)), [0, 2, 1])
+  assert.deepEqual([2, 3, 4].map((level) => getNewlyKnownSpellCountAtClassLevel('guerreiro', 'cavaleiro-arcano', level)), [0, 3, 1])
+  assert.deepEqual([2, 3, 4].map((level) => getNewlyKnownSpellCountAtClassLevel('ladino', 'trapaceiro-arcano', level)), [0, 3, 1])
+  assert.equal(getNewlyKnownSpellCountAtClassLevel('clerigo', '', 2), 0)
 })
 
 test('learned-spell classes unlock each spell tier after the previous-level known-spell quota', () => {
@@ -82,4 +92,13 @@ test('one selection panel preserves selected spell levels and still enforces bar
   assert.equal(bardLevelThreeLimit(2), 2)
   assert.equal(canSelectSpellAtSlot([1, 1, 1, 1, 1, 2], 0, 2, bardLevelThreeLimit, 2), true)
   assert.equal(canSelectSpellAtSlot([1, 1, 1, 1, 2, 2], 0, 2, bardLevelThreeLimit, 2), false)
+})
+
+test('new spell options exclude already-known names regardless of accents or case', () => {
+  const options = [
+    { name: 'Luz', level: 0 },
+    { name: 'Curar Ferimentos', level: 1 },
+    { name: 'Névoa', level: 1 },
+  ]
+  assert.deepEqual(filterKnownSpellOptions(options, ['luz', 'CURAR FERIMENTOS']), [{ name: 'Névoa', level: 1 }])
 })

@@ -286,7 +286,7 @@ const warlockInvocations = [
   warlockInvocation('lamina-sedenta', 'Lâmina Sedenta', 'Pré-requisito: 5º nível e Pacto da Lâmina. Ao realizar a ação Atacar com sua arma de pacto, ataque duas vezes.', 5, 'pacto-da-lamina'),
   warlockInvocation('lanca-mistica', 'Lança Mística', 'Pré-requisito: truque rajada mística. O alcance de rajada mística torna-se 90 m.'),
   warlockInvocation('larapio-dos-cinco-destinos', 'Larápio dos Cinco Destinos', 'Conjure perdição uma vez usando um espaço de Magia de Pacto; recupere o uso após descanso longo.'),
-  warlockInvocation('livro-de-segredos-antigos', 'Livro de Segredos Antigos', 'Pré-requisito: Pacto do Tomo. Inscreva duas magias de 1º nível com a propriedade ritual, de quaisquer listas, no Livro das Sombras. Pode adicionar outras magias rituais encontradas, de nível até metade do seu nível de bruxo, arredondada para baixo.', undefined, 'pacto-do-tomo'),
+  warlockInvocation('livro-de-segredos-antigos', 'Livro de Segredos Antigos', 'Pré-requisito: Pacto do Tomo. Inscreva duas magias de 1º nível com a propriedade ritual, de quaisquer listas, no Livro das Sombras. Pode adicionar outras magias rituais encontradas, de nível até metade do seu nível de bruxo, arredondada para cima.', undefined, 'pacto-do-tomo'),
   warlockInvocation('mascara-das-muitas-faces', 'Máscara das Muitas Faces', 'Conjure disfarçar-se à vontade, sem gastar espaço.'),
   warlockInvocation('mestre-das-infindaveis-formas', 'Mestre das Infindáveis Formas', 'Pré-requisito: 15º nível. Conjure alterar-se à vontade, sem gastar espaço ou componentes materiais.', 15),
   warlockInvocation('olhar-de-duas-mentes', 'Olhar de Duas Mentes', 'Use uma ação para tocar um humanoide voluntário e perceber pelos sentidos dele até o fim do seu próximo turno. Pode manter o efeito em turnos seguintes enquanto estiver no mesmo plano; durante isso, fica cego e surdo aos próprios sentidos.'),
@@ -310,6 +310,73 @@ const warlockInvocations = [
 
 export const warlockInvocationIsAvailable = (invocation: FeatureOption, selectedPact?: string) =>
   !invocation.pact || invocation.pact === selectedPact
+
+export type WarlockInvocationReplacement = { oldId: string; newId: string }
+export type WarlockInvocationChoiceAtLevel = { key: string; choice: FeatureChoice }
+
+export function planWarlockInvocationChoices({
+  levels,
+  knownIds,
+  options,
+  selectedPact,
+  choicesByLevel,
+  selectedChoices,
+  replacements,
+}: {
+  levels: number[]
+  knownIds: string[]
+  options: FeatureOption[]
+  selectedPact?: string
+  choicesByLevel: Record<number, WarlockInvocationChoiceAtLevel>
+  selectedChoices: Record<string, string[]>
+  replacements: Record<number, WarlockInvocationReplacement>
+}) {
+  const uniqueOptions = [...new Map(options.map((option) => [option.id, option])).values()]
+  const known = new Set(knownIds)
+  return levels.map((level) => {
+    const knownBeforeReplacement = [...known]
+    const replacement = replacements[level]
+    const knownWithoutReplaced = new Set(knownBeforeReplacement.filter((id) => id !== replacement?.oldId))
+    const replacementOption = uniqueOptions.find((option) => option.id === replacement?.newId
+      && (option.level === undefined || option.level <= level)
+      && warlockInvocationIsAvailable(option, selectedPact))
+    const replacementApplied = Boolean(replacement?.oldId && replacementOption
+      && knownBeforeReplacement.includes(replacement.oldId)
+      && !knownWithoutReplaced.has(replacementOption.id))
+    if (replacementApplied && replacement && replacementOption) {
+      known.delete(replacement.oldId)
+      known.add(replacementOption.id)
+    }
+
+    const invocationChoice = choicesByLevel[level]
+    const invocationChoiceKey = invocationChoice?.key
+    const selectedAtLevel = invocationChoiceKey ? selectedChoices[invocationChoiceKey] ?? [] : []
+    const availableAtLevel = uniqueOptions.filter((option) => (option.level === undefined || option.level <= level)
+      && warlockInvocationIsAvailable(option, selectedPact))
+    const visibleOptions = availableAtLevel.filter((option) => !known.has(option.id) || selectedAtLevel.includes(option.id))
+    const selectedAtLevelIsValid = new Set(selectedAtLevel).size === selectedAtLevel.length
+      && selectedAtLevel.every((id) => visibleOptions.some((option) => option.id === id) && !known.has(id))
+    for (const id of selectedAtLevel) {
+      if (visibleOptions.some((option) => option.id === id) && !known.has(id)) known.add(id)
+    }
+    const knownAfterReplacement = knownBeforeReplacement.filter((id) => !replacementApplied || id !== replacement?.oldId)
+    if (replacementApplied && replacement) knownAfterReplacement.push(replacement.newId)
+
+    return {
+      level,
+      knownBeforeReplacement,
+      knownAfterReplacement,
+      replacement,
+      replacementApplied,
+      replacementOptions: availableAtLevel.filter((option) => option.id !== replacement?.oldId && !knownWithoutReplaced.has(option.id)),
+      invocationChoice: invocationChoice?.choice,
+      invocationChoiceKey,
+      selectedAtLevel,
+      selectedAtLevelIsValid,
+      options: visibleOptions,
+    }
+  })
+}
 
 const warlock: ClassFeatureData = {
   features: [
@@ -940,6 +1007,13 @@ export function getKnownSpellCountAtClassLevel(className: string, subclassId: st
     return arcaneTricksterSpellProgression[classLevel - 3]?.[1] ?? 0
   }
   return null
+}
+
+export function getNewlyKnownSpellCountAtClassLevel(className: string, subclassId: string, classLevel: number): number {
+  const knownNow = getKnownSpellCountAtClassLevel(className, subclassId, classLevel)
+  if (knownNow === null) return 0
+  const knownBefore = getKnownSpellCountAtClassLevel(className, subclassId, classLevel - 1) ?? 0
+  return Math.max(0, knownNow - knownBefore)
 }
 
 export function getMaximumSpellCountAtOrAboveLevel(

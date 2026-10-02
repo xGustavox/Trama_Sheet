@@ -1,10 +1,19 @@
 import type { CharacterDetails } from './characterData'
-import type { ClassFeatureData } from './classFeatures'
+import { getNewlyKnownSpellCountAtClassLevel, type ClassFeatureData } from './classFeatures'
 
 export const experienceThresholds = [
   0, 300, 900, 2700, 6500, 14000, 23000, 34000, 48000, 64000,
   85000, 100000, 120000, 140000, 165000, 195000, 225000, 265000, 305000, 355000,
 ] as const
+
+export function formatExperienceInput(value: string | number) {
+  const digits = String(value).replace(/\D/g, '')
+  return digits.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+}
+
+export function parseExperienceInput(value: string) {
+  return value.replace(/\D/g, '')
+}
 
 export function levelForExperience(experience: number) {
   const safeExperience = Math.max(0, Math.trunc(Number.isFinite(experience) ? experience : 0))
@@ -36,6 +45,27 @@ export function hasLevelUpChoices(character: CharacterDetails, classId: string, 
       [6, 'beastAspect'],
       [14, 'totemicAttunement'],
     ].some(([level, key]) => character.level < Number(level) && targetLevel >= Number(level) && !character.primalTotemChoices[key as 'spiritualTotem' | 'beastAspect' | 'totemicAttunement'])) return true
+  }
+  if (classId === 'bruxo' && targetLevel > character.level) {
+    const invocationPrefix = `${character.characterClassId}:${character.classSubclassId}:`
+    if (Object.entries(character.classFeatureChoices).some(([key, selected]) =>
+      key.startsWith(invocationPrefix) && key.endsWith(':mystic-invocations') && selected.length > 0,
+    )) return true
+  }
+  if (Array.from({ length: targetLevel - character.level }, (_, index) => character.level + index + 1)
+    .some((level) => getNewlyKnownSpellCountAtClassLevel(classId, character.classSubclassId, level) > 0)) return true
+  const canReplaceKnownSpells = ['bardo', 'bruxo', 'feiticeiro', 'patrulheiro'].includes(classId)
+    || classId === 'guerreiro' && character.classSubclassId === 'cavaleiro-arcano'
+    || classId === 'ladino' && character.classSubclassId === 'trapaceiro-arcano'
+  if (canReplaceKnownSpells && targetLevel > character.level) {
+    try {
+      const spells: unknown = JSON.parse(character.spells)
+      if (spells && typeof spells === 'object' && !Array.isArray(spells)
+        && Array.isArray((spells as { knownSpells?: unknown }).knownSpells)
+        && (spells as { knownSpells: unknown[] }).knownSpells.some((spell) => typeof spell === 'string')) return true
+    } catch {
+      // Invalid saved spell data must not prevent ordinary level-up choices.
+    }
   }
   if (!classData) return false
   const subclassLevel = classData.subclasses[0]?.selectionLevel

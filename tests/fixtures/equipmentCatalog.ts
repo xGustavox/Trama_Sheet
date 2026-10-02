@@ -12,6 +12,9 @@ export async function openEquipmentTestDatabase() {
   await db.exec(readFileSync(new URL('../../supabase/migrations/20260930190000_magic_items_part_3.sql', import.meta.url), 'utf8'))
   await db.exec(readFileSync(new URL('../../supabase/migrations/20260930200000_magic_items_part_4.sql', import.meta.url), 'utf8'))
   await db.exec(readFileSync(new URL('../../supabase/migrations/20260930210000_magic_items_part_5.sql', import.meta.url), 'utf8'))
+  await db.exec('create table backgrounds (id uuid primary key default gen_random_uuid(), slug text not null unique, name text not null unique, source_page smallint not null); grant select on backgrounds to anon, authenticated')
+  await db.exec(readFileSync(new URL('../../supabase/migrations/20261001110000_haunted_background_and_equipment.sql', import.meta.url), 'utf8'))
+  await db.exec(readFileSync(new URL('../../supabase/migrations/20261001120000_haunted_trinkets_67_100.sql', import.meta.url), 'utf8'))
   return db
 }
 

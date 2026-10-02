@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { hasConfirmedAbilityIncrease, hasLevelUpChoices, experienceThresholds, levelForExperience } from '../src/lib/experience'
+import { formatExperienceInput, hasConfirmedAbilityIncrease, hasLevelUpChoices, experienceThresholds, levelForExperience, parseExperienceInput } from '../src/lib/experience'
 import type { CharacterDetails } from '../src/lib/characterData'
 import type { ClassFeatureData } from '../src/lib/classFeatures'
 
@@ -17,6 +17,14 @@ test('experience below zero or non-finite values safely remains level 1', () => 
   assert.equal(levelForExperience(-1), 1)
   assert.equal(levelForExperience(Number.NaN), 1)
   assert.equal(levelForExperience(Number.POSITIVE_INFINITY), 1)
+})
+
+test('XP input groups thousands with periods while calculations receive digits only', () => {
+  assert.equal(formatExperienceInput(10000), '10.000')
+  assert.equal(formatExperienceInput('150000'), '150.000')
+  assert.equal(formatExperienceInput(''), '')
+  assert.equal(parseExperienceInput('1.500'), '1500')
+  assert.equal(parseExperienceInput('12a.345'), '12345')
 })
 
 test('only level-ups that unlock a choice require the ficha drawer', () => {
@@ -39,6 +47,56 @@ test('only level-ups that unlock a choice require the ficha drawer', () => {
   assert.equal(hasLevelUpChoices(character, 'paladino', classData, 2), false)
   assert.equal(hasLevelUpChoices(character, 'paladino', classData, 3), true)
   assert.equal(hasLevelUpChoices(character, 'paladino', { features: [], subclasses: [] }, 3), false)
+})
+
+test('warlock level-ups open for new known spells and invocation replacement when available', () => {
+  const classData: ClassFeatureData = { features: [], subclasses: [] }
+  const character = {
+    level: 2,
+    characterClassId: 'bruxo',
+    classSubclassId: 'corruptor',
+    classFeatureChoices: { 'bruxo:corruptor:2:Invocações Místicas:mystic-invocations': ['armadura-de-sombras'] },
+  } as CharacterDetails
+
+  assert.equal(hasLevelUpChoices(character, 'bruxo', classData, 3), true)
+  assert.equal(hasLevelUpChoices(character, 'bruxo', classData, 2), false)
+  assert.equal(hasLevelUpChoices({ ...character, classFeatureChoices: {} }, 'bruxo', classData, 3), true)
+  assert.equal(hasLevelUpChoices({ ...character, level: 19, classFeatureChoices: {} }, 'bruxo', classData, 20), false)
+})
+
+test('learned-spell class level-ups open the drawer when a known spell can be replaced', () => {
+  const classData: ClassFeatureData = { features: [], subclasses: [] }
+  const bard = {
+    level: 4,
+    characterClassId: 'bardo',
+    classSubclassId: 'colegio-do-conhecimento',
+    classFeatureChoices: {},
+    spells: JSON.stringify({ knownSpells: ['Enfeitiçar Pessoa'] }),
+  } as CharacterDetails
+  const cleric = { ...bard, characterClassId: 'clerigo' } as CharacterDetails
+  const arcaneKnight = { ...bard, characterClassId: 'guerreiro', classSubclassId: 'cavaleiro-arcano' } as CharacterDetails
+
+  assert.equal(hasLevelUpChoices(bard, 'bardo', classData, 5), true)
+  assert.equal(hasLevelUpChoices(bard, 'bardo', classData, 4), false)
+  assert.equal(hasLevelUpChoices(cleric, 'clerigo', classData, 5), false)
+  assert.equal(hasLevelUpChoices(arcaneKnight, 'guerreiro', classData, 5), true)
+})
+
+test('level-ups open spell choices when class progression grants new known spells', () => {
+  const classData: ClassFeatureData = { features: [], subclasses: [] }
+  const ranger = {
+    level: 1,
+    characterClassId: 'patrulheiro',
+    classSubclassId: '',
+    classFeatureChoices: {},
+    spells: '{}',
+  } as CharacterDetails
+  const wizard = { ...ranger, characterClassId: 'mago' } as CharacterDetails
+  const cleric = { ...ranger, characterClassId: 'clerigo' } as CharacterDetails
+
+  assert.equal(hasLevelUpChoices(ranger, 'patrulheiro', classData, 2), true)
+  assert.equal(hasLevelUpChoices(wizard, 'mago', classData, 2), true)
+  assert.equal(hasLevelUpChoices(cleric, 'clerigo', classData, 2), false)
 })
 
 test('a subclass threshold or ASI prompts for choices before saving the new level', () => {
